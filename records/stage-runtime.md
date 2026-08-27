@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v17 boundary
+## Internal stage build v18 boundary
 
-`build/stage-integrated-v17.gba` (internal only; SHA-256
-`0E26058D7B5EAB2FCC374229366A5AFB4DACEA24F1E630BA3666B8949AA85F38`)
+`build/stage-integrated-v18.gba` (internal only; SHA-256
+`25AE78266064DC4703B58F41388C4D6A2D50CF4EF4704185D5977DA6B5DF7B3D`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -73,7 +73,10 @@ earlier provisional 9/10 assignment.
 
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard
-state machine are translated statically from the confirmed WSC routines. The
+state machine are translated statically from the confirmed WSC routines. Its
+state word is GBA `0x0300256A`: WSC `ES:0384` is the second halfword cleared
+from base `0x03002568` by the commercial stage-5 initializer at
+`0x0803FEF0`. The
 hazard state machine reuses the retail GBA entity table and spawn service
 rather than a parallel object system. Its three mode-producing object
 callbacks remain pending. The two commercial GBA object-construction sites
@@ -83,6 +86,14 @@ This is a confirmed engine prerequisite, not by itself proof of vertical
 motion or suction. Train vent/bounce producers, Iraira suction, Digimon Shoot
 mode logic, and any additional stage-specific engine branches remain pending.
 
-No emulator claim is attached to v17. Per the requested validation policy,
+An aligned ARM branch audit found all twelve direct calls to the retail stage
+getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
+table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
+`0x0836D28C`, and `0x0836D2F8`). v18 routes those calls through a bounded
+analog selector and separately bounds the setup-time dimension lookup at
+`0x0803EE70`. This removes out-of-range reads while native Ver. 1.5 object-mode
+records are still pending; it is not a substitute for those records.
+
+No emulator claim is attached to v18. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

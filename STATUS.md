@@ -21,12 +21,18 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
   confirmed dedicated-mode control-flow map.
 
-The current internal stage candidate is `stage-integrated-v17.gba`, identified
+The current internal stage candidate is `stage-integrated-v18.gba`, identified
 only by SHA-256
-`0E26058D7B5EAB2FCC374229366A5AFB4DACEA24F1E630BA3666B8949AA85F38`.
+`25AE78266064DC4703B58F41388C4D6A2D50CF4EF4704185D5977DA6B5DF7B3D`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
+
+v18 corrects the WSC `ES:0384` waterfall state mapping to GBA
+`0x0300256A`. It also bounds six confirmed calls that would otherwise index
+retail eight-entry tables with stage IDs 8–10, plus the setup-time dimension
+lookup. Native Ver. 1.5 object-mode records still replace that temporary
+analog mapping in a later integration step.
 
 ## Remaining release gates
 

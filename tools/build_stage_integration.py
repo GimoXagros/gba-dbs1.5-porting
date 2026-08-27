@@ -60,6 +60,8 @@ WATERFALL_HAZARD_HELPER = 0x584600
 WATERFALL_HAZARD_TABLE = 0x584800
 VERTICAL_FLAG_R0_HELPER = 0x584900
 VERTICAL_FLAG_R8_HELPER = 0x584940
+LEGACY_STAGE_SELECTOR = 0x584A00
+STAGE_DIMENSION_MAP_HELPER = 0x584A80
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -74,6 +76,19 @@ STAGE_BOUNDS_MAP_SITE = 0x07FC3C
 STAGE_BOUNDS_MAP_RETURN = 0x07FC40
 VERTICAL_FLAG_R0_SITE = 0x359568
 VERTICAL_FLAG_R8_SITE = 0x3597D0
+STAGE_DIMENSION_MAP_SITE = 0x03EE70
+STAGE_DIMENSION_MAP_RETURN = 0x03EE74
+# These callers immediately index an eight-entry retail jump or data table.
+# Keep the route selector's actual IDs for expanded dispatches, but present a
+# safe retail analog at these still-unported consumers.
+LEGACY_STAGE_SELECTOR_SITES = (
+    0x0C4BC4,
+    0x0C4CC8,
+    0x0D0BD0,
+    0x0D1408,
+    0x36D28C,
+    0x36D2F8,
+)
 
 STAGES = {
     "train": {
@@ -437,8 +452,9 @@ def build_waterfall_hazard_helper() -> bytes:
 
     The WSC routine uses the same six-byte entity records and spawn service as
     retail stage 5.  The commercial GBA port converts those to eight-byte
-    records at 0x03001C68 and service 0x08013764.  Ver. 1.5 adds a three-phase
-    state at the new stage-state word: spawn a mode-specific pair, wait for the
+    records at 0x03001C68 and service 0x08013764. WSC ES:0384 maps to GBA
+    0x0300256A, the second halfword cleared by the stage-5 initializer at
+    0x0803FEF0. Ver. 1.5 adds a three-phase state there: spawn a mode-specific pair, wait for the
     first entity to disappear, spawn the paired successors, then clear both
     records and emit the remaining IDs 9..11 once the shared activity gate is
     idle.
@@ -534,7 +550,7 @@ def build_waterfall_hazard_helper() -> bytes:
         pop {{r0-r8, lr}}
         bx lr
         .align 2
-    hazard_state: .word 0x03002622
+    hazard_state: .word 0x0300256A
     entity_table: .word 0x03001C68
     activity_gate: .word 0x03004CEC
     hazard_pairs: .word 0x{GBA_BASE + WATERFALL_HAZARD_TABLE:08X}
@@ -786,6 +802,62 @@ def build_selector_hook() -> bytes:
     return struct.pack(f"<{len(words)}I", *words)
 
 
+def build_legacy_stage_selector() -> bytes:
+    """Return a bounded retail analog for confirmed eight-entry consumers.
+
+    This duplicates the temporary character route policy used by the actual
+    selector, then maps train/waterfall/Iraira/Shoot to retail stages
+    0/6/3/7. It is intentionally called only from consumers proven to index
+    an eight-entry retail table. The actual initializer/update dispatches
+    continue to receive IDs 8..11.
+    """
+    return assemble_arm("""
+        ldr r8, legacy_battle_state
+        ldrb r0, [r8, #0xA]
+        cmp r0, #11
+        moveq r0, #3
+        bxeq lr
+        cmp r0, #13
+        moveq r0, #0
+        bxeq lr
+        cmp r0, #14
+        moveq r0, #6
+        bxeq lr
+        ldrb r0, [r8, #0xE]
+        cmp r0, #8
+        moveq r0, #0
+        bxeq lr
+        cmp r0, #9
+        moveq r0, #6
+        bxeq lr
+        cmp r0, #10
+        moveq r0, #3
+        bxeq lr
+        cmp r0, #11
+        moveq r0, #7
+        bx lr
+        .align 2
+    legacy_battle_state: .word 0x03002310
+    """, LEGACY_STAGE_SELECTOR)
+
+
+def build_stage_dimension_map_helper() -> bytes:
+    """Form the retail dimension-table byte offset without changing r1."""
+    return assemble_arm(f"""
+        mov r5, r1
+        cmp r5, #8
+        moveq r5, #0
+        cmp r5, #9
+        moveq r5, #6
+        cmp r5, #10
+        moveq r5, #3
+        cmp r5, #11
+        moveq r5, #7
+        lsl r5, r5, #2
+        b 0x{GBA_BASE + STAGE_DIMENSION_MAP_RETURN:08X}
+    """, STAGE_DIMENSION_MAP_HELPER)
+
+
 def build_update_dispatch_hook() -> bytes:
     words = [
         0xE59F8010,  # ldr r8, [pc, #0x10]
@@ -897,6 +969,14 @@ def main() -> int:
         raise SystemExit("vertical-stage r0 flag hook-site check failed")
     if struct.unpack_from("<I", source, VERTICAL_FLAG_R8_SITE)[0] != 0xE3888A02:
         raise SystemExit("vertical-stage r8 flag hook-site check failed")
+    if struct.unpack_from("<I", source, STAGE_DIMENSION_MAP_SITE)[0] != 0xE1A05101:
+        raise SystemExit("stage dimension map hook-site check failed")
+    expected_selector_call = lambda site: arm_branch(
+        GBA_BASE + site, GBA_BASE + SELECTOR_SITE, link=True
+    )
+    for site in LEGACY_STAGE_SELECTOR_SITES:
+        if struct.unpack_from("<I", source, site)[0] != expected_selector_call(site):
+            raise SystemExit(f"legacy stage selector call check failed at 0x{site:06X}")
 
     wsc15 = args.wsc15.read_bytes()
     if hashlib.sha256(wsc15).hexdigest().upper() != WSC15_SHA256:
@@ -1135,6 +1215,16 @@ def main() -> int:
             build_vertical_flag_helper(VERTICAL_FLAG_R8_HELPER, 8),
             "waterfall/Iraira object-flag r8 helper",
         ),
+        (
+            LEGACY_STAGE_SELECTOR,
+            build_legacy_stage_selector(),
+            "bounded selector for eight-entry retail consumers",
+        ),
+        (
+            STAGE_DIMENSION_MAP_HELPER,
+            build_stage_dimension_map_helper(),
+            "legacy stage-dimension index map helper",
+        ),
     ):
         if patched[target:target + len(blob)] != bytes([0xFF]) * len(blob):
             raise SystemExit(f"{label} target is not blank")
@@ -1174,6 +1264,22 @@ def main() -> int:
             link=True,
         ),
     )
+    struct.pack_into(
+        "<I", patched, STAGE_DIMENSION_MAP_SITE,
+        arm_branch(
+            GBA_BASE + STAGE_DIMENSION_MAP_SITE,
+            GBA_BASE + STAGE_DIMENSION_MAP_HELPER,
+        ),
+    )
+    for site in LEGACY_STAGE_SELECTOR_SITES:
+        struct.pack_into(
+            "<I", patched, site,
+            arm_branch(
+                GBA_BASE + site,
+                GBA_BASE + LEGACY_STAGE_SELECTOR,
+                link=True,
+            ),
+        )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(patched)
@@ -1248,6 +1354,16 @@ def main() -> int:
         "aux_stage_table_bytes": len(aux_stage_table),
         "stage_setup_map_hook": STAGE_SETUP_MAP_HOOK,
         "stage_bounds_map_hook": STAGE_BOUNDS_MAP_HOOK,
+        "legacy_stage_selector": {
+            "helper": LEGACY_STAGE_SELECTOR,
+            "patched_call_sites": list(LEGACY_STAGE_SELECTOR_SITES),
+            "dimension_index_site": STAGE_DIMENSION_MAP_SITE,
+            "dimension_index_helper": STAGE_DIMENSION_MAP_HELPER,
+            "claim": (
+                "static bounds hardening for confirmed eight-entry retail consumers; "
+                "native Ver. 1.5 object-mode records remain pending"
+            ),
+        },
         "vertical_stage_object_flag_hooks": {
             "source_evidence": [
                 "WSC 1.5 raw 0x781BEF stage-ID branch",
