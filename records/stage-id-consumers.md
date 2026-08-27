@@ -23,8 +23,8 @@ identified by SHA-256
 | `0x080D0BD0` | eight-entry jump table | bounded analog |
 | `0x080D1408` | eight-entry jump table | bounded analog |
 | `0x0835B384` | direct comparison with retail stage 3 | unchanged |
-| `0x0836D28C` | eight-byte retail object-mode record | bounded analog, native record pending |
-| `0x0836D2F8` | eight-byte retail object-mode record | bounded analog, native record pending |
+| `0x0836D28C` | eight-byte retail graphics/object-mode record | bounded analog, native callback pending |
+| `0x0836D2F8` | eight-byte object movement-pattern record | native twelve-entry Ver. 1.5 table |
 
 The setup routine also uses the actual stage ID at `0x0803EE70` to index an
 eight-entry dimension table without another getter call. v18 maps only the
@@ -35,6 +35,8 @@ initializer dispatch.
 
 The two `0x0836D2xx` consumers correspond to the object-mode family whose WSC
 Ver. 1.5 functions include the producers at logical `4090:3DFB`, `4090:3EE0`,
-and `4090:3FCA`. Their temporary analog mapping prevents invalid GBA reads but
-does not claim those producer behaviors. Completion requires converted native
-records/callbacks and removal of the temporary mapping at those two sites.
+and `4090:3FCA`. The movement-pattern consumer is now native through stage 11.
+The remaining graphics/configuration consumer is still mapped to a safe retail
+analog and does not claim those producer behaviors. Completion requires its
+converted native callbacks and removal of the temporary mapping at
+`0x0836D28C`.

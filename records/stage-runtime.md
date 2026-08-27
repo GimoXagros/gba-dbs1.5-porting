@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v18 boundary
+## Internal stage build v19 boundary
 
-`build/stage-integrated-v18.gba` (internal only; SHA-256
-`25AE78266064DC4703B58F41388C4D6A2D50CF4EF4704185D5977DA6B5DF7B3D`)
+`build/stage-integrated-v19.gba` (internal only; SHA-256
+`E78023026AC66A0BBB365D69C9C18F96220A61AED0A9A1AF6661B36A7846535F`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -89,11 +89,19 @@ mode logic, and any additional stage-specific engine branches remain pending.
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
 table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
-`0x0836D28C`, and `0x0836D2F8`). v18 routes those calls through a bounded
-analog selector and separately bounds the setup-time dimension lookup at
-`0x0803EE70`. This removes out-of-range reads while native Ver. 1.5 object-mode
-records are still pending; it is not a substitute for those records.
+`0x0836D28C`, and `0x0836D2F8`). v19 routes five of those calls through a
+bounded analog selector and separately bounds the setup-time dimension lookup
+at `0x0803EE70`.
 
-No emulator claim is attached to v18. Per the requested validation policy,
+The sixth consumer at `0x0836D2F8` now uses a native twelve-entry table. The
+commercial GBA conversion proves that each WSC four-byte record `(count, 4,
+near pointer)` becomes an eight-byte `<halfword, halfword, ARM pointer>` record
+while its referenced `0x20`-byte pattern is retained byte-for-byte. The build
+verifies this rule against all nine records present in both commercial ROMs,
+then converts Ver. 1.5 records 9–11 and their three patterns. The graphics
+configuration lookup at `0x0836D28C` remains bounded until its native
+Ver. 1.5 callbacks are ported.
+
+No emulator claim is attached to v19. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

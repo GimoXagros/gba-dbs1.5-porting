@@ -34,7 +34,7 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v18 contains the converted palette, tiles, eight maps,
+Internal stage build v19 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
 and safe mappings for legacy stage-index tables. The update slot remains an
 intentional return stub, and no menu, dedicated loop, object/presentation,

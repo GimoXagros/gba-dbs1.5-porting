@@ -62,6 +62,8 @@ VERTICAL_FLAG_R0_HELPER = 0x584900
 VERTICAL_FLAG_R8_HELPER = 0x584940
 LEGACY_STAGE_SELECTOR = 0x584A00
 STAGE_DIMENSION_MAP_HELPER = 0x584A80
+OBJECT_PATTERN_TABLE = 0x584B00
+OBJECT_PATTERN_DATA = 0x584B80
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -87,8 +89,12 @@ LEGACY_STAGE_SELECTOR_SITES = (
     0x0D0BD0,
     0x0D1408,
     0x36D28C,
-    0x36D2F8,
 )
+OBJECT_PATTERN_POINTER_SITE = 0x36D40C
+ORIGINAL_OBJECT_PATTERN_TABLE = 0x36E078
+WSC15_OBJECT_PATTERN_RECORDS = 0x74512D
+WSC15_OBJECT_PATTERN_BYTES = 0x74515D
+WSC15_OBJECT_OVERLAY_BASE = 0x740900
 
 STAGES = {
     "train": {
@@ -977,10 +983,44 @@ def main() -> int:
     for site in LEGACY_STAGE_SELECTOR_SITES:
         if struct.unpack_from("<I", source, site)[0] != expected_selector_call(site):
             raise SystemExit(f"legacy stage selector call check failed at 0x{site:06X}")
+    if struct.unpack_from("<I", source, OBJECT_PATTERN_POINTER_SITE)[0] != (
+        GBA_BASE + ORIGINAL_OBJECT_PATTERN_TABLE
+    ):
+        raise SystemExit("object pattern table pointer check failed")
 
     wsc15 = args.wsc15.read_bytes()
     if hashlib.sha256(wsc15).hexdigest().upper() != WSC15_SHA256:
         raise SystemExit("refusing unknown WSC Ver. 1.5 source")
+
+    # The commercial converter expands each WSC (count, divisor, near-pointer)
+    # record from 4 to 8 bytes and retains the referenced 0x20-byte pattern
+    # verbatim. Prove that rule on all nine records retained in the USA ROM
+    # before applying it to the three Ver. 1.5-only records.
+    object_pattern_records = bytearray()
+    object_pattern_data = bytearray()
+    for index in range(12):
+        record_offset = WSC15_OBJECT_PATTERN_RECORDS + index * 4
+        count, divisor, logical_pointer = struct.unpack_from("<BBH", wsc15, record_offset)
+        pattern_offset = WSC15_OBJECT_OVERLAY_BASE + logical_pointer
+        pattern = wsc15[pattern_offset:pattern_offset + 0x20]
+        if len(pattern) != 0x20:
+            raise SystemExit(f"WSC object pattern {index} falls outside ROM")
+        if index < 9:
+            gba_record_offset = ORIGINAL_OBJECT_PATTERN_TABLE + index * 8
+            gba_count, gba_divisor, gba_pointer = struct.unpack_from(
+                "<HHI", source, gba_record_offset
+            )
+            if (gba_count, gba_divisor) != (count, divisor):
+                raise SystemExit(f"object pattern record {index} conversion check failed")
+            gba_pattern_offset = gba_pointer - GBA_BASE
+            if source[gba_pattern_offset:gba_pattern_offset + 0x20] != pattern:
+                raise SystemExit(f"object pattern {index} payload check failed")
+            target_pointer = gba_pointer
+        else:
+            target_pointer = GBA_BASE + OBJECT_PATTERN_DATA + len(object_pattern_data)
+            object_pattern_data.extend(pattern)
+        object_pattern_records.extend(struct.pack("<HHI", count, divisor, target_pointer))
+
     train_gradient_wsc = struct.unpack_from(
         "<21H", wsc15, 0x75F94C
     )
@@ -1225,6 +1265,16 @@ def main() -> int:
             build_stage_dimension_map_helper(),
             "legacy stage-dimension index map helper",
         ),
+        (
+            OBJECT_PATTERN_TABLE,
+            bytes(object_pattern_records),
+            "expanded Ver. 1.5 object-pattern table",
+        ),
+        (
+            OBJECT_PATTERN_DATA,
+            bytes(object_pattern_data),
+            "Ver. 1.5 object-pattern payloads",
+        ),
     ):
         if patched[target:target + len(blob)] != bytes([0xFF]) * len(blob):
             raise SystemExit(f"{label} target is not blank")
@@ -1280,6 +1330,10 @@ def main() -> int:
                 link=True,
             ),
         )
+    struct.pack_into(
+        "<I", patched, OBJECT_PATTERN_POINTER_SITE,
+        GBA_BASE + OBJECT_PATTERN_TABLE,
+    )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(patched)
@@ -1362,6 +1416,19 @@ def main() -> int:
             "claim": (
                 "static bounds hardening for confirmed eight-entry retail consumers; "
                 "native Ver. 1.5 object-mode records remain pending"
+            ),
+        },
+        "object_pattern_extension": {
+            "table": OBJECT_PATTERN_TABLE,
+            "records": 12,
+            "new_payloads": OBJECT_PATTERN_DATA,
+            "new_payload_bytes": len(object_pattern_data),
+            "source_records": WSC15_OBJECT_PATTERN_RECORDS,
+            "source_payloads": WSC15_OBJECT_PATTERN_BYTES,
+            "pointer_site": OBJECT_PATTERN_POINTER_SITE,
+            "claim": (
+                "first nine records and payloads verified against the commercial GBA "
+                "conversion; Ver. 1.5 records 9..11 converted by the same rule"
             ),
         },
         "vertical_stage_object_flag_hooks": {
