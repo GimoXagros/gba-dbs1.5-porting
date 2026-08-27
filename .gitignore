@@ -1,0 +1,37 @@
+# Local dependencies, emulator installations, and caches
+local/
+vendor/
+**/__pycache__/
+*.py[cod]
+
+# Original inputs, patched images, saves, states, and binary derivatives
+build/
+outputs/
+evidence/
+*.gba
+*.wsc
+*.sav
+*.saveram
+*.state
+*.State
+*.ss1
+*.ram
+*.bin
+
+# Captures and other source-derived media
+*.png
+*.bmp
+*.gif
+*.wav
+*.mp3
+*.avi
+*.mp4
+*.log
+
+# Archives, shortcuts, and local editor/OS files
+*.zip
+*.7z
+*.rar
+*.lnk
+.DS_Store
+Thumbs.db
