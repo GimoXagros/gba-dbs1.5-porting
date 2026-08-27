@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v19 boundary
+## Internal stage build v20 boundary
 
-`build/stage-integrated-v19.gba` (internal only; SHA-256
-`E78023026AC66A0BBB365D69C9C18F96220A61AED0A9A1AF6661B36A7846535F`)
+`build/stage-integrated-v20.gba` (internal only; SHA-256
+`9F37B07292D92620238572CA35B0DF45D38DAFEDCEDBB0315F20502C0CC62FD2`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -76,10 +76,12 @@ callback, both palette paths, and the waterfall three-phase rolling-hazard
 state machine are translated statically from the confirmed WSC routines. Its
 state word is GBA `0x0300256A`: WSC `ES:0384` is the second halfword cleared
 from base `0x03002568` by the commercial stage-5 initializer at
-`0x0803FEF0`. The
-hazard state machine reuses the retail GBA entity table and spawn service
-rather than a parallel object system. Its three mode-producing object
-callbacks remain pending. The two commercial GBA object-construction sites
+`0x0803FEF0`. WSC stage-9 function `4090:3FCA` immediately writes mode 3 to
+that state. v20 mirrors this write in the cloned waterfall initializer while
+retaining all three commercial zeroes. The hazard state machine reuses the
+retail GBA entity table and spawn service rather than a parallel object
+system. Its remaining visual/movement callback is pending. The two commercial
+GBA object-construction sites
 corresponding to WSC raw `0x781BEF` and `0x786C5C` now preserve the Ver. 1.5
 exception that suppresses default object flag `0x2000` for stages 9 and 10.
 This is a confirmed engine prerequisite, not by itself proof of vertical
@@ -89,7 +91,7 @@ mode logic, and any additional stage-specific engine branches remain pending.
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
 table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
-`0x0836D28C`, and `0x0836D2F8`). v19 routes five of those calls through a
+`0x0836D28C`, and `0x0836D2F8`). v20 routes five of those calls through a
 bounded analog selector and separately bounds the setup-time dimension lookup
 at `0x0803EE70`.
 
@@ -102,6 +104,6 @@ then converts Ver. 1.5 records 9–11 and their three patterns. The graphics
 configuration lookup at `0x0836D28C` remains bounded until its native
 Ver. 1.5 callbacks are ported.
 
-No emulator claim is attached to v19. Per the requested validation policy,
+No emulator claim is attached to v20. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

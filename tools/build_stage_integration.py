@@ -64,6 +64,7 @@ LEGACY_STAGE_SELECTOR = 0x584A00
 STAGE_DIMENSION_MAP_HELPER = 0x584A80
 OBJECT_PATTERN_TABLE = 0x584B00
 OBJECT_PATTERN_DATA = 0x584B80
+WATERFALL_STATE_INIT_HELPER = 0x584C00
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -563,6 +564,19 @@ def build_waterfall_hazard_helper() -> bytes:
     """, WATERFALL_HAZARD_HELPER)
 
 
+def build_waterfall_state_init_helper() -> bytes:
+    """Seed the WSC stage-9 mode while retaining retail state zeroes."""
+    return assemble_arm("""
+        push {r1, lr}
+        str r0, [r5]
+        strh r0, [r5, #4]
+        mov r1, #3
+        strh r1, [r5, #2]
+        pop {r1, lr}
+        bx lr
+    """, WATERFALL_STATE_INIT_HELPER)
+
+
 def build_vertical_flag_helper(address: int, value_register: int) -> bytes:
     """Apply the Ver. 1.5 stage-9/10 exception to object flag 0x2000.
 
@@ -772,6 +786,21 @@ def relocate_stage_clone(source: bytes, target: int, *, spec: dict[str, object],
             struct.pack_into("<I", clone, offset, replacements[value])
     for relative, index in zip(spec["index_offsets"], indices, strict=True):
         struct.pack_into("<I", clone, relative, 0xE3A08000 | index)
+    if target == CLONE_TARGETS["waterfall"]:
+        # WSC stage-9 producer 4090:3FCA writes ES:0384 = 3. Replace the
+        # cloned stage-5 zeroing pair with a call that preserves the retail
+        # zeroes and seeds the converted GBA state at 0x0300256A.
+        if struct.unpack_from("<2I", clone, 0x130) != (0xE1C500B4, 0xE5850000):
+            raise SystemExit("waterfall state initializer patch-site check failed")
+        struct.pack_into(
+            "<2I", clone, 0x130,
+            arm_branch(
+                GBA_BASE + target + 0x130,
+                GBA_BASE + WATERFALL_STATE_INIT_HELPER,
+                link=True,
+            ),
+            0xE1A00000,
+        )
     return bytes(clone)
 
 
@@ -1275,6 +1304,11 @@ def main() -> int:
             bytes(object_pattern_data),
             "Ver. 1.5 object-pattern payloads",
         ),
+        (
+            WATERFALL_STATE_INIT_HELPER,
+            build_waterfall_state_init_helper(),
+            "waterfall stage-9 mode initializer",
+        ),
     ):
         if patched[target:target + len(blob)] != bytes([0xFF]) * len(blob):
             raise SystemExit(f"{label} target is not blank")
@@ -1379,6 +1413,8 @@ def main() -> int:
             "rolling_hazard_helper": WATERFALL_HAZARD_HELPER,
             "rolling_hazard_table": WATERFALL_HAZARD_TABLE,
             "rolling_hazard_source": "WSC 1.5 stage overlay relative 0x1C53..0x1D85",
+            "mode_initializer": WATERFALL_STATE_INIT_HELPER,
+            "mode_initializer_source": "WSC 1.5 logical 4090:3FCA / raw 0x7448CA",
             "palette_source": "WSC 1.5 stage overlay relative 0x1AF3..0x1B67",
             "claim": (
                 "static display/palette/rolling-hazard state-machine translation; "

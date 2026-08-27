@@ -11,7 +11,7 @@ identified by SHA-256
 
 ## Confirmed direct callers
 
-| Call site | Immediate use | v18 policy |
+| Call site | Immediate use | v20 policy |
 |---:|---|---|
 | `0x0803EE5C` | stage setup and expanded initializer dispatch | retain actual ID |
 | `0x080C4BC4` | eight-entry jump table | bounded analog |
@@ -27,7 +27,7 @@ identified by SHA-256
 | `0x0836D2F8` | eight-byte object movement-pattern record | native twelve-entry Ver. 1.5 table |
 
 The setup routine also uses the actual stage ID at `0x0803EE70` to index an
-eight-entry dimension table without another getter call. v18 maps only the
+eight-entry dimension table without another getter call. v20 maps only the
 derived byte offset there, preserving the actual ID in `r1` for the expanded
 initializer dispatch.
 

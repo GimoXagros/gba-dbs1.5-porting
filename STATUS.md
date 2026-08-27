@@ -21,20 +21,22 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
   confirmed dedicated-mode control-flow map.
 
-The current internal stage candidate is `stage-integrated-v19.gba`, identified
+The current internal stage candidate is `stage-integrated-v20.gba`, identified
 only by SHA-256
-`E78023026AC66A0BBB365D69C9C18F96220A61AED0A9A1AF6661B36A7846535F`.
+`9F37B07292D92620238572CA35B0DF45D38DAFEDCEDBB0315F20502C0CC62FD2`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
 
-v19 retains v18's corrected WSC `ES:0384` waterfall state mapping to GBA
+v20 retains v18's corrected WSC `ES:0384` waterfall state mapping to GBA
 `0x0300256A`. It also addresses six confirmed calls that would otherwise index
 retail eight-entry tables with stage IDs 8–10, plus the setup-time dimension
 lookup. The Ver. 1.5 object movement-pattern table is now natively expanded
 through ID 11; five other legacy consumers remain on bounded analogs. Native
 Ver. 1.5 graphics/object-mode callbacks still replace the remaining temporary
-mapping in a later integration step.
+mapping in a later integration step. The waterfall initializer now also seeds
+mode 3 exactly as WSC stage-9 function `4090:3FCA` does, activating the
+translated hazard path without claiming its remaining visual object callback.
 
 ## Remaining release gates
 
