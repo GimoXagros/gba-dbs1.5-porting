@@ -18,12 +18,12 @@ memory dump, screenshot, or emulator state.
 - Waterfall three-phase rolling-hazard state machine and confirmed stage 9/10
   object-flag exceptions.
 - Static ZeedMillenniummon alternate final-boss integration.
-- Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
-  confirmed dedicated-mode control-flow map.
+- Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
+  presentation objects, and the stage-11 dedicated core-loop route.
 
-The current internal stage candidate is `stage-integrated-v26.gba`, identified
+The current internal stage candidate is `stage-integrated-v27.gba`, identified
 only by SHA-256
-`FB71E42E610A94F78F96FCFCC31C5593C737D335864F4EC6AE35C27945D46448`.
+`AD68EE487A2D1265F50E8B86375D0ED4A84516CABAD7A5972DB3F3E99A5C57DE`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
@@ -50,9 +50,17 @@ with the commercial stage-7 conversion establishes the camera state
 (`0x03003D30`), and stage flags (`0x0300450A`) without inventing a parallel
 ABI. v25 installs the exact stage-11 threshold scan and converts all 202
 BGR444 colors used by its two three-rate palette-table groups to GBA BGR555.
-The retail callback from the same lineage remains temporary: the Shoot-only
-interrupt callback, transition helper, dedicated loop, rules, and exit are
-still release gates.
+The commercial battle loop at GBA `0x083700F0..0x0837024C` is also the exact
+translation of WSC `4090:583E`. v27 replaces its first literal load with a
+bounded dispatcher: stages 0–10 reproduce the displaced counter update and
+rejoin at `0x08370104`, while actual stage ID 11 enters the translated WSC
+`4090:7572` core loop and returns through the original epilogue. The WSC
+`4090:7642` signed scroll state machine and its 48-color BGR444 table are
+converted to GBA BGR555 and write the same sixteen palette entries at the
+same stride. The Shoot-only timer callback `4090:989C` and its new resource
+family are not yet converted; v27 marks the commercial `0x083731A0` callback
+as an explicit temporary boundary. Rules, reward, win/loss, and exit remain
+release gates.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart

@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v25 boundary
+## Internal stage build v27 boundary
 
-`build/stage-integrated-v26.gba` (internal only; SHA-256
-`FB71E42E610A94F78F96FCFCC31C5593C737D335864F4EC6AE35C27945D46448`)
+`build/stage-integrated-v27.gba` (internal only; SHA-256
+`AD68EE487A2D1265F50E8B86375D0ED4A84516CABAD7A5972DB3F3E99A5C57DE`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -89,6 +89,15 @@ exact semantic match.
 This is a confirmed engine prerequisite, not by itself proof of vertical
 motion or suction. Train vent/bounce producers, Iraira suction, Digimon Shoot
 mode logic, and the remaining stage-specific engine branches remain pending.
+
+v27 additionally hooks the commercial battle loop at `0x083700F4`. A bounded
+dispatcher preserves the displaced retail counter update for stages 0–10 and
+routes only actual stage ID 11 into the translated WSC `4090:7572..7641`
+core loop. The associated `4090:7642..76D0` signed palette-scroll state
+machine and its 48-color source table are translated exactly. The loop still
+uses retail GBA `0x083731A0` at the isolated timer-callback boundary until
+WSC `4090:989C` and the resource/object family it creates are converted; this
+is not a playable-mode or runtime-QA claim.
 
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail

@@ -86,6 +86,10 @@ SHOOT_UPDATE = 0x586200
 SHOOT_PALETTE_HELPER = 0x586400
 SHOOT_PALETTE_TABLES = 0x586800
 SHOOT_THRESHOLD_TABLE = 0x586A00
+SHOOT_MAIN_DISPATCH = 0x586B00
+SHOOT_MAIN_LOOP = 0x586C00
+SHOOT_SCROLL_HELPER = 0x586E00
+SHOOT_SCROLL_TABLE = 0x586F00
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -112,6 +116,9 @@ STAGE_DIMENSION_MAP_SITE = 0x03EE70
 STAGE_DIMENSION_MAP_RETURN = 0x03EE74
 OBJECT_CONFIG_TABLE_SITE = 0x36D2C0
 OBJECT_CONFIG_TABLE_RETURN = 0x36D2C8
+SHOOT_MAIN_DISPATCH_SITE = 0x3700F4
+SHOOT_MAIN_COMMON_RETURN = 0x370104
+SHOOT_MAIN_FUNCTION_RETURN = 0x370248
 # These callers immediately index an eight-entry retail jump or data table.
 # Keep the route selector's actual IDs for expanded dispatches, but present a
 # safe retail analog at these still-unported consumers.
@@ -895,6 +902,220 @@ def build_shoot_palette_helper() -> bytes:
     alt_table_b: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x106:08X}
     alt_table_c: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x124:08X}
     """, SHOOT_PALETTE_HELPER)
+
+
+def build_shoot_main_dispatch() -> bytes:
+    """Route actual stage ID 11 to the Ver. 1.5 dedicated main loop.
+
+    The hook replaces the first literal load in the commercial routine at
+    0x083700F4.  Non-Shoot stages reproduce that load/increment/store sequence
+    before returning at 0x08370104, while Shoot runs its separate loop and
+    returns through the commercial function epilogue at 0x08370248.
+    """
+    return assemble_arm(f"""
+        ldr r8, stage_state
+        ldrb r9, [r8, #0xe]
+        cmp r9, #11
+        beq shoot_main
+        ldr r8, frame_counter
+        ldrsh r9, [r8]
+        add r9, r9, #0x140
+        strh r9, [r8]
+        b 0x{GBA_BASE + SHOOT_MAIN_COMMON_RETURN:X}
+    shoot_main:
+        bl 0x{GBA_BASE + SHOOT_MAIN_LOOP:X}
+        b 0x{GBA_BASE + SHOOT_MAIN_FUNCTION_RETURN:X}
+        .align 2
+    stage_state: .word 0x03002310
+    frame_counter: .word 0x03004D42
+    """, SHOOT_MAIN_DISPATCH)
+
+
+def build_shoot_main_loop() -> bytes:
+    """Translate WSC Ver. 1.5 4090:7572..7641 into the GBA engine ABI.
+
+    The scanline records, player fields, completion call, and global mappings
+    are proven by the exact commercial translation at 0x08370104..0248.  The
+    Shoot-only timer callback at WSC 4090:989C owns an additional resource
+    family and remains a separate porting unit; until that family is converted,
+    the callback call below deliberately retains commercial 0x083731A0.
+    """
+    return assemble_arm(f"""
+        push {{r4, r5, lr}}
+        ldr r8, player_one_pointer
+        ldr r4, [r8]
+        ldr r8, player_two_pointer
+        ldr r5, [r8]
+
+        ldr r8, common_flags
+        ldrh r9, [r8, #6]
+        tst r9, #0x400
+        beq shoot_scanline_done
+        ldrsh r2, [r4, #0x64]
+        movs r2, r2
+        beq shoot_scanline_done
+        mov r7, #0xb
+        mov r6, #0x14
+        ldr r12, scanline_records
+        ldr r8, scanline_count
+        ldrb r0, [r8]
+        add r12, r12, r0, lsl #3
+        ldr r9, scanline_control
+    shoot_scanline_loop:
+        strh r9, [r12, #4]
+        strh r7, [r12, #2]
+        add r7, r7, #0xa
+        strh r6, [r12], #8
+        add r0, r0, #1
+        subs r2, r2, #1
+        bgt shoot_scanline_loop
+        strb r0, [r8]
+
+    shoot_scanline_done:
+        ldrsh r8, [r5, #0x74]
+        cmp r8, #0
+        beq shoot_timer_done
+        subs r8, r8, #1
+        strh r8, [r5, #0x74]
+        bne shoot_timer_done
+        push {{r4}}
+        mov r4, r5
+        bl 0x083731A0
+        pop {{r4}}
+
+    shoot_timer_done:
+        ldr r8, scroll_state
+        ldrsh r9, [r8]
+        cmp r9, #0
+        blne 0x{GBA_BASE + SHOOT_SCROLL_HELPER:X}
+
+        ldr r8, common_flags
+        ldrh r9, [r8, #6]
+        bic r9, r9, #0x1000
+        strh r9, [r8, #6]
+        ldrsh r8, [r5, #0x76]
+        cmp r8, #0
+        beq shoot_main_done
+
+        ldr r8, shoot_flags
+        ldrh r9, [r8]
+        tst r9, #8
+        bne shoot_check_completion
+        ldrh r8, [r4, #8]
+        tst r8, #0x4000
+        beq shoot_decrement
+        mov r9, #0
+        strh r9, [r5, #0x76]
+        b shoot_main_done
+    shoot_decrement:
+        ldrsh r8, [r5, #0x76]
+        subs r8, r8, #1
+        strh r8, [r5, #0x76]
+        ldr r8, common_flags
+        ldrh r9, [r8, #6]
+        orr r9, r9, #0x1000
+        strh r9, [r8, #6]
+
+    shoot_check_completion:
+        ldr r8, input_state
+        ldrsh r0, [r8]
+        and r0, r0, #3
+        cmp r0, #3
+        bne shoot_main_done
+        mov r9, #1
+        strh r9, [r4, #0xc]
+        mov r9, #0
+        strb r9, [r4, #0x6c]
+        strb r9, [r4, #0x6d]
+        push {{r4}}
+        push {{r11}}
+        ldr r8, [r4]
+        push {{r8}}
+        push {{r11}}
+        mov r8, #2
+        push {{r8}}
+        bl 0x0836A69C
+        add sp, sp, #0x14
+    shoot_main_done:
+        pop {{r4, r5, lr}}
+        bx lr
+        .align 2
+    player_one_pointer: .word 0x0300489C
+    player_two_pointer: .word 0x030048A0
+    common_flags: .word 0x03004500
+    scanline_records: .word 0x03001428
+    scanline_count: .word 0x030012CA
+    scanline_control: .word 0x000067FC
+    scroll_state: .word 0x03004D40
+    shoot_flags: .word 0x0300450A
+    input_state: .word 0x030012B4
+    """, SHOOT_MAIN_LOOP)
+
+
+def build_shoot_scroll_helper() -> bytes:
+    """Translate WSC Ver. 1.5 4090:7642..76D0 palette scrolling."""
+    return assemble_arm(f"""
+        push {{r0-r5, lr}}
+        ldr r1, shoot_flags
+        ldrh r0, [r1]
+        tst r0, #0x20
+        beq shoot_scroll_negative
+        ldr r2, scroll_state
+        ldrsh r0, [r2]
+        add r0, r0, #1
+        strh r0, [r2]
+        cmp r0, #0x3f
+        blt shoot_scroll_copy
+        ldrh r0, [r1]
+        bic r0, r0, #0x20
+        strh r0, [r1]
+        mov r0, #0
+        strh r0, [r2]
+        b shoot_scroll_done
+
+    shoot_scroll_negative:
+        ldrh r0, [r1]
+        tst r0, #0x10
+        beq shoot_scroll_settle
+        ldr r2, scroll_state
+        ldrsh r0, [r2]
+        sub r0, r0, #1
+        strh r0, [r2]
+        cmn r0, #0x80
+        bgt shoot_scroll_copy
+        mvn r0, #0
+        strh r0, [r2]
+        b shoot_scroll_copy
+
+    shoot_scroll_settle:
+        ldr r2, scroll_state
+        ldrsh r0, [r2]
+        cmp r0, #0
+        beq shoot_scroll_copy
+        subgt r0, r0, #1
+        addlt r0, r0, #1
+        strh r0, [r2]
+
+    shoot_scroll_copy:
+        asr r3, r0, #2
+        ldr r4, table_center
+        add r4, r4, r3, lsl #1
+        ldr r5, palette_base
+        mov r3, #16
+    shoot_scroll_copy_loop:
+        ldrh r0, [r4], #2
+        strh r0, [r5], #0x20
+        subs r3, r3, #1
+        bne shoot_scroll_copy_loop
+    shoot_scroll_done:
+        pop {{r0-r5, lr}}
+        bx lr
+        .align 2
+    shoot_flags: .word 0x0300450A
+    scroll_state: .word 0x03004D40
+    table_center: .word 0x{GBA_BASE + SHOOT_SCROLL_TABLE + 0x40:08X}
+    palette_base: .word 0x05000000
+    """, SHOOT_SCROLL_HELPER)
 
 
 def relocate_stage_clone(source: bytes, target: int, *, spec: dict[str, object],
@@ -2027,6 +2248,8 @@ def main() -> int:
         raise SystemExit("stage dimension map hook-site check failed")
     if struct.unpack_from("<I", source, OBJECT_CONFIG_TABLE_SITE)[0] != 0xE28F90C4:
         raise SystemExit("object configuration table hook-site check failed")
+    if struct.unpack_from("<I", source, SHOOT_MAIN_DISPATCH_SITE)[0] != 0xE59F8154:
+        raise SystemExit("Digimon Shoot main-loop dispatch hook-site check failed")
     expected_selector_call = lambda site: arm_branch(
         GBA_BASE + site, GBA_BASE + SELECTOR_SITE, link=True
     )
@@ -2242,6 +2465,16 @@ def main() -> int:
     ]
     if len(shoot_thresholds) != 0x40:
         raise AssertionError("Digimon Shoot threshold-table size invariant failed")
+    shoot_scroll_palette_words = struct.unpack_from(
+        "<48H", wsc15, WSC15_OBJECT_OVERLAY_BASE + 0x76D1
+    )
+    if any(value > 0x0FFF for value in shoot_scroll_palette_words):
+        raise SystemExit("Digimon Shoot scroll palette contains non-BGR444 data")
+    shoot_scroll_palette = struct.pack(
+        "<48H", *(convert_color(value) for value in shoot_scroll_palette_words)
+    )
+    if len(shoot_scroll_palette) != 0x60:
+        raise AssertionError("Digimon Shoot scroll-palette size invariant failed")
 
     asset_manifest = json.loads((args.asset_dir / "stage-assets.json").read_text(encoding="utf-8"))
     patched = bytearray(source)
@@ -2431,6 +2664,26 @@ def main() -> int:
             SHOOT_THRESHOLD_TABLE,
             shoot_thresholds,
             "Digimon Shoot threshold table",
+        ),
+        (
+            SHOOT_MAIN_DISPATCH,
+            build_shoot_main_dispatch(),
+            "Digimon Shoot main-loop dispatcher",
+        ),
+        (
+            SHOOT_MAIN_LOOP,
+            build_shoot_main_loop(),
+            "Digimon Shoot dedicated main loop",
+        ),
+        (
+            SHOOT_SCROLL_HELPER,
+            build_shoot_scroll_helper(),
+            "Digimon Shoot scroll-palette helper",
+        ),
+        (
+            SHOOT_SCROLL_TABLE,
+            shoot_scroll_palette,
+            "Digimon Shoot converted scroll-palette table",
         ),
         (
             FLICKER_CALLBACK,
@@ -2644,6 +2897,13 @@ def main() -> int:
             GBA_BASE + OBJECT_CONFIG_TABLE_HOOK,
         ),
     )
+    struct.pack_into(
+        "<I", patched, SHOOT_MAIN_DISPATCH_SITE,
+        arm_branch(
+            GBA_BASE + SHOOT_MAIN_DISPATCH_SITE,
+            GBA_BASE + SHOOT_MAIN_DISPATCH,
+        ),
+    )
     for site in LEGACY_STAGE_SELECTOR_SITES:
         struct.pack_into(
             "<I", patched, site,
@@ -2667,9 +2927,10 @@ def main() -> int:
             "static stage assets, corrected resource geometry, initializer/update dispatch, "
             "character routes, confirmed legacy stage-table bounds, native Ver. 1.5 "
             "object configurations/callbacks for stages 8..11, and translated display/"
-            "palette paths, and the Digimon Shoot threshold/three-rate palette update; "
-            "remaining Iraira suction integration, Digimon Shoot interrupt/dedicated-loop "
-            "logic, and integrated runtime QA deferred"
+            "palette paths, and the Digimon Shoot threshold/palette update, stage-11 main "
+            "dispatch, dedicated core loop, and scroll-palette state machine; remaining "
+            "Iraira suction integration, Digimon Shoot timer resource family/rules/reward/"
+            "exit logic, and integrated runtime QA deferred"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": hashlib.sha256(patched).hexdigest().upper(),
@@ -2725,12 +2986,26 @@ def main() -> int:
             "palette_helper": SHOOT_PALETTE_HELPER,
             "palette_tables": SHOOT_PALETTE_TABLES,
             "threshold_table": SHOOT_THRESHOLD_TABLE,
+            "main_dispatch_site": SHOOT_MAIN_DISPATCH_SITE,
+            "main_dispatch": SHOOT_MAIN_DISPATCH,
+            "main_loop": SHOOT_MAIN_LOOP,
+            "scroll_helper": SHOOT_SCROLL_HELPER,
+            "scroll_table": SHOOT_SCROLL_TABLE,
             "update_source": "WSC 1.5 stage overlay relative 0x2067..0x20CA",
             "palette_source": "WSC 1.5 stage overlay relative 0x20CB..0x226A and 0x226B..0x23A1",
+            "main_loop_source": "WSC 1.5 object overlay 4090:7572..7641",
+            "scroll_source": "WSC 1.5 object overlay 4090:7642..76D0",
+            "scroll_palette_source": "WSC 1.5 object overlay 4090:76D1..7730",
             "lineage_callback": "retail GBA 0x080C97B8; temporary until 5EEA:0C3A is translated",
+            "timer_callback": (
+                "retail GBA 0x083731A0; explicit temporary boundary until "
+                "WSC 4090:989C and its resource family are translated"
+            ),
             "claim": (
-                "native threshold scan and exact three-rate converted palette animation; "
-                "Shoot-specific interrupt callback/transition and dedicated game loop pending"
+                "native threshold scan, exact three-rate converted palette animation, "
+                "stage-11 main-loop routing, dedicated core loop, and exact scroll-palette "
+                "state machine; Shoot-specific timer callback/resource family and full "
+                "minigame object/rules/reward flow remain pending"
             ),
         },
         "spawn_hook": SPAWN_HOOK,

@@ -34,7 +34,7 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v25 contains the converted palette, tiles, eight maps,
+Internal stage build v27 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
 and safe mappings for unrelated legacy stage-index tables. Its relocated
 object-configuration table contains the native stage-11 pair and translated
@@ -52,10 +52,30 @@ original 8-tick, 10-frame, 8-frame, and 7-frame cadences are preserved.
 The update temporarily registers retail GBA callback `0x080C97B8`, the
 commercial translation of the shared stage-7 lineage. This is an explicit
 intermediate boundary, not a claim that the Shoot-only callback `5EEA:0C3A`
-or transition helper `5EEA:0E0B` has been ported. No menu, dedicated loop,
-broader presentation branch, rules, reward, or exit hook is claimed yet.
+or transition helper `5EEA:0E0B` has been ported.
 
-The next implementation unit is the Shoot-only interrupt/transition state and
-dedicated loop as one connected subsystem. Installing isolated completion-bit writes
-or routing stage 11 through the normal fighter loop would bypass the source
-mode and is not an acceptable completion path.
+The commercial GBA main routine at `0x083700F0..0x0837024C` exactly matches
+the retail WSC path at `4090:583E`. v27 hooks its first literal load and checks
+the actual stage ID at GBA `0x0300231E`: stages 0–10 reproduce the displaced
+`0x03004D42 += 0x140` operation and rejoin commercial code, while stage 11
+enters a static ARM translation of WSC `4090:7572..7641`. The translated loop
+uses the proven player globals `0x0300489C/A0`, scanline records
+`0x03001428`, common flags `0x03004506`, Shoot flags `0x0300450A`, scroll
+state `0x03004D40`, and input `0x030012B4`.
+
+WSC `4090:7642..76D0` is also translated as its exact signed scroll state
+machine. Its 48 BGR444 colors at `4090:76D1..7730` become BGR555; a centered
+pointer and `state >> 2` select sixteen colors written to BG palette memory at
+`0x20`-byte spacing. The positive `0x3F` reset, negative `-0x80` clamp to
+`-1`, and zero-settling behavior are retained.
+
+The timer-expiry call remains retail GBA `0x083731A0` as an explicit temporary
+boundary. The source call is Shoot-only `4090:989C`, which creates a new
+resource/object family and therefore must be converted with that family.
+No menu, broader presentation branch, rules, reward, win/loss, or exit hook
+is claimed yet.
+
+The next implementation unit is the Shoot-only `4090:989C` timer callback and
+the resource/object callback family it creates, followed by the connected
+rules/reward/exit paths. Installing isolated completion-bit writes would
+bypass the source mode and is not an acceptable completion path.
