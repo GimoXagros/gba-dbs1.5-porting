@@ -29,3 +29,8 @@ The dated implementation snapshot and remaining release gates are tracked in
 [`STATUS.md`](STATUS.md). Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
+
+The current internal composite is built in three checked layers: stage v28,
+progression/unlocks v4, then the Zeed boss layer. Each builder refuses an
+unexpected input SHA-256, so a later stage change must deliberately advance
+the two downstream hashes before a new composite can be produced.

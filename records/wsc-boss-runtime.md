@@ -58,7 +58,9 @@ and the deterministic Zeed bundle. It makes three checked changes:
    header. The second zero-HP event clears that bit and resumes the retail
    completion path. Easy or continued runs retain the retail one-boss path.
 
-The current internal artifact is `build/boss-integrated.gba`, SHA-256
-`48D7A5FD630BCB2FEE3E335CA6A0A924D98545CA1278EA7DD10829532D060DE8`.
+The current internal artifact is `build/full-integrated-v29.gba`, SHA-256
+`46A934889ECF226A988153DF754D8D918122990C7A14521E812BA031829E8EE4`.
+It is built from current stage v28 through progression v4 before the boss
+layer, rather than retaining the older isolated boss candidate.
 It is not a deliverable ROM. Runtime transition, loss, continue, and second
 victory behavior are part of the single final integrated validation pass.

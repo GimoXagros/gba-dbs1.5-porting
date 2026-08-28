@@ -137,10 +137,12 @@ callbacks now write modes 1 and 2 to GBA `0x0300256A`; the unrelated mode-3
 behavior remains excluded.
 
 Digimon Shoot update slot 11 now owns its native threshold table and exact
-converted three-rate palette animation. Its Shoot-only interrupt callback and
-dedicated game loop remain pending, so the update still uses the retail
-stage-7 lineage callback as a documented temporary boundary.
+converted three-rate palette animation. Its stage-11 main dispatcher,
+dedicated core loop, signed scroll-palette state machine, and native timer
+palette callback are also translated. The update display interrupt still uses
+the retail stage-7 lineage callback as a documented boundary until the
+Shoot-only `5EEA:0C3A` interrupt/transition family is translated.
 
-No emulator claim is attached to v26. Per the requested validation policy,
+No emulator claim is attached to v28. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

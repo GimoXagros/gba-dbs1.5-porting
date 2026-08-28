@@ -21,12 +21,21 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
 
-The current internal stage candidate is `stage-integrated-v28.gba`, identified
+The current internal composite candidate is `full-integrated-v29.gba`, identified
 only by SHA-256
-`9430FD8F890DEC4B44F73EABAFCF7A5ECF14831F41117A353A24D28BDDE35A95`.
+`46A934889ECF226A988153DF754D8D918122990C7A14521E812BA031829E8EE4`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
+
+v29 is the first current composite after the recent stage work. Its checked
+build chain is v28 stage integration
+`9430FD8F890DEC4B44F73EABAFCF7A5ECF14831F41117A353A24D28BDDE35A95`
+→ progression/unlock integration
+`621FB828E1D06F0797953D2EA419DF22BBB1FB1FAC2BA59F184E7399380589C0`
+→ Zeed final-boss integration. This corrects the previous state where the
+newest stage candidate and the progression/boss candidates existed only as
+separate ROM layers.
 
 v26 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
 `0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
