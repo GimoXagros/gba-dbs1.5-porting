@@ -34,13 +34,13 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v21 contains the converted palette, tiles, eight maps,
+Internal stage build v24 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
-and safe mappings for legacy stage-index tables. Its relocated object
-configuration table also has a bounded stage-11 entry, but the native Shoot
-configuration and callbacks are not yet installed. The update slot remains an
-intentional return stub, and no menu, dedicated loop, object/presentation,
-reward, or exit hook is claimed yet.
+and safe mappings for unrelated legacy stage-index tables. Its relocated
+object-configuration table contains the native stage-11 pair and translated
+presentation callbacks `4090:432F`/`4090:43E6`. The update slot remains an
+intentional return stub, and no menu, dedicated loop, broader presentation
+branches, reward, or exit hook is claimed yet.
 
 The next implementation unit is the dedicated loop plus its update/display
 state as one connected subsystem. Installing isolated completion-bit writes

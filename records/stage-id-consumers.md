@@ -11,7 +11,7 @@ identified by SHA-256
 
 ## Confirmed direct callers
 
-| Call site | Immediate use | v21 policy |
+| Call site | Immediate use | v24 policy |
 |---:|---|---|
 | `0x0803EE5C` | stage setup and expanded initializer dispatch | retain actual ID |
 | `0x080C4BC4` | eight-entry jump table | bounded analog |
@@ -23,11 +23,11 @@ identified by SHA-256
 | `0x080D0BD0` | eight-entry jump table | bounded analog |
 | `0x080D1408` | eight-entry jump table | bounded analog |
 | `0x0835B384` | direct comparison with retail stage 3 | unchanged |
-| `0x0836D28C` | eight-byte graphics/object configuration record | native twelve-entry table; stage 8 native, IDs 9–11 explicitly bounded |
+| `0x0836D28C` | eight-byte graphics/object configuration record | native twelve-entry Ver. 1.5 table |
 | `0x0836D2F8` | eight-byte object movement-pattern record | native twelve-entry Ver. 1.5 table |
 
 The setup routine also uses the actual stage ID at `0x0803EE70` to index an
-eight-entry dimension table without another getter call. v21 maps only the
+eight-entry dimension table without another getter call. v24 maps only the
 derived byte offset there, preserving the actual ID in `r1` for the expanded
 initializer dispatch.
 
@@ -36,8 +36,7 @@ initializer dispatch.
 The two `0x0836D2xx` consumers correspond to adjacent movement-pattern and
 object-configuration families. Both tables are now structurally expanded
 through stage 11. The configuration consumer uses the actual stage ID and its
-commercial conversion rule is verified across stages 0–7. Stage 8 is native,
-using WSC configuration pair `0x745081` and translated callbacks
-`4090:3CD5`/`4090:3D7B`. Entries 9–11 still point to documented retail analog
-configuration pairs, so completion requires replacing those three entries
-with the native waterfall, Iraira Room, and Shoot records and callbacks.
+commercial conversion rule is verified across stages 0–7. Stages 8–11 use
+their native pairs at WSC physical `0x745081..0x745110` and all eight source
+callbacks. No entry in either object table remains mapped to a retail analog;
+the four other bounded getter consumers are independent legacy systems.

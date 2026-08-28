@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v21 boundary
+## Internal stage build v24 boundary
 
-`build/stage-integrated-v21.gba` (internal only; SHA-256
-`5E37F8C69F17B5067CAA6E004168F797F0E0E4A6B829C9F250D10B05A1B73F6F`)
+`build/stage-integrated-v24.gba` (internal only; SHA-256
+`CA7CF42408AAC36C1680657E854CD834447D8673310EA60E6D92C5555CB2F15D`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -77,8 +77,8 @@ state machine are translated statically from the confirmed WSC routines. Its
 state word is GBA `0x0300256A`: WSC `ES:0384` is the second halfword cleared
 from base `0x03002568` by the commercial stage-5 initializer at
 `0x0803FEF0`. The hazard state machine reuses the retail GBA entity table and
-spawn service rather than a parallel object system. Its mode-producing
-visual/movement callbacks are pending. The two commercial GBA object-construction sites
+spawn service rather than a parallel object system. Its native mode-1 and
+mode-2 visual/movement callbacks are now connected. The two commercial GBA object-construction sites
 corresponding to WSC raw `0x781BEF` and `0x786C5C` now preserve the Ver. 1.5
 exception that suppresses default object flag `0x2000` for stages 9 and 10.
 This is a confirmed engine prerequisite, not by itself proof of vertical
@@ -88,7 +88,7 @@ mode logic, and any additional stage-specific engine branches remain pending.
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
 table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
-`0x0836D28C`, and `0x0836D2F8`). v21 routes four still-unported consumers
+`0x0836D28C`, and `0x0836D2F8`). v24 routes four still-unported consumers
 through a bounded analog selector and separately bounds the setup-time
 dimension lookup at `0x0803EE70`.
 
@@ -104,21 +104,22 @@ configuration table. Direct comparison proves a second conversion rule: each
 WSC entry `(resource bank, near pointer)` becomes `<32-bit bank, ARM pointer>`,
 and each 16-byte WSC object record becomes 20 GBA bytes by retaining its first
 14 bytes, adding two zero pad bytes, and expanding the callback-table pointer
-to 32 bits. The build verifies this across stages 0–7. Stage 8 uses the native
-records at WSC physical `0x745081..0x7450A0` and static ARM translations of
-callbacks `4090:3CD5` and `4090:3D7B`. They reproduce the two directions,
-signed position thresholds, velocity changes, animation cadence, and destroy
-conditions using the ABI established by the commercial callbacks at
-`0x0836D8B4`, `0x0836D9C8`, and `0x0836DADC`. Entries 9–11 remain labeled
-temporary analogs rather than being claimed as native.
+to 32 bits. The build verifies this across stages 0–7, then converts all four
+Ver. 1.5 pairs at WSC physical `0x745081..0x745110`. Static ARM translations
+cover callbacks `4090:3CD5`, `3D7B`, `3DFB`, `3EE0`, `40AF`, `42B5`,
+`432F`, and `43E6`. They reproduce source flags, signed or unsigned position
+thresholds as applicable, velocity/acceleration phases, animation cadence,
+timers, and destroy conditions using the ABI established by the commercial
+callbacks at `0x0836D8B4`, `0x0836D9C8`, and `0x0836DADC`. No object-config
+entry remains on a retail analog.
 
 The v20 claim that waterfall stage 9 directly seeds mode 3 from
 `4090:3FCA` was incorrect and is removed. The WSC stage configuration pair at
 physical `0x7450A1` instead references callback tables `0x481F` and `0x4821`,
 whose functions `4090:3DFB` and `4090:3EE0` produce modes 1 and 2. Those actual
-callbacks, not the unrelated mode-3 behavior, are the remaining native port
-targets.
+callbacks now write modes 1 and 2 to GBA `0x0300256A`; the unrelated mode-3
+behavior remains excluded.
 
-No emulator claim is attached to v21. Per the requested validation policy,
+No emulator claim is attached to v24. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

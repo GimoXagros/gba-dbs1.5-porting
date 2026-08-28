@@ -62,8 +62,7 @@ translations:
 
 The translated callbacks retain the source direction flag, signed position
 thresholds (`0x0F00`, `0x0C80`, and `0x1D00`), velocities, animation-frame
-cadence, and object destruction calls. Stages 9–11 remain explicit temporary
-analogs in v21 and are not claimed as native.
+cadence, and object destruction calls.
 
 ## Corrected waterfall interpretation
 
@@ -71,4 +70,23 @@ Stage 9's records at physical `0x7450A1` reference callback-table entries
 `0x481F` and `0x4821`, whose functions are `4090:3DFB` and `4090:3EE0`.
 They produce waterfall modes 1 and 2. The earlier v20 assumption that
 `4090:3FCA` was a stage-9 initializer producing mode 3 was therefore removed;
-the native stage-9 callbacks must be translated directly.
+the native stage-9 callbacks were translated directly and now write modes 1
+and 2 to GBA `0x0300256A`.
+
+## Remaining native entries
+
+Internal build v24 converts all four Ver. 1.5 stage pairs:
+
+| Stage | Physical records | WSC callbacks | GBA callback ROM offsets |
+|---:|---:|---|---|
+| 8 train | `0x745081..0x7450A0` | `3CD5`, `3D7B` | `0x584E00`, `0x585000` |
+| 9 waterfall | `0x7450A1..0x7450C0` | `3DFB`, `3EE0` | `0x585200`, `0x585500` |
+| 10 Iraira | `0x7450D1..0x7450F0` | `40AF`, `42B5` | `0x585800`, `0x585C00` |
+| 11 Shoot | `0x7450F1..0x745110` | `432F`, `43E6` | `0x585E00`, `0x586000` |
+
+The Iraira translation retains the full acceleration/velocity phase chain in
+`40AF` and the signed-animation adjustment in `42B5`. The Shoot translation
+retains its forced entry coordinates, source-specific signed/unsigned boundary
+tests, and animation divisors. These callbacks complete the object-config
+family; they do not by themselves complete Iraira's stage-level suction path
+or the dedicated Digimon Shoot game loop.

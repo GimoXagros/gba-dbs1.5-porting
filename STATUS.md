@@ -21,28 +21,28 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
   confirmed dedicated-mode control-flow map.
 
-The current internal stage candidate is `stage-integrated-v21.gba`, identified
+The current internal stage candidate is `stage-integrated-v24.gba`, identified
 only by SHA-256
-`5E37F8C69F17B5067CAA6E004168F797F0E0E4A6B829C9F250D10B05A1B73F6F`.
+`CA7CF42408AAC36C1680657E854CD834447D8673310EA60E6D92C5555CB2F15D`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
 
-v21 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
+v24 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
 `0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
 analysis proves that waterfall stage 9 is configured with callbacks
 `4090:3DFB` and `4090:3EE0`, which produce modes 1 and 2; `4090:3FCA` is a
 separate behavior and cannot be treated as the stage initializer.
 
-The Ver. 1.5 movement-pattern table remains native through ID 11. The adjacent
-graphics/object configuration table is now relocated and expanded to twelve
-entries. Its commercial WSC→GBA record-conversion rule is checked against all
-eight retail stages before use. Train stage 8 now uses its native pair from WSC
-physical `0x745081` and both translated movement callbacks (`4090:3CD5` and
-`4090:3D7B`); waterfall, Iraira Room, and Shoot remain explicitly bounded to
-retail analog configurations until their own callbacks are integrated. Four
-other confirmed legacy consumers plus the setup-time dimension lookup remain
-bounded independently.
+The Ver. 1.5 movement-pattern and graphics/object-configuration tables are now
+native through ID 11. The latter is relocated to twelve entries after its
+commercial WSC→GBA record-conversion rule is checked against all eight retail
+stages. Stages 8–11 use their exact Ver. 1.5 record pairs and eight translated
+callbacks: train `3CD5/3D7B`, waterfall `3DFB/3EE0`, Iraira Room
+`40AF/42B5`, and Shoot `432F/43E6`. Waterfall callbacks now produce the
+correct modes 1 and 2 at GBA `0x0300256A`. Four unrelated legacy consumers
+plus the setup-time dimension lookup remain bounded independently; those
+analogs no longer apply to this native object-configuration family.
 
 ## Remaining release gates
 

@@ -66,10 +66,22 @@ OBJECT_PATTERN_TABLE = 0x584B00
 OBJECT_PATTERN_DATA = 0x584B80
 OBJECT_CONFIG_TABLE = 0x584C00
 OBJECT_CONFIG_DATA = 0x584C80
+WATERFALL_OBJECT_CONFIG = 0x584CC0
+IRAIRA_OBJECT_CONFIG = 0x584D00
+SHOOT_OBJECT_CONFIG = 0x584DC0
 OBJECT_CONFIG_TABLE_HOOK = 0x584D40
 OBJECT_CALLBACK_SLOTS = 0x584D80
+WATERFALL_CALLBACK_SLOTS = 0x584D88
+IRAIRA_CALLBACK_SLOTS = 0x584D90
+SHOOT_CALLBACK_SLOTS = 0x584D98
 TRAIN_OBJECT_CALLBACK_LEFT = 0x584E00
 TRAIN_OBJECT_CALLBACK_RIGHT = 0x585000
+WATERFALL_OBJECT_CALLBACK_LEFT = 0x585200
+WATERFALL_OBJECT_CALLBACK_RIGHT = 0x585500
+IRAIRA_OBJECT_CALLBACK_LEFT = 0x585800
+IRAIRA_OBJECT_CALLBACK_RIGHT = 0x585C00
+SHOOT_OBJECT_CALLBACK_LEFT = 0x585E00
+SHOOT_OBJECT_CALLBACK_RIGHT = 0x586000
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -1045,6 +1057,707 @@ def build_train_object_callback_right() -> bytes:
     """, TRAIN_OBJECT_CALLBACK_RIGHT)
 
 
+def build_waterfall_object_callback_left() -> bytes:
+    """Translate WSC callback 4090:3DFB (waterfall mode 1)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        ldr r8, waterfall_mode
+        mov r0, #1
+        strh r0, [r8]
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x6000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mvn r8, #0x6F
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x40
+        strh r8, [r4, #0x94]
+        strh r0, [r4, #0x96]
+        mov r8, #0x100
+        strh r8, [r4, #0x98]
+        adr r8, wait_phase
+        str r8, [r4]
+        bl wait_phase
+        pop {lr}
+        bx lr
+
+    wait_phase:
+        push {lr}
+        ldrh r8, [r4, #0x98]
+        cmp r8, #0
+        bne wait_update
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r8, #0x70
+        strh r8, [r4, #0x42]
+        adr r8, exit_phase
+        str r8, [r4]
+        b waterfall_left_return
+    wait_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #1
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne waterfall_left_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        ldrh r8, [r4, #0x98]
+        sub r8, r8, #1
+        strh r8, [r4, #0x98]
+    waterfall_left_return:
+        pop {lr}
+        bx lr
+
+    exit_phase:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmp r8, #0xF00
+        blt exit_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    exit_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #1
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne waterfall_left_exit_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+    waterfall_left_exit_return:
+        pop {lr}
+        bx lr
+        .align 2
+    waterfall_mode: .word 0x0300256A
+    """, WATERFALL_OBJECT_CALLBACK_LEFT)
+
+
+def build_waterfall_object_callback_right() -> bytes:
+    """Translate WSC callback 4090:3EE0 (waterfall mode 2)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        ldr r8, waterfall_mode
+        mov r0, #2
+        strh r0, [r8]
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        bic r8, r8, #0x2000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mov r8, #0x70
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0xC0
+        strh r8, [r4, #0x94]
+        strh r0, [r4, #0x96]
+        mov r8, #0x100
+        strh r8, [r4, #0x98]
+        adr r8, wait_phase
+        str r8, [r4]
+        bl wait_phase
+        pop {lr}
+        bx lr
+
+    wait_phase:
+        push {lr}
+        ldrh r8, [r4, #0x98]
+        cmp r8, #0
+        bne wait_update
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mvn r8, #0x6F
+        strh r8, [r4, #0x42]
+        adr r8, exit_phase
+        str r8, [r4]
+        b waterfall_right_return
+    wait_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #1
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne waterfall_right_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        ldrh r8, [r4, #0x98]
+        sub r8, r8, #1
+        strh r8, [r4, #0x98]
+    waterfall_right_return:
+        pop {lr}
+        bx lr
+
+    exit_phase:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmn r8, #0x200
+        bgt exit_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    exit_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #1
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne waterfall_right_exit_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+    waterfall_right_exit_return:
+        pop {lr}
+        bx lr
+        .align 2
+    waterfall_mode: .word 0x0300256A
+    """, WATERFALL_OBJECT_CALLBACK_RIGHT)
+
+
+def build_iraira_object_callback_left() -> bytes:
+    """Translate WSC callback 4090:40AF (Iraira oscillating entrant)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        bic r8, r8, #0x2000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mov r8, #0x120
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0xC0
+        strh r8, [r4, #0x94]
+        mov r8, #0x140
+        strh r8, [r4, #0x98]
+        adr r8, wait_phase
+        str r8, [r4]
+        bl wait_phase
+        pop {lr}
+        bx lr
+
+    wait_phase:
+        push {lr}
+        ldrh r8, [r4, #0x98]
+        cmp r8, #0
+        bne wait_update
+        mvn r8, #0x1F
+        strh r8, [r4, #0x46]
+        mov r8, #0x80
+        strh r8, [r4, #0x44]
+        adr r8, decelerate_to_zero
+        str r8, [r4]
+        b iraira_left_return
+    wait_update:
+        bl object_update
+        bl animate_frame
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        asr r0, r0, #2
+        ldrsh r8, [r4, #0x44]
+        add r8, r8, r0
+        strh r8, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        ldrh r8, [r4, #0x98]
+        sub r8, r8, #1
+        strh r8, [r4, #0x98]
+    iraira_left_return:
+        pop {lr}
+        bx lr
+
+    decelerate_to_zero:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmp r8, #0
+        bgt decelerate_update
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mvn r8, #0x7F
+        strh r8, [r4, #0x46]
+        adr r8, accelerate_left
+        str r8, [r4]
+        b iraira_decelerate_return
+    decelerate_update:
+        bl object_update
+    iraira_decelerate_return:
+        pop {lr}
+        bx lr
+
+    accelerate_left:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmn r8, #0x100
+        bgt accelerate_left_update
+        mov r8, #0x80
+        strh r8, [r4, #0x46]
+        adr r8, return_to_zero
+        str r8, [r4]
+        b iraira_accelerate_left_return
+    accelerate_left_update:
+        bl object_update
+    iraira_accelerate_left_return:
+        pop {lr}
+        bx lr
+
+    return_to_zero:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmp r8, #0
+        blt return_to_zero_update
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r8, #0x80
+        strh r8, [r4, #0x46]
+        adr r8, accelerate_right
+        str r8, [r4]
+        b iraira_return_zero_done
+    return_to_zero_update:
+        bl object_update
+    iraira_return_zero_done:
+        pop {lr}
+        bx lr
+
+    accelerate_right:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmp r8, #0x100
+        blt accelerate_right_update
+        mvn r8, #0x7F
+        strh r8, [r4, #0x46]
+        adr r8, decelerate_right
+        str r8, [r4]
+        b iraira_accelerate_right_return
+    accelerate_right_update:
+        bl object_update
+    iraira_accelerate_right_return:
+        pop {lr}
+        bx lr
+
+    decelerate_right:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmp r8, #0
+        bgt decelerate_right_update
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mvn r8, #0x1F
+        strh r8, [r4, #0x46]
+        adr r8, final_acceleration
+        str r8, [r4]
+        b iraira_decelerate_right_return
+    decelerate_right_update:
+        bl object_update
+    iraira_decelerate_right_return:
+        pop {lr}
+        bx lr
+
+    final_acceleration:
+        push {lr}
+        bl apply_acceleration
+        ldrsh r8, [r4, #0x42]
+        cmn r8, #0x100
+        bgt final_acceleration_update
+        mov r0, #0
+        mvn r8, #0xFF
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x80
+        strh r8, [r4, #0x94]
+        adr r8, exit_phase
+        str r8, [r4]
+        b iraira_final_accel_return
+    final_acceleration_update:
+        bl object_update
+    iraira_final_accel_return:
+        pop {lr}
+        bx lr
+
+    exit_phase:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmn r8, #0x100
+        bgt exit_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    exit_update:
+        bl object_update
+        bl animate_frame
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        asr r0, r0, #2
+        ldrsh r8, [r4, #0x44]
+        add r8, r8, r0
+        strh r8, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        ldrh r8, [r4, #0x98]
+        sub r8, r8, #1
+        strh r8, [r4, #0x98]
+        pop {lr}
+        bx lr
+
+    apply_acceleration:
+        ldrsh r0, [r4, #0x46]
+        asr r0, r0, #4
+        ldrsh r8, [r4, #0x42]
+        add r8, r8, r0
+        strh r8, [r4, #0x42]
+        bx lr
+
+    object_update:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        pop {lr}
+        bx lr
+
+    animate_frame:
+        push {lr}
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        pop {lr}
+        bx lr
+    """, IRAIRA_OBJECT_CALLBACK_LEFT)
+
+
+def build_iraira_object_callback_right() -> bytes:
+    """Translate WSC callback 4090:42B5 (Iraira right entrant)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x6000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mvn r8, #0xCF
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x80
+        strh r8, [r4, #0x94]
+        adr r8, update
+        str r8, [r4]
+        bl update
+        pop {lr}
+        bx lr
+
+    update:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmn r8, #0x200
+        bgt continue_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    continue_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        tst r0, #0x8000
+        asrne r0, r0, #2
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        ldrh r8, [r4, #0x98]
+        sub r8, r8, #1
+        strh r8, [r4, #0x98]
+        pop {lr}
+        bx lr
+    """, IRAIRA_OBJECT_CALLBACK_RIGHT)
+
+
+def build_shoot_object_callback_left() -> bytes:
+    """Translate WSC callback 4090:432F (Shoot left presentation object)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r8, #0x200
+        rsb r8, r8, #0
+        strh r8, [r4, #0x34]
+        mov r8, #0x1800
+        strh r8, [r4, #0x36]
+        mov r0, #0
+        mov r8, #0xD0
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x80
+        strh r8, [r4, #0x94]
+        adr r8, intro_phase
+        str r8, [r4]
+        bl intro_phase
+        pop {lr}
+        bx lr
+
+    intro_phase:
+        push {lr}
+        ldrh r8, [r4, #0x94]
+        cmp r8, #0x7F
+        bne intro_update
+        adr r8, travel_phase
+        str r8, [r4]
+        mov r8, #0
+        strh r8, [r4, #0x96]
+        pop {lr}
+        bx lr
+    intro_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        pop {lr}
+        bx lr
+
+    travel_phase:
+        push {lr}
+        ldrh r8, [r4, #0x34]
+        cmp r8, #0x1D00
+        blo travel_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    travel_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #1
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne shoot_left_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+    shoot_left_return:
+        pop {lr}
+        bx lr
+    """, SHOOT_OBJECT_CALLBACK_LEFT)
+
+
+def build_shoot_object_callback_right() -> bytes:
+    """Translate WSC callback 4090:43E6 (Shoot right presentation object)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r8, #0x1D00
+        strh r8, [r4, #0x34]
+        mov r8, #0xC00
+        strh r8, [r4, #0x36]
+        mov r0, #0
+        mvn r8, #0xCF
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        strh r0, [r4, #0x94]
+        strh r0, [r4, #0x96]
+        adr r8, update
+        str r8, [r4]
+        bl update
+        pop {lr}
+        bx lr
+
+    update:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmn r8, #0x200
+        bgt continue_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    continue_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x96]
+        add r8, r8, #1
+        and r8, r8, #3
+        strh r8, [r4, #0x96]
+        cmp r8, #0
+        bne shoot_right_return
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+    shoot_right_return:
+        pop {lr}
+        bx lr
+    """, SHOOT_OBJECT_CALLBACK_RIGHT)
+
+
 def build_update_dispatch_hook() -> bytes:
     words = [
         0xE59F8010,  # ldr r8, [pc, #0x10]
@@ -1244,48 +1957,85 @@ def main() -> int:
                     f"object config callback {stage_id}:{record_id} falls outside GBA ROM"
                 )
 
-    train_bank, train_config_pointer = struct.unpack_from(
-        "<HH", wsc15, WSC15_OBJECT_CONFIG_TABLE + 8 * 4
-    )
-    if (train_bank, train_config_pointer) != (2, 0x4781):
-        raise SystemExit("unexpected WSC Ver. 1.5 train object configuration")
-    train_config_source = WSC15_OBJECT_OVERLAY_BASE + train_config_pointer
-    train_callback_pointers = []
-    train_object_config_data = bytearray()
-    for record_id in range(2):
-        record = wsc15[
-            train_config_source + record_id * 0x10:
-            train_config_source + (record_id + 1) * 0x10
-        ]
-        callback_pointer = struct.unpack_from("<H", record, 14)[0]
-        train_callback_pointers.append(callback_pointer)
-        train_object_config_data.extend(record[:14])
-        train_object_config_data.extend(b"\0\0")
-        train_object_config_data.extend(struct.pack(
-            "<I", GBA_BASE + OBJECT_CALLBACK_SLOTS + record_id * 4
-        ))
-    if train_callback_pointers != [0x481B, 0x481D]:
-        raise SystemExit("unexpected WSC train object callbacks")
+    def convert_new_object_config(
+        stage_id: int,
+        expected: tuple[int, int],
+        expected_callbacks: list[int],
+        callback_slots: int,
+    ) -> tuple[int, bytes]:
+        bank, config_pointer = struct.unpack_from(
+            "<HH", wsc15, WSC15_OBJECT_CONFIG_TABLE + stage_id * 4
+        )
+        if (bank, config_pointer) != expected:
+            raise SystemExit(f"unexpected WSC stage-{stage_id} object configuration")
+        config_source = WSC15_OBJECT_OVERLAY_BASE + config_pointer
+        callback_pointers = []
+        converted = bytearray()
+        for record_id in range(2):
+            record = wsc15[
+                config_source + record_id * 0x10:
+                config_source + (record_id + 1) * 0x10
+            ]
+            callback_pointers.append(struct.unpack_from("<H", record, 14)[0])
+            converted.extend(record[:14])
+            converted.extend(b"\0\0")
+            converted.extend(struct.pack(
+                "<I", GBA_BASE + callback_slots + record_id * 4
+            ))
+        if callback_pointers != expected_callbacks:
+            raise SystemExit(f"unexpected WSC stage-{stage_id} object callbacks")
+        return bank, bytes(converted)
 
-    # Stage 8 now receives its native Ver. 1.5 pair.  Stages 9..11 remain
-    # deliberately bounded to their documented retail analogs until their own
-    # callbacks are translated; relocating the table makes the native train
-    # entry reachable without risking an out-of-range index meanwhile.
-    analog_entries = [
-        retail_object_config_table[index * 8:(index + 1) * 8]
-        for index in (6, 3, 7)
-    ]
+    train_bank, train_object_config_data = convert_new_object_config(
+        8, (2, 0x4781), [0x481B, 0x481D], OBJECT_CALLBACK_SLOTS
+    )
+    waterfall_bank, waterfall_object_config_data = convert_new_object_config(
+        9, (3, 0x47A1), [0x481F, 0x4821], WATERFALL_CALLBACK_SLOTS
+    )
+    iraira_bank, iraira_object_config_data = convert_new_object_config(
+        10, (2, 0x47D1), [0x4825, 0x4827], IRAIRA_CALLBACK_SLOTS
+    )
+    shoot_bank, shoot_object_config_data = convert_new_object_config(
+        11, (2, 0x47F1), [0x4829, 0x482B], SHOOT_CALLBACK_SLOTS
+    )
+
+    # All four appended stages now receive their native Ver. 1.5 pairs. Shoot
+    # still requires its dedicated minigame loop even though its presentation
+    # objects no longer use a retail analog.
     object_config_table = (
         retail_object_config_table
         + struct.pack("<II", train_bank, GBA_BASE + OBJECT_CONFIG_DATA)
-        + b"".join(analog_entries)
+        + struct.pack("<II", waterfall_bank, GBA_BASE + WATERFALL_OBJECT_CONFIG)
+        + struct.pack("<II", iraira_bank, GBA_BASE + IRAIRA_OBJECT_CONFIG)
+        + struct.pack("<II", shoot_bank, GBA_BASE + SHOOT_OBJECT_CONFIG)
     )
-    if len(object_config_table) != 12 * 8 or len(train_object_config_data) != 2 * 0x14:
+    if (
+        len(object_config_table) != 12 * 8
+        or len(train_object_config_data) != 2 * 0x14
+        or len(waterfall_object_config_data) != 2 * 0x14
+        or len(iraira_object_config_data) != 2 * 0x14
+        or len(shoot_object_config_data) != 2 * 0x14
+    ):
         raise AssertionError("expanded object configuration size invariant failed")
     train_callback_slots = struct.pack(
         "<II",
         GBA_BASE + TRAIN_OBJECT_CALLBACK_LEFT,
         GBA_BASE + TRAIN_OBJECT_CALLBACK_RIGHT,
+    )
+    waterfall_callback_slots = struct.pack(
+        "<II",
+        GBA_BASE + WATERFALL_OBJECT_CALLBACK_LEFT,
+        GBA_BASE + WATERFALL_OBJECT_CALLBACK_RIGHT,
+    )
+    iraira_callback_slots = struct.pack(
+        "<II",
+        GBA_BASE + IRAIRA_OBJECT_CALLBACK_LEFT,
+        GBA_BASE + IRAIRA_OBJECT_CALLBACK_RIGHT,
+    )
+    shoot_callback_slots = struct.pack(
+        "<II",
+        GBA_BASE + SHOOT_OBJECT_CALLBACK_LEFT,
+        GBA_BASE + SHOOT_OBJECT_CALLBACK_RIGHT,
     )
 
     train_gradient_wsc = struct.unpack_from(
@@ -1553,6 +2303,21 @@ def main() -> int:
             "native Ver. 1.5 train object configuration",
         ),
         (
+            WATERFALL_OBJECT_CONFIG,
+            bytes(waterfall_object_config_data),
+            "native Ver. 1.5 waterfall object configuration",
+        ),
+        (
+            IRAIRA_OBJECT_CONFIG,
+            bytes(iraira_object_config_data),
+            "native Ver. 1.5 Iraira object configuration",
+        ),
+        (
+            SHOOT_OBJECT_CONFIG,
+            bytes(shoot_object_config_data),
+            "native Ver. 1.5 Shoot object configuration",
+        ),
+        (
             OBJECT_CONFIG_TABLE_HOOK,
             build_object_config_table_hook(),
             "expanded object-configuration table hook",
@@ -1563,6 +2328,21 @@ def main() -> int:
             "native train object callback slots",
         ),
         (
+            WATERFALL_CALLBACK_SLOTS,
+            waterfall_callback_slots,
+            "native waterfall object callback slots",
+        ),
+        (
+            IRAIRA_CALLBACK_SLOTS,
+            iraira_callback_slots,
+            "native Iraira object callback slots",
+        ),
+        (
+            SHOOT_CALLBACK_SLOTS,
+            shoot_callback_slots,
+            "native Shoot object callback slots",
+        ),
+        (
             TRAIN_OBJECT_CALLBACK_LEFT,
             build_train_object_callback_left(),
             "native train left object callback",
@@ -1571,6 +2351,36 @@ def main() -> int:
             TRAIN_OBJECT_CALLBACK_RIGHT,
             build_train_object_callback_right(),
             "native train right object callback",
+        ),
+        (
+            WATERFALL_OBJECT_CALLBACK_LEFT,
+            build_waterfall_object_callback_left(),
+            "native waterfall mode-1 object callback",
+        ),
+        (
+            WATERFALL_OBJECT_CALLBACK_RIGHT,
+            build_waterfall_object_callback_right(),
+            "native waterfall mode-2 object callback",
+        ),
+        (
+            IRAIRA_OBJECT_CALLBACK_LEFT,
+            build_iraira_object_callback_left(),
+            "native Iraira oscillating object callback",
+        ),
+        (
+            IRAIRA_OBJECT_CALLBACK_RIGHT,
+            build_iraira_object_callback_right(),
+            "native Iraira right object callback",
+        ),
+        (
+            SHOOT_OBJECT_CALLBACK_LEFT,
+            build_shoot_object_callback_left(),
+            "native Shoot left presentation callback",
+        ),
+        (
+            SHOOT_OBJECT_CALLBACK_RIGHT,
+            build_shoot_object_callback_right(),
+            "native Shoot right presentation callback",
         ),
     ):
         if patched[target:target + len(blob)] != bytes([0xFF]) * len(blob):
@@ -1646,10 +2456,10 @@ def main() -> int:
         "kind": "internal-stage-integration-build",
         "claim_scope": (
             "static stage assets, corrected resource geometry, initializer/update dispatch, "
-            "character routes, confirmed legacy stage-table bounds, native train object "
-            "configuration/callbacks, and translated train/waterfall/Iraira display and "
-            "palette paths; waterfall/Iraira native object callbacks, Iraira suction, "
-            "Digimon Shoot runtime logic, and integrated runtime QA deferred"
+            "character routes, confirmed legacy stage-table bounds, native Ver. 1.5 "
+            "object configurations/callbacks for stages 8..11, and translated display/"
+            "palette paths; remaining Iraira suction integration, Digimon Shoot dedicated "
+            "runtime logic, and integrated runtime QA deferred"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": hashlib.sha256(patched).hexdigest().upper(),
@@ -1686,8 +2496,8 @@ def main() -> int:
             "rolling_hazard_source": "WSC 1.5 stage overlay relative 0x1C53..0x1D85",
             "palette_source": "WSC 1.5 stage overlay relative 0x1AF3..0x1B67",
             "claim": (
-                "static display/palette/rolling-hazard state-machine translation; "
-                "mode-producing object callbacks and runtime QA deferred"
+                "static display/palette/rolling-hazard state-machine translation plus "
+                "native mode-1/mode-2 object configuration and callbacks; runtime QA deferred"
             ),
         },
         "iraira_mechanics": {
@@ -1695,7 +2505,10 @@ def main() -> int:
             "palette_helper": IRAIRA_PALETTE_HELPER,
             "display_callback": FLICKER_CALLBACK,
             "palette_source": "WSC 1.5 stage overlay relative 0x1DA3..0x1FA3",
-            "claim": "static display/palette translation; suction producer pending",
+            "claim": (
+                "static display/palette translation plus native object configuration "
+                "and callbacks; remaining stage-level suction integration pending"
+            ),
         },
         "spawn_hook": SPAWN_HOOK,
         "spawn_table": SPAWN_TABLE,
@@ -1720,8 +2533,8 @@ def main() -> int:
             "dimension_index_helper": STAGE_DIMENSION_MAP_HELPER,
             "claim": (
                 "static bounds hardening for confirmed eight-entry retail consumers; "
-                "native train object configuration is separate; waterfall/Iraira/Shoot "
-                "object configurations remain bounded"
+                "native Ver. 1.5 object configurations are handled by a separate "
+                "twelve-entry table"
             ),
         },
         "object_pattern_extension": {
@@ -1750,15 +2563,35 @@ def main() -> int:
                 TRAIN_OBJECT_CALLBACK_RIGHT,
             ],
             "train_callback_sources": ["4090:3CD5", "4090:3D7B"],
-            "temporary_analogs": {
-                "waterfall": 6,
-                "impmon": 3,
-                "shoot": 7,
-            },
+            "waterfall_config": WATERFALL_OBJECT_CONFIG,
+            "waterfall_config_source": "WSC 1.5 physical 0x7450A1..0x7450C1",
+            "waterfall_callback_slots": WATERFALL_CALLBACK_SLOTS,
+            "waterfall_callbacks": [
+                WATERFALL_OBJECT_CALLBACK_LEFT,
+                WATERFALL_OBJECT_CALLBACK_RIGHT,
+            ],
+            "waterfall_callback_sources": ["4090:3DFB", "4090:3EE0"],
+            "iraira_config": IRAIRA_OBJECT_CONFIG,
+            "iraira_config_source": "WSC 1.5 physical 0x7450D1..0x7450F1",
+            "iraira_callback_slots": IRAIRA_CALLBACK_SLOTS,
+            "iraira_callbacks": [
+                IRAIRA_OBJECT_CALLBACK_LEFT,
+                IRAIRA_OBJECT_CALLBACK_RIGHT,
+            ],
+            "iraira_callback_sources": ["4090:40AF", "4090:42B5"],
+            "shoot_config": SHOOT_OBJECT_CONFIG,
+            "shoot_config_source": "WSC 1.5 physical 0x7450F1..0x745111",
+            "shoot_callback_slots": SHOOT_CALLBACK_SLOTS,
+            "shoot_callbacks": [
+                SHOOT_OBJECT_CALLBACK_LEFT,
+                SHOOT_OBJECT_CALLBACK_RIGHT,
+            ],
+            "shoot_callback_sources": ["4090:432F", "4090:43E6"],
+            "temporary_analogs": {},
             "claim": (
-                "retail conversion rule verified for stages 0..7; native train "
-                "configuration and both movement callbacks translated statically; "
-                "runtime QA deferred"
+                "retail conversion rule verified for stages 0..7; all Ver. 1.5 stage "
+                "configurations and their eight movement/presentation callbacks translated "
+                "statically; runtime QA deferred"
             ),
         },
         "vertical_stage_object_flag_hooks": {
