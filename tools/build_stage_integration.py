@@ -15,7 +15,7 @@ sys.path.insert(0, str(SCRIPT_DIR.parent / "vendor"))
 
 from keystone import KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_LITTLE_ENDIAN, Ks
 
-from convert_wsc_palette_block import convert_color
+from convert_wsc_palette_block import convert_block, convert_color
 
 
 INPUT_SHA256 = "38E5F35AA4C9A92EC0738DE01EC6C1654F0A0CC0BD75289054383FBE9A7E7AB4"
@@ -90,6 +90,8 @@ SHOOT_MAIN_DISPATCH = 0x586B00
 SHOOT_MAIN_LOOP = 0x586C00
 SHOOT_SCROLL_HELPER = 0x586E00
 SHOOT_SCROLL_TABLE = 0x586F00
+SHOOT_TIMER_CALLBACK = 0x587000
+SHOOT_TIMER_PALETTES = 0x587100
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -936,9 +938,8 @@ def build_shoot_main_loop() -> bytes:
 
     The scanline records, player fields, completion call, and global mappings
     are proven by the exact commercial translation at 0x08370104..0248.  The
-    Shoot-only timer callback at WSC 4090:989C owns an additional resource
-    family and remains a separate porting unit; until that family is converted,
-    the callback call below deliberately retains commercial 0x083731A0.
+    The Shoot-only timer callback at WSC 4090:989C is translated separately at
+    SHOOT_TIMER_CALLBACK using the commercial palette-loader conversion rule.
     """
     return assemble_arm(f"""
         push {{r4, r5, lr}}
@@ -980,7 +981,7 @@ def build_shoot_main_loop() -> bytes:
         bne shoot_timer_done
         push {{r4}}
         mov r4, r5
-        bl 0x083731A0
+        bl 0x{GBA_BASE + SHOOT_TIMER_CALLBACK:X}
         pop {{r4}}
 
     shoot_timer_done:
@@ -1116,6 +1117,53 @@ def build_shoot_scroll_helper() -> bytes:
     table_center: .word 0x{GBA_BASE + SHOOT_SCROLL_TABLE + 0x40:08X}
     palette_base: .word 0x05000000
     """, SHOOT_SCROLL_HELPER)
+
+
+def build_shoot_timer_callback() -> bytes:
+    """Translate WSC Ver. 1.5 4090:989C..9907.
+
+    Commercial GBA 0x083731A0 proves both the object-field mapping and the
+    five-stack-argument palette-loader ABI. The Ver. 1.5 routine selects one
+    of three native palette blocks and then advances the Shoot scroll palette
+    only when flags 0x4000, 0x20, and 0x10 are all clear.
+    """
+    return assemble_arm(f"""
+        push {{lr}}
+        ldrsh r0, [r4, #0x64]
+        ldrsh r8, [r4, #0x6a]
+        cmp r0, r8
+        ldrle r8, palette_high
+        ble shoot_timer_load
+        ldrsh r8, [r4, #0x68]
+        cmp r0, r8
+        ldrle r8, palette_middle
+        ldrgt r8, palette_low
+    shoot_timer_load:
+        push {{r8}}
+        push {{r11}}
+        push {{r11}}
+        mov r8, #0
+        push {{r8}}
+        mov r8, #1
+        push {{r8}}
+        bl 0x080132EC
+        add sp, sp, #0x14
+        ldr r8, shoot_flags
+        ldrh r8, [r8]
+        tst r8, #0x4000
+        bne shoot_timer_done
+        tst r8, #0x30
+        bne shoot_timer_done
+        bl 0x{GBA_BASE + SHOOT_SCROLL_HELPER:X}
+    shoot_timer_done:
+        pop {{lr}}
+        bx lr
+        .align 2
+    palette_high: .word 0x{GBA_BASE + SHOOT_TIMER_PALETTES + 0x50:08X}
+    palette_middle: .word 0x{GBA_BASE + SHOOT_TIMER_PALETTES + 0x28:08X}
+    palette_low: .word 0x{GBA_BASE + SHOOT_TIMER_PALETTES:08X}
+    shoot_flags: .word 0x0300450A
+    """, SHOOT_TIMER_CALLBACK)
 
 
 def relocate_stage_clone(source: bytes, target: int, *, spec: dict[str, object],
@@ -2475,6 +2523,33 @@ def main() -> int:
     )
     if len(shoot_scroll_palette) != 0x60:
         raise AssertionError("Digimon Shoot scroll-palette size invariant failed")
+    # The commercial runtime-palette family uses its source count as the
+    # 40-byte GBA record trailer. Prove this at all three retail blocks selected
+    # by WSC 4090:6FDE / GBA 0x083731A0 before applying it to Ver. 1.5.
+    retail_runtime_palette_pairs = (
+        (0x3D35D0, 0x34F810),
+        (0x3D3668, 0x34F8F4),
+        (0x3D368E, 0x34F91A),
+    )
+    for retail_wsc, retail_gba in retail_runtime_palette_pairs:
+        expected = bytearray(convert_block(wsc15[retail_wsc:retail_wsc + 0x26]))
+        expected[-2:] = wsc15[retail_wsc:retail_wsc + 2]
+        if source[retail_gba:retail_gba + 0x28] != expected:
+            raise SystemExit("commercial runtime-palette conversion rule changed")
+    shoot_timer_palette_parts = []
+    for relative in (0, 0x26, 0x4C):
+        source_offset = 0x3D4B20 + relative
+        source_block = wsc15[source_offset:source_offset + 0x26]
+        if len(source_block) != 0x26:
+            raise SystemExit("Digimon Shoot timer palette falls outside WSC ROM")
+        if struct.unpack_from("<3H", source_block) != (1, 1, 8):
+            raise SystemExit("unexpected Digimon Shoot timer palette header")
+        converted_block = bytearray(convert_block(source_block))
+        converted_block[-2:] = source_block[:2]
+        shoot_timer_palette_parts.append(bytes(converted_block))
+    shoot_timer_palettes = b"".join(shoot_timer_palette_parts)
+    if len(shoot_timer_palettes) != 3 * 0x28:
+        raise AssertionError("Digimon Shoot timer-palette size invariant failed")
 
     asset_manifest = json.loads((args.asset_dir / "stage-assets.json").read_text(encoding="utf-8"))
     patched = bytearray(source)
@@ -2684,6 +2759,16 @@ def main() -> int:
             SHOOT_SCROLL_TABLE,
             shoot_scroll_palette,
             "Digimon Shoot converted scroll-palette table",
+        ),
+        (
+            SHOOT_TIMER_CALLBACK,
+            build_shoot_timer_callback(),
+            "Digimon Shoot timer palette callback",
+        ),
+        (
+            SHOOT_TIMER_PALETTES,
+            shoot_timer_palettes,
+            "Digimon Shoot converted timer palette blocks",
         ),
         (
             FLICKER_CALLBACK,
@@ -2928,9 +3013,9 @@ def main() -> int:
             "character routes, confirmed legacy stage-table bounds, native Ver. 1.5 "
             "object configurations/callbacks for stages 8..11, and translated display/"
             "palette paths, and the Digimon Shoot threshold/palette update, stage-11 main "
-            "dispatch, dedicated core loop, and scroll-palette state machine; remaining "
-            "Iraira suction integration, Digimon Shoot timer resource family/rules/reward/"
-            "exit logic, and integrated runtime QA deferred"
+            "dispatch, dedicated core loop, scroll-palette state machine, and timer palette "
+            "callback; remaining Iraira suction integration, Digimon Shoot rules/reward/exit "
+            "logic, and integrated runtime QA deferred"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": hashlib.sha256(patched).hexdigest().upper(),
@@ -2991,21 +3076,21 @@ def main() -> int:
             "main_loop": SHOOT_MAIN_LOOP,
             "scroll_helper": SHOOT_SCROLL_HELPER,
             "scroll_table": SHOOT_SCROLL_TABLE,
+            "timer_callback": SHOOT_TIMER_CALLBACK,
+            "timer_palettes": SHOOT_TIMER_PALETTES,
             "update_source": "WSC 1.5 stage overlay relative 0x2067..0x20CA",
             "palette_source": "WSC 1.5 stage overlay relative 0x20CB..0x226A and 0x226B..0x23A1",
             "main_loop_source": "WSC 1.5 object overlay 4090:7572..7641",
             "scroll_source": "WSC 1.5 object overlay 4090:7642..76D0",
             "scroll_palette_source": "WSC 1.5 object overlay 4090:76D1..7730",
+            "timer_callback_source": "WSC 1.5 object overlay 4090:989C..9907",
+            "timer_palette_source": "WSC 1.5 physical 0x3D4B20 + offsets 0/0x26/0x4C",
             "lineage_callback": "retail GBA 0x080C97B8; temporary until 5EEA:0C3A is translated",
-            "timer_callback": (
-                "retail GBA 0x083731A0; explicit temporary boundary until "
-                "WSC 4090:989C and its resource family are translated"
-            ),
             "claim": (
                 "native threshold scan, exact three-rate converted palette animation, "
                 "stage-11 main-loop routing, dedicated core loop, and exact scroll-palette "
-                "state machine; Shoot-specific timer callback/resource family and full "
-                "minigame object/rules/reward flow remain pending"
+                "state machine plus the native timer palette callback and its three converted "
+                "blocks; full minigame object/rules/reward flow remains pending"
             ),
         },
         "spawn_hook": SPAWN_HOOK,

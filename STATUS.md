@@ -21,9 +21,9 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
 
-The current internal stage candidate is `stage-integrated-v27.gba`, identified
+The current internal stage candidate is `stage-integrated-v28.gba`, identified
 only by SHA-256
-`AD68EE487A2D1265F50E8B86375D0ED4A84516CABAD7A5972DB3F3E99A5C57DE`.
+`9430FD8F890DEC4B44F73EABAFCF7A5ECF14831F41117A353A24D28BDDE35A95`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
@@ -57,10 +57,12 @@ rejoin at `0x08370104`, while actual stage ID 11 enters the translated WSC
 `4090:7572` core loop and returns through the original epilogue. The WSC
 `4090:7642` signed scroll state machine and its 48-color BGR444 table are
 converted to GBA BGR555 and write the same sixteen palette entries at the
-same stride. The Shoot-only timer callback `4090:989C` and its new resource
-family are not yet converted; v27 marks the commercial `0x083731A0` callback
-as an explicit temporary boundary. Rules, reward, win/loss, and exit remain
-release gates.
+same stride. v28 replaces the final temporary call to commercial
+`0x083731A0` with the translated Shoot-only timer callback `4090:989C`. Its
+three WSC runtime-palette records are converted by a rule verified against all
+three records selected by the commercial `4090:6FDE`→GBA `0x083731A0`
+lineage, including the distinct GBA record trailer. Rules, reward, win/loss,
+and exit remain release gates.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart

@@ -34,7 +34,7 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v27 contains the converted palette, tiles, eight maps,
+Internal stage build v28 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
 and safe mappings for unrelated legacy stage-index tables. Its relocated
 object-configuration table contains the native stage-11 pair and translated
@@ -69,13 +69,20 @@ pointer and `state >> 2` select sixteen colors written to BG palette memory at
 `0x20`-byte spacing. The positive `0x3F` reset, negative `-0x80` clamp to
 `-1`, and zero-settling behavior are retained.
 
-The timer-expiry call remains retail GBA `0x083731A0` as an explicit temporary
-boundary. The source call is Shoot-only `4090:989C`, which creates a new
-resource/object family and therefore must be converted with that family.
+v28 replaces the timer-expiry call with a static translation of Shoot-only
+`4090:989C..9907`. The source chooses three 38-byte WSC runtime-palette blocks
+at physical `0x3D4B20 + 0/0x26/0x4C`. Before converting them, the build proves
+the same selection and 38→40-byte record rule against all three blocks used by
+the commercial WSC `4090:6FDE` / GBA `0x083731A0` pair. This family differs
+from character palette records by carrying the source count in the two-byte
+GBA trailer. The callback retains both source position comparisons and calls
+the scroll helper only when Shoot flags `0x4000`, `0x20`, and `0x10` are all
+clear.
+
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook
 is claimed yet.
 
-The next implementation unit is the Shoot-only `4090:989C` timer callback and
-the resource/object callback family it creates, followed by the connected
-rules/reward/exit paths. Installing isolated completion-bit writes would
-bypass the source mode and is not an acceptable completion path.
+The next implementation unit is the connected Shoot object/rules callbacks
+beginning at `4090:9908`, followed by reward/exit paths. Installing isolated
+completion-bit writes would bypass the source mode and is not an acceptable
+completion path.
