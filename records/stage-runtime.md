@@ -53,8 +53,8 @@ new; both contain relocated retail content.
 
 ## Internal stage build v25 boundary
 
-`build/stage-integrated-v25.gba` (internal only; SHA-256
-`99A50594464046A78B3F720F1C8692FEDBAE5D2FDDC6BA857CBC0BB2C482C8EB`)
+`build/stage-integrated-v26.gba` (internal only; SHA-256
+`FB71E42E610A94F78F96FCFCC31C5593C737D335864F4EC6AE35C27945D46448`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -78,12 +78,17 @@ state word is GBA `0x0300256A`: WSC `ES:0384` is the second halfword cleared
 from base `0x03002568` by the commercial stage-5 initializer at
 `0x0803FEF0`. The hazard state machine reuses the retail GBA entity table and
 spawn service rather than a parallel object system. Its native mode-1 and
-mode-2 visual/movement callbacks are now connected. The two commercial GBA object-construction sites
-corresponding to WSC raw `0x781BEF` and `0x786C5C` now preserve the Ver. 1.5
-exception that suppresses default object flag `0x2000` for stages 9 and 10.
+mode-2 visual/movement callbacks are now connected. All four confirmed
+commercial GBA object-construction sites corresponding to WSC raw `0x74382E`,
+`0x745483`, `0x781BEF`, and `0x786C5C` now preserve the Ver. 1.5 exception
+that suppresses default object flag `0x2000` for stages 9 and 10. The first two
+are GBA `0x08353428` and `0x0835B354`; the latter sits inside the commercial
+translation of WSC `4090:53D7`, whose stage×character lookup, object-loader
+call, cleared motion fields, `4/7` state pair, and `0x1100` clamp provide an
+exact semantic match.
 This is a confirmed engine prerequisite, not by itself proof of vertical
 motion or suction. Train vent/bounce producers, Iraira suction, Digimon Shoot
-mode logic, and any additional stage-specific engine branches remain pending.
+mode logic, and the remaining stage-specific engine branches remain pending.
 
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
@@ -125,6 +130,6 @@ converted three-rate palette animation. Its Shoot-only interrupt callback and
 dedicated game loop remain pending, so the update still uses the retail
 stage-7 lineage callback as a documented temporary boundary.
 
-No emulator claim is attached to v25. Per the requested validation policy,
+No emulator claim is attached to v26. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

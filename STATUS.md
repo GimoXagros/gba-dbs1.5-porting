@@ -21,14 +21,14 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
   confirmed dedicated-mode control-flow map.
 
-The current internal stage candidate is `stage-integrated-v25.gba`, identified
+The current internal stage candidate is `stage-integrated-v26.gba`, identified
 only by SHA-256
-`99A50594464046A78B3F720F1C8692FEDBAE5D2FDDC6BA857CBC0BB2C482C8EB`.
+`FB71E42E610A94F78F96FCFCC31C5593C737D335864F4EC6AE35C27945D46448`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
 
-v25 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
+v26 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
 `0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
 analysis proves that waterfall stage 9 is configured with callbacks
 `4090:3DFB` and `4090:3EE0`, which produce modes 1 and 2; `4090:3FCA` is a
@@ -53,6 +53,15 @@ BGR444 colors used by its two three-rate palette-table groups to GBA BGR555.
 The retail callback from the same lineage remains temporary: the Shoot-only
 interrupt callback, transition helper, dedicated loop, rules, and exit are
 still release gates.
+
+v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
+The commercial player constructor at GBA `0x08353428` is the exact counterpart
+of the WSC raw `0x74382E` branch. The shared stage/character auxiliary
+constructor at GBA `0x0835B298..0x0835B3A8` matches WSC `4090:53D7`, including
+the stage×character lookup, object loader, four cleared motion fields, `4/7`
+state pair, and `0x1100` clamp; its flag site is `0x0835B354`. Both now call
+the same bounded stage-9/10 exception helper already used by the two later
+object-construction consumers.
 
 ## Remaining release gates
 

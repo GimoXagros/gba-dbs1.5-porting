@@ -100,6 +100,14 @@ STAGE_BOUNDS_MAP_SITE = 0x07FC3C
 STAGE_BOUNDS_MAP_RETURN = 0x07FC40
 VERTICAL_FLAG_R0_SITE = 0x359568
 VERTICAL_FLAG_R8_SITE = 0x3597D0
+# Ver. 1.5 applies the same stage-9/10 renderer-flag exception in the
+# commercial player constructor and in the shared stage/character auxiliary
+# constructor.  Both GBA sites already hold the value in r8, so they can call
+# the proven r8 helper without disturbing the surrounding load/store ABI.
+VERTICAL_FLAG_R8_ADDITIONAL_SITES = (
+    0x353428,  # WSC Ver. 1.5 raw 0x74382E consumer
+    0x35B354,  # WSC Ver. 1.5 raw 0x745483 consumer / 4090:53D7 lineage
+)
 STAGE_DIMENSION_MAP_SITE = 0x03EE70
 STAGE_DIMENSION_MAP_RETURN = 0x03EE74
 OBJECT_CONFIG_TABLE_SITE = 0x36D2C0
@@ -2005,6 +2013,16 @@ def main() -> int:
         raise SystemExit("vertical-stage r0 flag hook-site check failed")
     if struct.unpack_from("<I", source, VERTICAL_FLAG_R8_SITE)[0] != 0xE3888A02:
         raise SystemExit("vertical-stage r8 flag hook-site check failed")
+    expected_additional_r8_flags = (0xE3888A02, 0xE3988A02)
+    for site, expected in zip(
+        VERTICAL_FLAG_R8_ADDITIONAL_SITES,
+        expected_additional_r8_flags,
+        strict=True,
+    ):
+        if struct.unpack_from("<I", source, site)[0] != expected:
+            raise SystemExit(
+                f"additional vertical-stage r8 flag hook-site check failed at 0x{site:06X}"
+            )
     if struct.unpack_from("<I", source, STAGE_DIMENSION_MAP_SITE)[0] != 0xE1A05101:
         raise SystemExit("stage dimension map hook-site check failed")
     if struct.unpack_from("<I", source, OBJECT_CONFIG_TABLE_SITE)[0] != 0xE28F90C4:
@@ -2603,6 +2621,15 @@ def main() -> int:
             link=True,
         ),
     )
+    for site in VERTICAL_FLAG_R8_ADDITIONAL_SITES:
+        struct.pack_into(
+            "<I", patched, site,
+            arm_branch(
+                GBA_BASE + site,
+                GBA_BASE + VERTICAL_FLAG_R8_HELPER,
+                link=True,
+            ),
+        )
     struct.pack_into(
         "<I", patched, STAGE_DIMENSION_MAP_SITE,
         arm_branch(
@@ -2792,10 +2819,16 @@ def main() -> int:
         },
         "vertical_stage_object_flag_hooks": {
             "source_evidence": [
+                "WSC 1.5 raw 0x74382E stage-ID branch",
+                "WSC 1.5 raw 0x745483 stage-ID branch / 4090:53D7",
                 "WSC 1.5 raw 0x781BEF stage-ID branch",
                 "WSC 1.5 raw 0x786C5C stage-ID branch",
             ],
-            "gba_sites": [VERTICAL_FLAG_R0_SITE, VERTICAL_FLAG_R8_SITE],
+            "gba_sites": [
+                *VERTICAL_FLAG_R8_ADDITIONAL_SITES,
+                VERTICAL_FLAG_R0_SITE,
+                VERTICAL_FLAG_R8_SITE,
+            ],
             "helpers": [VERTICAL_FLAG_R0_HELPER, VERTICAL_FLAG_R8_HELPER],
             "effect": (
                 "preserve retail object construction except suppress the default "
