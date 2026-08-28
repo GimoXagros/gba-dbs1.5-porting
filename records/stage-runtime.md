@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v24 boundary
+## Internal stage build v25 boundary
 
-`build/stage-integrated-v24.gba` (internal only; SHA-256
-`CA7CF42408AAC36C1680657E854CD834447D8673310EA60E6D92C5555CB2F15D`)
+`build/stage-integrated-v25.gba` (internal only; SHA-256
+`99A50594464046A78B3F720F1C8692FEDBAE5D2FDDC6BA857CBC0BB2C482C8EB`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -88,7 +88,7 @@ mode logic, and any additional stage-specific engine branches remain pending.
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
 table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
-`0x0836D28C`, and `0x0836D2F8`). v24 routes four still-unported consumers
+`0x0836D28C`, and `0x0836D2F8`). v25 routes four still-unported consumers
 through a bounded analog selector and separately bounds the setup-time
 dimension lookup at `0x0803EE70`.
 
@@ -120,6 +120,11 @@ whose functions `4090:3DFB` and `4090:3EE0` produce modes 1 and 2. Those actual
 callbacks now write modes 1 and 2 to GBA `0x0300256A`; the unrelated mode-3
 behavior remains excluded.
 
-No emulator claim is attached to v24. Per the requested validation policy,
+Digimon Shoot update slot 11 now owns its native threshold table and exact
+converted three-rate palette animation. Its Shoot-only interrupt callback and
+dedicated game loop remain pending, so the update still uses the retail
+stage-7 lineage callback as a documented temporary boundary.
+
+No emulator claim is attached to v25. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

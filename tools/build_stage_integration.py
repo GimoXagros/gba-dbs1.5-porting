@@ -82,6 +82,10 @@ IRAIRA_OBJECT_CALLBACK_LEFT = 0x585800
 IRAIRA_OBJECT_CALLBACK_RIGHT = 0x585C00
 SHOOT_OBJECT_CALLBACK_LEFT = 0x585E00
 SHOOT_OBJECT_CALLBACK_RIGHT = 0x586000
+SHOOT_UPDATE = 0x586200
+SHOOT_PALETTE_HELPER = 0x586400
+SHOOT_PALETTE_TABLES = 0x586800
+SHOOT_THRESHOLD_TABLE = 0x586A00
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -751,6 +755,138 @@ def build_iraira_palette_helper() -> bytes:
     palette_state: .word 0x03002568
     tables: .word 0x{GBA_BASE + IRAIRA_PALETTE_TABLES:08X}
     """, IRAIRA_PALETTE_HELPER)
+
+
+def build_shoot_update() -> bytes:
+    """Port the non-interrupt body of WSC Ver. 1.5 update entry 11.
+
+    Retail GBA stage 7 proves the camera/output ABI and the translation of
+    the common transition helper.  The Ver. 1.5 routine substitutes its own
+    threshold table and palette animator.  Its scanline callback is still a
+    separate porting unit, so this update temporarily registers the retail
+    callback from the same WSC lineage while preserving the native stage ID.
+    """
+    return assemble_arm(f"""
+        push {{lr}}
+        ldr r1, camera_state
+        ldrsh r10, [r1, #0x12]
+        ldr r8, threshold_position
+        strh r10, [r8]
+        mov r3, #0
+        ldr r1, thresholds
+    shoot_threshold_loop:
+        ldrh r0, [r1], #2
+        sub r0, r0, r10
+        cmp r0, #8
+        addle r3, r3, #1
+        ble shoot_threshold_loop
+        ldr r8, threshold_index
+        strh r3, [r8]
+        ldr r3, lineage_callback
+        str r3, [r5], #4
+        add r2, r2, #1
+        bl 0x080173BC
+        bl 0x{GBA_BASE + SHOOT_PALETTE_HELPER:X}
+        pop {{lr}}
+        bx lr
+        .align 2
+    camera_state: .word 0x03002338
+    threshold_position: .word 0x03004D46
+    thresholds: .word 0x{GBA_BASE + SHOOT_THRESHOLD_TABLE:08X}
+    threshold_index: .word 0x03004D44
+    lineage_callback: .word 0x080C97B8
+    """, SHOOT_UPDATE)
+
+
+def build_shoot_palette_helper() -> bytes:
+    """Translate WSC Ver. 1.5 overlay 0x226B..0x23A1.
+
+    WSC 1000:0174 maps to the retail GBA stage-7 animation state at
+    0x03003D30. WSC 1000:03D8 maps to 0x0300450A. The routine maintains the
+    original 8-tick, 10-frame, 8-frame, and 7-frame cadences and writes the
+    converted BGR555 colors into the commercial port's staging structure.
+    """
+    return assemble_arm(f"""
+        push {{r0-r8, lr}}
+        ldr r4, animation_state
+        ldr r8, stage_flags
+        ldrh r8, [r8]
+        tst r8, #8
+        ldrne r5, alt_table_a
+        ldreq r5, normal_table_a
+        ldrne r6, alt_table_b
+        ldreq r6, normal_table_b
+        ldrne r7, alt_table_c
+        ldreq r7, normal_table_c
+
+        ldrh r0, [r4]
+        add r0, r0, #1
+        and r0, r0, #7
+        strh r0, [r4]
+        cmp r0, #0
+        beq shoot_palette_slow
+        tst r0, #1
+        beq shoot_palette_done
+
+        ldrh r0, [r4, #4]
+        add r1, r0, #1
+        and r1, r1, #7
+        strh r1, [r4, #4]
+        add r6, r6, r0, lsl #1
+        add r2, r4, #0x14
+        mov r3, #8
+    shoot_palette_eight:
+        ldrh r1, [r6], #2
+        strh r1, [r2], #2
+        subs r3, r3, #1
+        bne shoot_palette_eight
+
+        ldrh r0, [r4, #6]
+        add r1, r0, #1
+        cmp r1, #7
+        movhs r1, #0
+        strh r1, [r4, #6]
+        add r7, r7, r0, lsl #4
+        add r2, r4, #0x24
+        mov r3, #5
+    shoot_palette_five:
+        ldrh r1, [r7], #2
+        strh r1, [r2], #2
+        subs r3, r3, #1
+        bne shoot_palette_five
+        b shoot_palette_done
+
+    shoot_palette_slow:
+        ldrh r0, [r4, #2]
+        add r1, r0, #1
+        cmp r1, #10
+        movhs r1, #0
+        strh r1, [r4, #2]
+        add r5, r5, r0, lsl #2
+        add r2, r4, #8
+        mov r3, #3
+    shoot_palette_columns:
+        ldrh r1, [r5]
+        strh r1, [r2]
+        ldrh r1, [r5, #2]
+        strh r1, [r2, #2]
+        add r5, r5, #4
+        add r2, r2, #4
+        subs r3, r3, #1
+        bne shoot_palette_columns
+    shoot_palette_done:
+        pop {{r0-r8, lr}}
+        bx lr
+        .align 2
+    animation_state: .word 0x03003D30
+    stage_flags: .word 0x0300450A
+    normal_table_a: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES:08X}
+    normal_table_b: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x3C:08X}
+    normal_table_c: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x5A:08X}
+    alt_table_a: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0xCA:08X}
+    alt_table_b: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x106:08X}
+    alt_table_c: .word 0x{GBA_BASE + SHOOT_PALETTE_TABLES + 0x124:08X}
+    """, SHOOT_PALETTE_HELPER)
 
 
 def relocate_stage_clone(source: bytes, target: int, *, spec: dict[str, object],
@@ -2062,6 +2198,32 @@ def main() -> int:
     iraira_palette = struct.pack(
         "<256H", *(convert_color(value) for value in iraira_palette_wsc)
     )
+    # Entry 11's six pointer-selected BGR444 tables occupy two equal groups:
+    # 0x3C bytes for the paired three-color columns, 0x1E for the eight-color
+    # strip, and 0x70 for the five-color frames. Preserve those exact source
+    # boundaries before converting every color to the commercial GBA BGR555
+    # representation.
+    shoot_palette_parts = []
+    for relative, byte_count in (
+        (0x20CB, 0x3C), (0x2107, 0x1E), (0x2125, 0x70),
+        (0x2195, 0x3C), (0x21D1, 0x1E), (0x21EF, 0x70),
+    ):
+        colors = struct.unpack_from(
+            f"<{byte_count // 2}H", wsc15,
+            WSC15_STAGE_OVERLAY_BASE + relative,
+        )
+        shoot_palette_parts.append(struct.pack(
+            f"<{len(colors)}H", *(convert_color(value) for value in colors)
+        ))
+    shoot_palette = b"".join(shoot_palette_parts)
+    if len(shoot_palette) != 0x194:
+        raise AssertionError("Digimon Shoot palette-table size invariant failed")
+    shoot_thresholds = wsc15[
+        WSC15_OBJECT_OVERLAY_BASE + 0x7751:
+        WSC15_OBJECT_OVERLAY_BASE + 0x7751 + 0x40
+    ]
+    if len(shoot_thresholds) != 0x40:
+        raise AssertionError("Digimon Shoot threshold-table size invariant failed")
 
     asset_manifest = json.loads((args.asset_dir / "stage-assets.json").read_text(encoding="utf-8"))
     patched = bytearray(source)
@@ -2156,7 +2318,7 @@ def main() -> int:
         GBA_BASE + TRAIN_UPDATE,
         GBA_BASE + WATERFALL_UPDATE,
         GBA_BASE + IRAIRA_UPDATE,
-        GBA_BASE + UPDATE_STUB,
+        GBA_BASE + SHOOT_UPDATE,
     )
     update_stub = struct.pack("<I", 0xE12FFF1E)  # bx lr
 
@@ -2231,6 +2393,26 @@ def main() -> int:
             IRAIRA_PALETTE_HELPER,
             build_iraira_palette_helper(),
             "Iraira Room palette helper",
+        ),
+        (
+            SHOOT_UPDATE,
+            build_shoot_update(),
+            "Digimon Shoot threshold/palette update",
+        ),
+        (
+            SHOOT_PALETTE_HELPER,
+            build_shoot_palette_helper(),
+            "Digimon Shoot three-rate palette helper",
+        ),
+        (
+            SHOOT_PALETTE_TABLES,
+            shoot_palette,
+            "Digimon Shoot converted palette tables",
+        ),
+        (
+            SHOOT_THRESHOLD_TABLE,
+            shoot_thresholds,
+            "Digimon Shoot threshold table",
         ),
         (
             FLICKER_CALLBACK,
@@ -2458,8 +2640,9 @@ def main() -> int:
             "static stage assets, corrected resource geometry, initializer/update dispatch, "
             "character routes, confirmed legacy stage-table bounds, native Ver. 1.5 "
             "object configurations/callbacks for stages 8..11, and translated display/"
-            "palette paths; remaining Iraira suction integration, Digimon Shoot dedicated "
-            "runtime logic, and integrated runtime QA deferred"
+            "palette paths, and the Digimon Shoot threshold/three-rate palette update; "
+            "remaining Iraira suction integration, Digimon Shoot interrupt/dedicated-loop "
+            "logic, and integrated runtime QA deferred"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": hashlib.sha256(patched).hexdigest().upper(),
@@ -2508,6 +2691,19 @@ def main() -> int:
             "claim": (
                 "static display/palette translation plus native object configuration "
                 "and callbacks; remaining stage-level suction integration pending"
+            ),
+        },
+        "shoot_mechanics": {
+            "update": SHOOT_UPDATE,
+            "palette_helper": SHOOT_PALETTE_HELPER,
+            "palette_tables": SHOOT_PALETTE_TABLES,
+            "threshold_table": SHOOT_THRESHOLD_TABLE,
+            "update_source": "WSC 1.5 stage overlay relative 0x2067..0x20CA",
+            "palette_source": "WSC 1.5 stage overlay relative 0x20CB..0x226A and 0x226B..0x23A1",
+            "lineage_callback": "retail GBA 0x080C97B8; temporary until 5EEA:0C3A is translated",
+            "claim": (
+                "native threshold scan and exact three-rate converted palette animation; "
+                "Shoot-specific interrupt callback/transition and dedicated game loop pending"
             ),
         },
         "spawn_hook": SPAWN_HOOK,

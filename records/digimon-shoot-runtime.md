@@ -34,15 +34,28 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v24 contains the converted palette, tiles, eight maps,
+Internal stage build v25 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
 and safe mappings for unrelated legacy stage-index tables. Its relocated
 object-configuration table contains the native stage-11 pair and translated
-presentation callbacks `4090:432F`/`4090:43E6`. The update slot remains an
-intentional return stub, and no menu, dedicated loop, broader presentation
-branches, reward, or exit hook is claimed yet.
+presentation callbacks `4090:432F`/`4090:43E6`.
 
-The next implementation unit is the dedicated loop plus its update/display
-state as one connected subsystem. Installing isolated completion-bit writes
+The update slot now translates the WSC entry's camera threshold scan and its
+three-rate palette helper. Commercial stage-7 code proves these address
+mappings: WSC `1000:01CE`→GBA `0x03002338`, WSC
+`0C00:3CE0/3CE2`→GBA `0x03004D44/46`, WSC `1000:0174`→GBA
+`0x03003D30`, and WSC `1000:03D8`→GBA `0x0300450A`. The 32 threshold
+halfwords are retained byte-for-byte. All 202 colors selected through the six
+source pointers at WSC overlay `0x225F` are converted to BGR555, while the
+original 8-tick, 10-frame, 8-frame, and 7-frame cadences are preserved.
+
+The update temporarily registers retail GBA callback `0x080C97B8`, the
+commercial translation of the shared stage-7 lineage. This is an explicit
+intermediate boundary, not a claim that the Shoot-only callback `5EEA:0C3A`
+or transition helper `5EEA:0E0B` has been ported. No menu, dedicated loop,
+broader presentation branch, rules, reward, or exit hook is claimed yet.
+
+The next implementation unit is the Shoot-only interrupt/transition state and
+dedicated loop as one connected subsystem. Installing isolated completion-bit writes
 or routing stage 11 through the normal fighter loop would bypass the source
 mode and is not an acceptable completion path.
