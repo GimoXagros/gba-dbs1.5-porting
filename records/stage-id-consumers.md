@@ -11,7 +11,7 @@ identified by SHA-256
 
 ## Confirmed direct callers
 
-| Call site | Immediate use | v20 policy |
+| Call site | Immediate use | v21 policy |
 |---:|---|---|
 | `0x0803EE5C` | stage setup and expanded initializer dispatch | retain actual ID |
 | `0x080C4BC4` | eight-entry jump table | bounded analog |
@@ -23,20 +23,21 @@ identified by SHA-256
 | `0x080D0BD0` | eight-entry jump table | bounded analog |
 | `0x080D1408` | eight-entry jump table | bounded analog |
 | `0x0835B384` | direct comparison with retail stage 3 | unchanged |
-| `0x0836D28C` | eight-byte retail graphics/object-mode record | bounded analog, native callback pending |
+| `0x0836D28C` | eight-byte graphics/object configuration record | native twelve-entry table; stage 8 native, IDs 9–11 explicitly bounded |
 | `0x0836D2F8` | eight-byte object movement-pattern record | native twelve-entry Ver. 1.5 table |
 
 The setup routine also uses the actual stage ID at `0x0803EE70` to index an
-eight-entry dimension table without another getter call. v20 maps only the
+eight-entry dimension table without another getter call. v21 maps only the
 derived byte offset there, preserving the actual ID in `r1` for the expanded
 initializer dispatch.
 
 ## Remaining native-port gate
 
-The two `0x0836D2xx` consumers correspond to the object-mode family whose WSC
-Ver. 1.5 functions include the producers at logical `4090:3DFB`, `4090:3EE0`,
-and `4090:3FCA`. The movement-pattern consumer is now native through stage 11.
-The remaining graphics/configuration consumer is still mapped to a safe retail
-analog and does not claim those producer behaviors. Completion requires its
-converted native callbacks and removal of the temporary mapping at
-`0x0836D28C`.
+The two `0x0836D2xx` consumers correspond to adjacent movement-pattern and
+object-configuration families. Both tables are now structurally expanded
+through stage 11. The configuration consumer uses the actual stage ID and its
+commercial conversion rule is verified across stages 0–7. Stage 8 is native,
+using WSC configuration pair `0x745081` and translated callbacks
+`4090:3CD5`/`4090:3D7B`. Entries 9–11 still point to documented retail analog
+configuration pairs, so completion requires replacing those three entries
+with the native waterfall, Iraira Room, and Shoot records and callbacks.

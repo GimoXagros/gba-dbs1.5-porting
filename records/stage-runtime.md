@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v20 boundary
+## Internal stage build v21 boundary
 
-`build/stage-integrated-v20.gba` (internal only; SHA-256
-`9F37B07292D92620238572CA35B0DF45D38DAFEDCEDBB0315F20502C0CC62FD2`)
+`build/stage-integrated-v21.gba` (internal only; SHA-256
+`5E37F8C69F17B5067CAA6E004168F797F0E0E4A6B829C9F250D10B05A1B73F6F`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -76,12 +76,9 @@ callback, both palette paths, and the waterfall three-phase rolling-hazard
 state machine are translated statically from the confirmed WSC routines. Its
 state word is GBA `0x0300256A`: WSC `ES:0384` is the second halfword cleared
 from base `0x03002568` by the commercial stage-5 initializer at
-`0x0803FEF0`. WSC stage-9 function `4090:3FCA` immediately writes mode 3 to
-that state. v20 mirrors this write in the cloned waterfall initializer while
-retaining all three commercial zeroes. The hazard state machine reuses the
-retail GBA entity table and spawn service rather than a parallel object
-system. Its remaining visual/movement callback is pending. The two commercial
-GBA object-construction sites
+`0x0803FEF0`. The hazard state machine reuses the retail GBA entity table and
+spawn service rather than a parallel object system. Its mode-producing
+visual/movement callbacks are pending. The two commercial GBA object-construction sites
 corresponding to WSC raw `0x781BEF` and `0x786C5C` now preserve the Ver. 1.5
 exception that suppresses default object flag `0x2000` for stages 9 and 10.
 This is a confirmed engine prerequisite, not by itself proof of vertical
@@ -91,19 +88,37 @@ mode logic, and any additional stage-specific engine branches remain pending.
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
 table (`0x080C4BC4`, `0x080C4CC8`, `0x080D0BD0`, `0x080D1408`,
-`0x0836D28C`, and `0x0836D2F8`). v20 routes five of those calls through a
-bounded analog selector and separately bounds the setup-time dimension lookup
-at `0x0803EE70`.
+`0x0836D28C`, and `0x0836D2F8`). v21 routes four still-unported consumers
+through a bounded analog selector and separately bounds the setup-time
+dimension lookup at `0x0803EE70`.
 
-The sixth consumer at `0x0836D2F8` now uses a native twelve-entry table. The
+The consumer at `0x0836D2F8` uses a native twelve-entry movement-pattern table. The
 commercial GBA conversion proves that each WSC four-byte record `(count, 4,
 near pointer)` becomes an eight-byte `<halfword, halfword, ARM pointer>` record
 while its referenced `0x20`-byte pattern is retained byte-for-byte. The build
 verifies this rule against all nine records present in both commercial ROMs,
-then converts Ver. 1.5 records 9–11 and their three patterns. The graphics
-configuration lookup at `0x0836D28C` remains bounded until its native
-Ver. 1.5 callbacks are ported.
+then converts Ver. 1.5 records 9–11 and their three patterns.
 
-No emulator claim is attached to v20. Per the requested validation policy,
+The consumer at `0x0836D28C` now indexes a relocated twelve-entry object
+configuration table. Direct comparison proves a second conversion rule: each
+WSC entry `(resource bank, near pointer)` becomes `<32-bit bank, ARM pointer>`,
+and each 16-byte WSC object record becomes 20 GBA bytes by retaining its first
+14 bytes, adding two zero pad bytes, and expanding the callback-table pointer
+to 32 bits. The build verifies this across stages 0–7. Stage 8 uses the native
+records at WSC physical `0x745081..0x7450A0` and static ARM translations of
+callbacks `4090:3CD5` and `4090:3D7B`. They reproduce the two directions,
+signed position thresholds, velocity changes, animation cadence, and destroy
+conditions using the ABI established by the commercial callbacks at
+`0x0836D8B4`, `0x0836D9C8`, and `0x0836DADC`. Entries 9–11 remain labeled
+temporary analogs rather than being claimed as native.
+
+The v20 claim that waterfall stage 9 directly seeds mode 3 from
+`4090:3FCA` was incorrect and is removed. The WSC stage configuration pair at
+physical `0x7450A1` instead references callback tables `0x481F` and `0x4821`,
+whose functions `4090:3DFB` and `4090:3EE0` produce modes 1 and 2. Those actual
+callbacks, not the unrelated mode-3 behavior, are the remaining native port
+targets.
+
+No emulator claim is attached to v21. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

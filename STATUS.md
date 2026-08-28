@@ -1,6 +1,6 @@
 # Port status
 
-Snapshot date: 2026-08-27 (Asia/Seoul)
+Snapshot date: 2026-08-28 (Asia/Seoul)
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -21,22 +21,28 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, and
   confirmed dedicated-mode control-flow map.
 
-The current internal stage candidate is `stage-integrated-v20.gba`, identified
+The current internal stage candidate is `stage-integrated-v21.gba`, identified
 only by SHA-256
-`9F37B07292D92620238572CA35B0DF45D38DAFEDCEDBB0315F20502C0CC62FD2`.
+`5E37F8C69F17B5067CAA6E004168F797F0E0E4A6B829C9F250D10B05A1B73F6F`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
 have been performed for the newest hooks, but no emulator-pass claim is made
 for this candidate.
 
-v20 retains v18's corrected WSC `ES:0384` waterfall state mapping to GBA
-`0x0300256A`. It also addresses six confirmed calls that would otherwise index
-retail eight-entry tables with stage IDs 8–10, plus the setup-time dimension
-lookup. The Ver. 1.5 object movement-pattern table is now natively expanded
-through ID 11; five other legacy consumers remain on bounded analogs. Native
-Ver. 1.5 graphics/object-mode callbacks still replace the remaining temporary
-mapping in a later integration step. The waterfall initializer now also seeds
-mode 3 exactly as WSC stage-9 function `4090:3FCA` does, activating the
-translated hazard path without claiming its remaining visual object callback.
+v21 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
+`0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
+analysis proves that waterfall stage 9 is configured with callbacks
+`4090:3DFB` and `4090:3EE0`, which produce modes 1 and 2; `4090:3FCA` is a
+separate behavior and cannot be treated as the stage initializer.
+
+The Ver. 1.5 movement-pattern table remains native through ID 11. The adjacent
+graphics/object configuration table is now relocated and expanded to twelve
+entries. Its commercial WSC→GBA record-conversion rule is checked against all
+eight retail stages before use. Train stage 8 now uses its native pair from WSC
+physical `0x745081` and both translated movement callbacks (`4090:3CD5` and
+`4090:3D7B`); waterfall, Iraira Room, and Shoot remain explicitly bounded to
+retail analog configurations until their own callbacks are integrated. Four
+other confirmed legacy consumers plus the setup-time dimension lookup remain
+bounded independently.
 
 ## Remaining release gates
 

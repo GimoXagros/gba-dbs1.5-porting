@@ -64,7 +64,12 @@ LEGACY_STAGE_SELECTOR = 0x584A00
 STAGE_DIMENSION_MAP_HELPER = 0x584A80
 OBJECT_PATTERN_TABLE = 0x584B00
 OBJECT_PATTERN_DATA = 0x584B80
-WATERFALL_STATE_INIT_HELPER = 0x584C00
+OBJECT_CONFIG_TABLE = 0x584C00
+OBJECT_CONFIG_DATA = 0x584C80
+OBJECT_CONFIG_TABLE_HOOK = 0x584D40
+OBJECT_CALLBACK_SLOTS = 0x584D80
+TRAIN_OBJECT_CALLBACK_LEFT = 0x584E00
+TRAIN_OBJECT_CALLBACK_RIGHT = 0x585000
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -81,6 +86,8 @@ VERTICAL_FLAG_R0_SITE = 0x359568
 VERTICAL_FLAG_R8_SITE = 0x3597D0
 STAGE_DIMENSION_MAP_SITE = 0x03EE70
 STAGE_DIMENSION_MAP_RETURN = 0x03EE74
+OBJECT_CONFIG_TABLE_SITE = 0x36D2C0
+OBJECT_CONFIG_TABLE_RETURN = 0x36D2C8
 # These callers immediately index an eight-entry retail jump or data table.
 # Keep the route selector's actual IDs for expanded dispatches, but present a
 # safe retail analog at these still-unported consumers.
@@ -89,13 +96,14 @@ LEGACY_STAGE_SELECTOR_SITES = (
     0x0C4CC8,
     0x0D0BD0,
     0x0D1408,
-    0x36D28C,
 )
 OBJECT_PATTERN_POINTER_SITE = 0x36D40C
 ORIGINAL_OBJECT_PATTERN_TABLE = 0x36E078
 WSC15_OBJECT_PATTERN_RECORDS = 0x74512D
 WSC15_OBJECT_PATTERN_BYTES = 0x74515D
 WSC15_OBJECT_OVERLAY_BASE = 0x740900
+ORIGINAL_OBJECT_CONFIG_TABLE = 0x36D38C
+WSC15_OBJECT_CONFIG_TABLE = 0x744F2D
 
 STAGES = {
     "train": {
@@ -564,19 +572,6 @@ def build_waterfall_hazard_helper() -> bytes:
     """, WATERFALL_HAZARD_HELPER)
 
 
-def build_waterfall_state_init_helper() -> bytes:
-    """Seed the WSC stage-9 mode while retaining retail state zeroes."""
-    return assemble_arm("""
-        push {r1, lr}
-        str r0, [r5]
-        strh r0, [r5, #4]
-        mov r1, #3
-        strh r1, [r5, #2]
-        pop {r1, lr}
-        bx lr
-    """, WATERFALL_STATE_INIT_HELPER)
-
-
 def build_vertical_flag_helper(address: int, value_register: int) -> bytes:
     """Apply the Ver. 1.5 stage-9/10 exception to object flag 0x2000.
 
@@ -786,21 +781,6 @@ def relocate_stage_clone(source: bytes, target: int, *, spec: dict[str, object],
             struct.pack_into("<I", clone, offset, replacements[value])
     for relative, index in zip(spec["index_offsets"], indices, strict=True):
         struct.pack_into("<I", clone, relative, 0xE3A08000 | index)
-    if target == CLONE_TARGETS["waterfall"]:
-        # WSC stage-9 producer 4090:3FCA writes ES:0384 = 3. Replace the
-        # cloned stage-5 zeroing pair with a call that preserves the retail
-        # zeroes and seeds the converted GBA state at 0x0300256A.
-        if struct.unpack_from("<2I", clone, 0x130) != (0xE1C500B4, 0xE5850000):
-            raise SystemExit("waterfall state initializer patch-site check failed")
-        struct.pack_into(
-            "<2I", clone, 0x130,
-            arm_branch(
-                GBA_BASE + target + 0x130,
-                GBA_BASE + WATERFALL_STATE_INIT_HELPER,
-                link=True,
-            ),
-            0xE1A00000,
-        )
     return bytes(clone)
 
 
@@ -891,6 +871,178 @@ def build_stage_dimension_map_helper() -> bytes:
         lsl r5, r5, #2
         b 0x{GBA_BASE + STAGE_DIMENSION_MAP_RETURN:08X}
     """, STAGE_DIMENSION_MAP_HELPER)
+
+
+def build_object_config_table_hook() -> bytes:
+    """Index the relocated twelve-entry object-configuration table.
+
+    The caller has already masked the stage ID into r1.  The two replaced
+    retail instructions formed the address of the inline eight-entry table;
+    this helper performs the same calculation against the expanded table.
+    """
+    return assemble_arm(f"""
+        ldr sb, object_config_table
+        add r1, sb, r1, lsl #3
+        b 0x{GBA_BASE + OBJECT_CONFIG_TABLE_RETURN:08X}
+        .align 2
+    object_config_table: .word 0x{GBA_BASE + OBJECT_CONFIG_TABLE:08X}
+    """, OBJECT_CONFIG_TABLE_HOOK)
+
+
+def build_train_object_callback_left() -> bytes:
+    """Translate WSC object callback 4090:3CD5 (train, left entrant)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        bic r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mvn r8, #0x6F
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x40
+        strh r8, [r4, #0x94]
+        adr r8, approach
+        str r8, [r4]
+        bl approach
+        pop {lr}
+        bx lr
+
+    approach:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmp r8, #0xF00
+        bgt approach_update
+        mov r8, #0x100
+        strh r8, [r4, #0x42]
+        adr r8, depart
+        str r8, [r4]
+        b left_return
+    approach_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+    left_return:
+        pop {lr}
+        bx lr
+
+    depart:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmp r8, #0x1D00
+        blt depart_update
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    depart_update:
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        pop {lr}
+        bx lr
+    """, TRAIN_OBJECT_CALLBACK_LEFT)
+
+
+def build_train_object_callback_right() -> bytes:
+    """Translate WSC object callback 4090:3D7B (train, right entrant)."""
+    return assemble_arm("""
+    entry:
+        push {lr}
+        push {r5}
+        push {fp}
+        mov r8, #0
+        push {r8}
+        bl 0x08012874
+        add sp, sp, #12
+        ldrh r8, [r5, #8]
+        orr r8, r8, #0x4000
+        strh r8, [r5, #8]
+        mov r0, #0
+        mov r8, #0xE0
+        strh r8, [r4, #0x42]
+        strh r0, [r4, #0x44]
+        strh r0, [r4, #0x46]
+        strh r0, [r4, #0x48]
+        mov r8, #0x40
+        strh r8, [r4, #0x94]
+        adr r8, update
+        str r8, [r4]
+        bl update
+        pop {lr}
+        bx lr
+
+    update:
+        push {lr}
+        ldrsh r8, [r4, #0x34]
+        cmp r8, #0x1D00
+        blt choose_velocity
+        bl 0x0836D750
+        pop {lr}
+        bx lr
+    choose_velocity:
+        ldrsh r8, [r4, #0x36]
+        cmp r8, #0xC80
+        movle r8, #0x80
+        movgt r8, #0xE0
+        strh r8, [r4, #0x42]
+        push {r5}
+        push {fp}
+        mov r8, #1
+        push {r8}
+        bl 0x08012A84
+        add sp, sp, #12
+        ldrh r8, [r4, #0x94]
+        push {r8}
+        bl 0x08012348
+        add sp, sp, #4
+        asr r0, r0, #1
+        strh r0, [r4, #0x44]
+        asr r0, r0, #1
+        ldrsh r8, [r4, #0x44]
+        add r8, r8, r0
+        strh r8, [r4, #0x44]
+        ldrh r8, [r4, #0x94]
+        add r8, r8, #1
+        and r8, r8, #0xFF
+        strh r8, [r4, #0x94]
+        pop {lr}
+        bx lr
+    """, TRAIN_OBJECT_CALLBACK_RIGHT)
 
 
 def build_update_dispatch_hook() -> bytes:
@@ -1006,6 +1158,8 @@ def main() -> int:
         raise SystemExit("vertical-stage r8 flag hook-site check failed")
     if struct.unpack_from("<I", source, STAGE_DIMENSION_MAP_SITE)[0] != 0xE1A05101:
         raise SystemExit("stage dimension map hook-site check failed")
+    if struct.unpack_from("<I", source, OBJECT_CONFIG_TABLE_SITE)[0] != 0xE28F90C4:
+        raise SystemExit("object configuration table hook-site check failed")
     expected_selector_call = lambda site: arm_branch(
         GBA_BASE + site, GBA_BASE + SELECTOR_SITE, link=True
     )
@@ -1049,6 +1203,90 @@ def main() -> int:
             target_pointer = GBA_BASE + OBJECT_PATTERN_DATA + len(object_pattern_data)
             object_pattern_data.extend(pattern)
         object_pattern_records.extend(struct.pack("<HHI", count, divisor, target_pointer))
+
+    # The WSC table stores (resource bank, near pointer) pairs.  The commercial
+    # GBA conversion keeps the bank as a 32-bit value and expands the near
+    # pointer to an ARM address.  Each pointed-to WSC pair contains two 16-byte
+    # object records; the converter copies the first 14 bytes of each record,
+    # inserts two padding bytes, and replaces its final callback-table near
+    # pointer with a 32-bit address.  Prove this on all eight retail stages
+    # before applying the same rule to the Ver. 1.5 train pair.
+    retail_object_config_table = source[
+        ORIGINAL_OBJECT_CONFIG_TABLE:ORIGINAL_OBJECT_CONFIG_TABLE + 8 * 8
+    ]
+    for stage_id in range(8):
+        wsc_bank, wsc_config_pointer = struct.unpack_from(
+            "<HH", wsc15, WSC15_OBJECT_CONFIG_TABLE + stage_id * 4
+        )
+        gba_bank, gba_config_pointer = struct.unpack_from(
+            "<II", retail_object_config_table, stage_id * 8
+        )
+        if gba_bank != wsc_bank:
+            raise SystemExit(f"object config bank {stage_id} conversion check failed")
+        wsc_config_offset = WSC15_OBJECT_OVERLAY_BASE + wsc_config_pointer
+        gba_config_offset = gba_config_pointer - GBA_BASE
+        for record_id in range(2):
+            wsc_record = wsc15[
+                wsc_config_offset + record_id * 0x10:
+                wsc_config_offset + (record_id + 1) * 0x10
+            ]
+            gba_record = source[
+                gba_config_offset + record_id * 0x14:
+                gba_config_offset + (record_id + 1) * 0x14
+            ]
+            if gba_record[:14] != wsc_record[:14] or gba_record[14:16] != b"\0\0":
+                raise SystemExit(
+                    f"object config record {stage_id}:{record_id} conversion check failed"
+                )
+            callback_slot = struct.unpack_from("<I", gba_record, 16)[0] - GBA_BASE
+            if not (0 <= callback_slot <= len(source) - 4):
+                raise SystemExit(
+                    f"object config callback {stage_id}:{record_id} falls outside GBA ROM"
+                )
+
+    train_bank, train_config_pointer = struct.unpack_from(
+        "<HH", wsc15, WSC15_OBJECT_CONFIG_TABLE + 8 * 4
+    )
+    if (train_bank, train_config_pointer) != (2, 0x4781):
+        raise SystemExit("unexpected WSC Ver. 1.5 train object configuration")
+    train_config_source = WSC15_OBJECT_OVERLAY_BASE + train_config_pointer
+    train_callback_pointers = []
+    train_object_config_data = bytearray()
+    for record_id in range(2):
+        record = wsc15[
+            train_config_source + record_id * 0x10:
+            train_config_source + (record_id + 1) * 0x10
+        ]
+        callback_pointer = struct.unpack_from("<H", record, 14)[0]
+        train_callback_pointers.append(callback_pointer)
+        train_object_config_data.extend(record[:14])
+        train_object_config_data.extend(b"\0\0")
+        train_object_config_data.extend(struct.pack(
+            "<I", GBA_BASE + OBJECT_CALLBACK_SLOTS + record_id * 4
+        ))
+    if train_callback_pointers != [0x481B, 0x481D]:
+        raise SystemExit("unexpected WSC train object callbacks")
+
+    # Stage 8 now receives its native Ver. 1.5 pair.  Stages 9..11 remain
+    # deliberately bounded to their documented retail analogs until their own
+    # callbacks are translated; relocating the table makes the native train
+    # entry reachable without risking an out-of-range index meanwhile.
+    analog_entries = [
+        retail_object_config_table[index * 8:(index + 1) * 8]
+        for index in (6, 3, 7)
+    ]
+    object_config_table = (
+        retail_object_config_table
+        + struct.pack("<II", train_bank, GBA_BASE + OBJECT_CONFIG_DATA)
+        + b"".join(analog_entries)
+    )
+    if len(object_config_table) != 12 * 8 or len(train_object_config_data) != 2 * 0x14:
+        raise AssertionError("expanded object configuration size invariant failed")
+    train_callback_slots = struct.pack(
+        "<II",
+        GBA_BASE + TRAIN_OBJECT_CALLBACK_LEFT,
+        GBA_BASE + TRAIN_OBJECT_CALLBACK_RIGHT,
+    )
 
     train_gradient_wsc = struct.unpack_from(
         "<21H", wsc15, 0x75F94C
@@ -1305,9 +1543,34 @@ def main() -> int:
             "Ver. 1.5 object-pattern payloads",
         ),
         (
-            WATERFALL_STATE_INIT_HELPER,
-            build_waterfall_state_init_helper(),
-            "waterfall stage-9 mode initializer",
+            OBJECT_CONFIG_TABLE,
+            object_config_table,
+            "expanded stage object-configuration table",
+        ),
+        (
+            OBJECT_CONFIG_DATA,
+            bytes(train_object_config_data),
+            "native Ver. 1.5 train object configuration",
+        ),
+        (
+            OBJECT_CONFIG_TABLE_HOOK,
+            build_object_config_table_hook(),
+            "expanded object-configuration table hook",
+        ),
+        (
+            OBJECT_CALLBACK_SLOTS,
+            train_callback_slots,
+            "native train object callback slots",
+        ),
+        (
+            TRAIN_OBJECT_CALLBACK_LEFT,
+            build_train_object_callback_left(),
+            "native train left object callback",
+        ),
+        (
+            TRAIN_OBJECT_CALLBACK_RIGHT,
+            build_train_object_callback_right(),
+            "native train right object callback",
         ),
     ):
         if patched[target:target + len(blob)] != bytes([0xFF]) * len(blob):
@@ -1355,6 +1618,13 @@ def main() -> int:
             GBA_BASE + STAGE_DIMENSION_MAP_HELPER,
         ),
     )
+    struct.pack_into(
+        "<I", patched, OBJECT_CONFIG_TABLE_SITE,
+        arm_branch(
+            GBA_BASE + OBJECT_CONFIG_TABLE_SITE,
+            GBA_BASE + OBJECT_CONFIG_TABLE_HOOK,
+        ),
+    )
     for site in LEGACY_STAGE_SELECTOR_SITES:
         struct.pack_into(
             "<I", patched, site,
@@ -1376,9 +1646,10 @@ def main() -> int:
         "kind": "internal-stage-integration-build",
         "claim_scope": (
             "static stage assets, corrected resource geometry, initializer/update dispatch, "
-            "character routes, confirmed legacy stage-table bounds, and translated train/"
-            "waterfall/Iraira display and palette paths; Iraira suction, Digimon Shoot "
-            "runtime logic, and integrated runtime QA deferred"
+            "character routes, confirmed legacy stage-table bounds, native train object "
+            "configuration/callbacks, and translated train/waterfall/Iraira display and "
+            "palette paths; waterfall/Iraira native object callbacks, Iraira suction, "
+            "Digimon Shoot runtime logic, and integrated runtime QA deferred"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": hashlib.sha256(patched).hexdigest().upper(),
@@ -1413,8 +1684,6 @@ def main() -> int:
             "rolling_hazard_helper": WATERFALL_HAZARD_HELPER,
             "rolling_hazard_table": WATERFALL_HAZARD_TABLE,
             "rolling_hazard_source": "WSC 1.5 stage overlay relative 0x1C53..0x1D85",
-            "mode_initializer": WATERFALL_STATE_INIT_HELPER,
-            "mode_initializer_source": "WSC 1.5 logical 4090:3FCA / raw 0x7448CA",
             "palette_source": "WSC 1.5 stage overlay relative 0x1AF3..0x1B67",
             "claim": (
                 "static display/palette/rolling-hazard state-machine translation; "
@@ -1451,7 +1720,8 @@ def main() -> int:
             "dimension_index_helper": STAGE_DIMENSION_MAP_HELPER,
             "claim": (
                 "static bounds hardening for confirmed eight-entry retail consumers; "
-                "native Ver. 1.5 object-mode records remain pending"
+                "native train object configuration is separate; waterfall/Iraira/Shoot "
+                "object configurations remain bounded"
             ),
         },
         "object_pattern_extension": {
@@ -1465,6 +1735,30 @@ def main() -> int:
             "claim": (
                 "first nine records and payloads verified against the commercial GBA "
                 "conversion; Ver. 1.5 records 9..11 converted by the same rule"
+            ),
+        },
+        "object_config_extension": {
+            "table": OBJECT_CONFIG_TABLE,
+            "records": 12,
+            "table_hook_site": OBJECT_CONFIG_TABLE_SITE,
+            "table_hook": OBJECT_CONFIG_TABLE_HOOK,
+            "train_config": OBJECT_CONFIG_DATA,
+            "train_config_source": "WSC 1.5 physical 0x745081..0x7450A1",
+            "train_callback_slots": OBJECT_CALLBACK_SLOTS,
+            "train_callbacks": [
+                TRAIN_OBJECT_CALLBACK_LEFT,
+                TRAIN_OBJECT_CALLBACK_RIGHT,
+            ],
+            "train_callback_sources": ["4090:3CD5", "4090:3D7B"],
+            "temporary_analogs": {
+                "waterfall": 6,
+                "impmon": 3,
+                "shoot": 7,
+            },
+            "claim": (
+                "retail conversion rule verified for stages 0..7; native train "
+                "configuration and both movement callbacks translated statically; "
+                "runtime QA deferred"
             ),
         },
         "vertical_stage_object_flag_hooks": {
