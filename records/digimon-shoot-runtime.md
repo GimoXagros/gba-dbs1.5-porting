@@ -34,7 +34,7 @@ connected.
 
 ## Current implementation state
 
-Internal stage build v28 contains the converted palette, tiles, eight maps,
+Internal stage build v30 contains the converted palette, tiles, eight maps,
 two resource descriptors, stage initializer slot 11, update-table slot 11,
 and safe mappings for unrelated legacy stage-index tables. Its relocated
 object-configuration table contains the native stage-11 pair and translated
@@ -49,10 +49,14 @@ halfwords are retained byte-for-byte. All 202 colors selected through the six
 source pointers at WSC overlay `0x225F` are converted to BGR555, while the
 original 8-tick, 10-frame, 8-frame, and 7-frame cadences are preserved.
 
-The update temporarily registers retail GBA callback `0x080C97B8`, the
-commercial translation of the shared stage-7 lineage. This is an explicit
-intermediate boundary, not a claim that the Shoot-only callback `5EEA:0C3A`
-or transition helper `5EEA:0E0B` has been ported.
+The update now registers a GBA translation of the Shoot-only normal display
+callback `5EEA:0C3A`. Direct comparison with the commercial WSC
+`9070:072C`→GBA `0x080C97B8` conversion proves the callback slot and the
+current/saved threshold position and index mappings. Its normal path connects
+a translated scanline threshold callback from `5EEA:0D42`. When Shoot flag
+`0x400` requests the separate transition family, it deliberately falls back
+to retail callback `0x080C97B8`; WSC `5EEA:0D87/0E0B` uses additional state
+whose GBA RAM/hardware mapping is not yet proven.
 
 The commercial GBA main routine at `0x083700F0..0x0837024C` exactly matches
 the retail WSC path at `4090:583E`. v27 hooks its first literal load and checks
@@ -79,8 +83,9 @@ GBA trailer. The callback retains both source position comparisons and calls
 the scroll helper only when Shoot flags `0x4000`, `0x20`, and `0x10` are all
 clear.
 
-No menu, broader presentation branch, rules, reward, win/loss, or exit hook
-is claimed yet.
+No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
+claimed yet. The transition-state fallback above is also an explicit release
+gate.
 
 The next implementation unit is the connected Shoot object/rules callbacks
 beginning at `4090:9908`, followed by reward/exit paths. Installing isolated

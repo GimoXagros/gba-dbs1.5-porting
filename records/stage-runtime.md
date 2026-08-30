@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v28 boundary
+## Internal stage build v30 boundary
 
-`build/stage-integrated-v28.gba` (internal only; SHA-256
-`9430FD8F890DEC4B44F73EABAFCF7A5ECF14831F41117A353A24D28BDDE35A95`)
+`build/stage-integrated-v30.gba` (internal only; SHA-256
+`BA9EDDDFAE4499B2D72DCD8DDE3001128F2A4012D054796321750AE9DC9800FE`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently
@@ -99,7 +99,10 @@ the timer-expiry callback `4090:989C..9907` and its three selected runtime
 palette blocks. Their 38→40-byte conversion rule, including the source-count
 trailer, is first checked against all three blocks selected by the commercial
 WSC `4090:6FDE` / GBA `0x083731A0` pair. This remains a static integration,
-not a playable-mode or runtime-QA claim.
+not a playable-mode or runtime-QA claim. v30 additionally translates the
+normal Shoot display callback `5EEA:0C3A` and its scanline threshold callback
+`5EEA:0D42`. The transition-state path `5EEA:0D87/0E0B` remains bounded by a
+retail-callback fallback until its extra GBA state mapping is proven.
 
 An aligned ARM branch audit found all twelve direct calls to the retail stage
 getter at `0x080D1C78`. Six callers immediately index an eight-entry retail
@@ -139,10 +142,10 @@ behavior remains excluded.
 Digimon Shoot update slot 11 now owns its native threshold table and exact
 converted three-rate palette animation. Its stage-11 main dispatcher,
 dedicated core loop, signed scroll-palette state machine, and native timer
-palette callback are also translated. The update display interrupt still uses
-the retail stage-7 lineage callback as a documented boundary until the
-Shoot-only `5EEA:0C3A` interrupt/transition family is translated.
+palette callback are also translated. Its normal display interrupt and
+threshold callback are translated; only the separate transition-state family
+still uses the documented retail fallback.
 
-No emulator claim is attached to v28. Per the requested validation policy,
+No emulator claim is attached to v30. Per the requested validation policy,
 runtime QA is deliberately deferred until the remaining port systems are
 integrated into one final candidate.

@@ -92,6 +92,8 @@ SHOOT_SCROLL_HELPER = 0x586E00
 SHOOT_SCROLL_TABLE = 0x586F00
 SHOOT_TIMER_CALLBACK = 0x587000
 SHOOT_TIMER_PALETTES = 0x587100
+SHOOT_DISPLAY_CALLBACK = 0x587200
+SHOOT_THRESHOLD_CALLBACK = 0x587400
 DISPATCH_SITE = 0x03EEC0
 SELECTOR_SITE = 0x0D1C78
 DISPATCH_RETURN = 0x03EED0
@@ -779,9 +781,10 @@ def build_shoot_update() -> bytes:
 
     Retail GBA stage 7 proves the camera/output ABI and the translation of
     the common transition helper.  The Ver. 1.5 routine substitutes its own
-    threshold table and palette animator.  Its scanline callback is still a
-    separate porting unit, so this update temporarily registers the retail
-    callback from the same WSC lineage while preserving the native stage ID.
+    threshold table and palette animator. The normal scanline path and its
+    threshold callback are translated at SHOOT_DISPLAY_CALLBACK and
+    SHOOT_THRESHOLD_CALLBACK. The separate transition state behind Shoot flag
+    0x400 remains a bounded retail-lineage fallback.
     """
     return assemble_arm(f"""
         push {{lr}}
@@ -811,8 +814,120 @@ def build_shoot_update() -> bytes:
     threshold_position: .word 0x03004D46
     thresholds: .word 0x{GBA_BASE + SHOOT_THRESHOLD_TABLE:08X}
     threshold_index: .word 0x03004D44
-    lineage_callback: .word 0x080C97B8
+    lineage_callback: .word 0x{GBA_BASE + SHOOT_DISPLAY_CALLBACK:08X}
     """, SHOOT_UPDATE)
+
+
+def build_shoot_display_callback() -> bytes:
+    """Translate the normal path of WSC Ver. 1.5 5EEA:0C3A.
+
+    Commercial WSC 9070:072C and GBA 0x080C97B8 prove the display-state,
+    camera, callback-slot, threshold-state, hardware-helper, and common-tail
+    mappings. Shoot flag 0x400 enters a distinct transition state whose RAM
+    mapping is not yet proven; that branch deliberately retains the previous
+    commercial callback instead of allocating guessed scratch memory.
+    """
+    return assemble_arm(f"""
+        ldr r8, shoot_flags
+        ldrh r9, [r8]
+        tst r9, #0x400
+        bne 0x080C97B8
+
+        push {{lr}}
+        mov r0, #0x21
+        bl 0x08000FEC
+        ldr r5, display_state
+        ldrb r0, [r5]
+        bl 0x08000F2C
+        ldrb r0, [r5, #1]
+        bl 0x08000F44
+
+        bl 0x08000CE8
+        orr r0, r0, #7
+        ldr r8, shoot_flags
+        ldrh r9, [r8]
+        tst r9, #0x800
+        bicne r0, r0, #1
+        bl 0x08000CFC
+
+        ldr r8, callback_slot
+        ldr r9, threshold_callback
+        str r9, [r8]
+        ldr r8, threshold_position
+        ldrh r3, [r8]
+        ldr r8, threshold_index
+        ldrh r1, [r8]
+        ldr r8, saved_position
+        strh r3, [r8]
+        ldr r8, saved_index
+        strh r1, [r8]
+        add r1, r1, #1
+        strh r1, [r8]
+        lsl r1, r1, #1
+        ldr r8, thresholds
+        ldrh r0, [r8, r1]
+        sub r0, r0, r3
+        bl 0x08000C10
+        bl 0x080C9000
+        pop {{lr}}
+        bx lr
+        .align 2
+    display_state: .word 0x0300456C
+    shoot_flags: .word 0x0300450A
+    callback_slot: .word 0x030012E0
+    threshold_callback: .word 0x{GBA_BASE + SHOOT_THRESHOLD_CALLBACK:08X}
+    threshold_position: .word 0x03004D46
+    threshold_index: .word 0x03004D44
+    saved_position: .word 0x03004D4A
+    saved_index: .word 0x03004D48
+    thresholds: .word 0x{GBA_BASE + SHOOT_THRESHOLD_TABLE:08X}
+    """, SHOOT_DISPLAY_CALLBACK)
+
+
+def build_shoot_threshold_callback() -> bytes:
+    """Translate WSC Ver. 1.5 5EEA:0D42 for the GBA scanline ABI."""
+    return assemble_arm(f"""
+        push {{r0-r3, lr}}
+        ldr r8, saved_index
+        ldrh r1, [r8]
+        add r9, r1, #1
+        strh r9, [r8]
+
+        mov r2, r1
+        cmp r2, #0x10
+        rsbpl r2, r2, #0x1f
+        lsls r2, r2, #4
+        beq shoot_threshold_zero
+        bl 0x08000CD8
+        and r0, r0, #0xff
+        add r0, r0, r2, lsl #8
+        bl 0x08000CF8
+        b shoot_threshold_schedule
+    shoot_threshold_zero:
+        ldr r8, palette_base
+        mov r9, #5
+        strh r9, [r8]
+        ldr r8, scanline_control
+        strb r0, [r8, #1]
+
+    shoot_threshold_schedule:
+        ldr r8, saved_position
+        ldrh r3, [r8]
+        add r1, r1, #1
+        lsl r1, r1, #1
+        ldr r8, thresholds
+        ldrh r0, [r8, r1]
+        sub r0, r0, r3
+        bl 0x08000C10
+        pop {{r0-r3, lr}}
+        bx lr
+        .align 2
+    saved_index: .word 0x03004D48
+    saved_position: .word 0x03004D4A
+    thresholds: .word 0x{GBA_BASE + SHOOT_THRESHOLD_TABLE:08X}
+    palette_base: .word 0x05000000
+    scanline_control: .word 0x030012B6
+    """, SHOOT_THRESHOLD_CALLBACK)
 
 
 def build_shoot_palette_helper() -> bytes:
@@ -2771,6 +2886,16 @@ def main() -> int:
             "Digimon Shoot converted timer palette blocks",
         ),
         (
+            SHOOT_DISPLAY_CALLBACK,
+            build_shoot_display_callback(),
+            "Digimon Shoot normal display callback",
+        ),
+        (
+            SHOOT_THRESHOLD_CALLBACK,
+            build_shoot_threshold_callback(),
+            "Digimon Shoot threshold scanline callback",
+        ),
+        (
             FLICKER_CALLBACK,
             build_flicker_callback(source),
             "waterfall/Iraira display callback",
@@ -3078,6 +3203,8 @@ def main() -> int:
             "scroll_table": SHOOT_SCROLL_TABLE,
             "timer_callback": SHOOT_TIMER_CALLBACK,
             "timer_palettes": SHOOT_TIMER_PALETTES,
+            "display_callback": SHOOT_DISPLAY_CALLBACK,
+            "threshold_callback": SHOOT_THRESHOLD_CALLBACK,
             "update_source": "WSC 1.5 stage overlay relative 0x2067..0x20CA",
             "palette_source": "WSC 1.5 stage overlay relative 0x20CB..0x226A and 0x226B..0x23A1",
             "main_loop_source": "WSC 1.5 object overlay 4090:7572..7641",
@@ -3085,12 +3212,17 @@ def main() -> int:
             "scroll_palette_source": "WSC 1.5 object overlay 4090:76D1..7730",
             "timer_callback_source": "WSC 1.5 object overlay 4090:989C..9907",
             "timer_palette_source": "WSC 1.5 physical 0x3D4B20 + offsets 0/0x26/0x4C",
-            "lineage_callback": "retail GBA 0x080C97B8; temporary until 5EEA:0C3A is translated",
+            "display_callback_source": "WSC 1.5 5EEA:0C3A normal branch and 5EEA:0D42",
+            "display_transition_fallback": (
+                "retail GBA 0x080C97B8 only while Shoot flag 0x400 is set; "
+                "5EEA:0D87/0E0B transition state remains pending"
+            ),
             "claim": (
                 "native threshold scan, exact three-rate converted palette animation, "
                 "stage-11 main-loop routing, dedicated core loop, and exact scroll-palette "
-                "state machine plus the native timer palette callback and its three converted "
-                "blocks; full minigame object/rules/reward flow remains pending"
+                "state machine plus the native timer palette callback, its three converted "
+                "blocks, and the normal Shoot display/threshold interrupt path; transition "
+                "state and full minigame object/rules/reward flow remain pending"
             ),
         },
         "spawn_hook": SPAWN_HOOK,

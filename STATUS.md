@@ -1,6 +1,6 @@
 # Port status
 
-Snapshot date: 2026-08-28 (Asia/Seoul)
+Snapshot date: 2026-08-31 (Asia/Seoul)
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -21,21 +21,38 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
 
-The current internal composite candidate is `full-integrated-v29.gba`, identified
+The current internal composite candidate is `full-integrated-v31.gba`, identified
 only by SHA-256
-`46A934889ECF226A988153DF754D8D918122990C7A14521E812BA031829E8EE4`.
+`16F4C7A827F3F9D241A3E5C2AE3D2EB2803447F7693BDD1F88400EA2D97BE4AC`.
 That file is intentionally excluded from Git. Static branch/disassembly checks
-have been performed for the newest hooks, but no emulator-pass claim is made
-for this candidate.
+and independent rebuild hash checks have been performed for the newest hooks,
+but no emulator-pass claim is made for this candidate.
 
-v29 is the first current composite after the recent stage work. Its checked
-build chain is v28 stage integration
-`9430FD8F890DEC4B44F73EABAFCF7A5ECF14831F41117A353A24D28BDDE35A95`
+v31 is the current composite after the recent Shoot display work. Its checked
+build chain is v30 stage integration
+`BA9EDDDFAE4499B2D72DCD8DDE3001128F2A4012D054796321750AE9DC9800FE`
 → progression/unlock integration
-`621FB828E1D06F0797953D2EA419DF22BBB1FB1FAC2BA59F184E7399380589C0`
-→ Zeed final-boss integration. This corrects the previous state where the
-newest stage candidate and the progression/boss candidates existed only as
-separate ROM layers.
+`DF7EF1537FBCA48C2FA08450A0535230EB46F6E058020CAE01C5859DE0ED0CA5`
+→ Zeed final-boss integration. Repeating all three builds produces the same
+hashes byte-for-byte.
+
+## Completion estimate
+
+The current end-to-end estimate is **about 55–60%, with 57% as the working
+center value**. This is a planning estimate, not completion evidence. Static
+code/data integration alone is approximately 68%; release readiness is lower
+because the remaining runtime systems are substantial and final emulator,
+save, regression, and BPS verification have intentionally not started.
+
+| Area | Approximate state | Main remaining work |
+|---|---:|---|
+| Fighters and evolution resources/routes | 80% | Real evolution transitions and final regression |
+| Added stage content and mechanics | 65% | Train vents/bounce, suction, remaining vertical branches |
+| Alternate final boss | 70% | End-to-end runtime route, loss/continue/victory regression |
+| Digimon Shoot | 45% | Rules/objects, transition state, reward, win/loss, exit |
+| Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, opening implementation |
+| Build tooling and static integration | 85% | Full final-candidate audit and release packaging |
+| Final emulator/save QA and BPS release | 0% | Deliberately deferred until all content is connected |
 
 v26 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
 `0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
@@ -70,8 +87,12 @@ same stride. v28 replaces the final temporary call to commercial
 `0x083731A0` with the translated Shoot-only timer callback `4090:989C`. Its
 three WSC runtime-palette records are converted by a rule verified against all
 three records selected by the commercial `4090:6FDE`→GBA `0x083731A0`
-lineage, including the distinct GBA record trailer. Rules, reward, win/loss,
-and exit remain release gates.
+lineage, including the distinct GBA record trailer. v30 replaces the normal
+display callback with a translation of WSC `5EEA:0C3A` and connects the
+translated scanline threshold callback `5EEA:0D42`. The Shoot flag `0x400`
+transition branch still falls back to the matching retail GBA callback until
+the private state used by WSC `5EEA:0D87/0E0B` is mapped without guessing.
+Rules, reward, win/loss, and exit remain release gates.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
@@ -86,8 +107,8 @@ object-construction consumers.
 
 1. Finish the train, waterfall, and Iraira Room runtime mechanics and remaining
    vertical-stage engine branches.
-2. Port Digimon Shoot rules, update/display callbacks, menu/reward route,
-   win/loss behavior, and exit transitions.
+2. Port Digimon Shoot rules/object callbacks, the remaining transition state,
+   menu/reward route, win/loss behavior, and exit transitions.
 3. Port tag/reward/rating persistence and the extended opening/presentation
    sequence.
 4. Combine every declared Ver. 1.5 population in one reproducible candidate and
