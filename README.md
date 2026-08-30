@@ -25,12 +25,20 @@ supplied-save validation are intentionally reserved for the fully integrated
 release candidate, and only the resulting patch—not a ROM image—will be placed
 in `outputs/`.
 
-The dated implementation snapshot and remaining release gates are tracked in
-[`STATUS.md`](STATUS.md). Reverse-engineering evidence is kept locally because
+The recovery audit, actual-runtime matrix, and corrected progress baseline are
+tracked in [`PORT_AUDIT.md`](PORT_AUDIT.md). The earlier implementation notes
+and remaining release gates are retained in [`STATUS.md`](STATUS.md).
+Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The current internal composite is built in three checked layers: stage v30,
-progression/unlocks v5, then the Zeed boss layer (composite v31). Each builder refuses an
-unexpected input SHA-256, so a later stage change must deliberately advance
-the two downstream hashes before a new composite can be produced.
+The current internal composite is built in four checked layers: base roster,
+stage v30, progression/unlocks v5, then the Zeed boss layer (composite v31).
+Each builder refuses an unexpected input SHA-256, so a later stage change must
+deliberately advance the downstream hashes before a new composite can be
+produced.
+
+The current four-layer rebuild still depends on pre-generated ignored asset
+directories. It is reproducible from those fixed inputs, but it is not yet a
+single clean build from the original ROMs; see the reproducibility finding in
+[`PORT_AUDIT.md`](PORT_AUDIT.md).

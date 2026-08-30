@@ -2,6 +2,13 @@
 
 Snapshot date: 2026-08-31 (Asia/Seoul)
 
+> **Recovery correction:** [`PORT_AUDIT.md`](PORT_AUDIT.md) is the
+> authoritative current status. The earlier 55-60% / 57% planning estimate is
+> withdrawn because it mixed static integration with unverified runtime
+> behavior. The exact v31 candidate currently has direct evidence only for GBA
+> boot/first-frame rendering; overall runtime-evidenced progress is no more
+> than 5%. The single next milestone is `BOOT -> TITLE`.
+
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
 release and contains no original or patched ROM image, save, extracted asset,
@@ -36,15 +43,13 @@ build chain is v30 stage integration
 → Zeed final-boss integration. Repeating all three builds produces the same
 hashes byte-for-byte.
 
-## Completion estimate
+## Historical implementation estimate (withdrawn)
 
-The current end-to-end estimate is **about 55–60%, with 57% as the working
-center value**. This is a planning estimate, not completion evidence. Static
-code/data integration alone is approximately 68%; release readiness is lower
-because the remaining runtime systems are substantial and final emulator,
-save, regression, and BPS verification have intentionally not started.
+The table below is retained only as a record of the former static-work
+estimate. It must not be read as playable or release progress. Runtime status
+and corrected progress are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
 
-| Area | Approximate state | Main remaining work |
+| Area | Former static-work estimate | Main remaining work |
 |---|---:|---|
 | Fighters and evolution resources/routes | 80% | Real evolution transitions and final regression |
 | Added stage content and mechanics | 65% | Train vents/bounce, suction, remaining vertical branches |
@@ -52,7 +57,7 @@ save, regression, and BPS verification have intentionally not started.
 | Digimon Shoot | 45% | Rules/objects, transition state, reward, win/loss, exit |
 | Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, opening implementation |
 | Build tooling and static integration | 85% | Full final-candidate audit and release packaging |
-| Final emulator/save QA and BPS release | 0% | Deliberately deferred until all content is connected |
+| Final emulator/save QA and BPS release | 0% | Deferred until all content is connected |
 
 v26 retains the corrected WSC `ES:0384` waterfall-state mapping to GBA
 `0x0300256A`, but retracts v20's provisional mode-3 initializer. Direct table
