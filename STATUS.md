@@ -7,9 +7,9 @@ Snapshot date: 2026-08-31 (Asia/Seoul)
 > withdrawn because it mixed static integration with unverified runtime
 > behavior. A roster-record relocation defect in v31 was isolated and fixed.
 > Exact v32 now passes `BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` in
-> non-displaying mGBA runs; overall runtime-evidenced progress remains no more
-> than 5%. The single next runtime milestone is
-> `CHARACTER SELECT -> FIRST RETAIL BATTLE`.
+> non-displaying mGBA runs and reaches the first retail battle; overall
+> runtime-evidenced progress is no more than 8%. The single next runtime
+> milestone is `FIRST RETAIL BATTLE INPUT RESPONSE`.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -39,6 +39,11 @@ Exact v32 reaches title, responds to Start with a main-menu frame byte-identical
 to the USA control, and responds to A by entering the same character-select
 display/background/game state while mGBA runs on a private, non-interactive
 desktop. Character roster correctness remains unverified.
+
+Selecting retail character ID 0 also reaches the same baseline battle state,
+stage byte, and player pointers as the USA control. This is entry proof only;
+battle input, collision, attacks, damage, results, and added-content behavior
+remain unverified.
 
 v31 is retained as superseded history. Its relocated roster records omitted
 the canonical first eight bytes, causing the opening sequence to return to the

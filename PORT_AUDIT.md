@@ -167,6 +167,17 @@ transition, not for roster correctness. Manifests are under ignored
 directories `evidence/usa-gdb-character-select-20260831/` and
 `evidence/full-fixed-gdb-character-select-20260831/`.
 
+A third A press at 61.0 seconds and capture at 75.0 seconds entered the first
+retail battle in both ROMs. `DISPCNT=0x3F40`, the full palette, battle state
+`0x03002310..0x0300231F`, stage byte 1, and player pointers
+`0x0300489C/A0` match. Exact v32 differs as intended in the selection list
+(`0x03004710`) and maximum cursor (12 instead of 6); dynamic battle VRAM and
+the frame are not byte-identical because the independently timed battles had
+already advanced to different animation/camera phases. This proves baseline
+battle entry only. Manifests are under ignored directories
+`evidence/usa-gdb-first-battle-20260831/` and
+`evidence/full-fixed-gdb-first-battle-20260831/`.
+
 | Runtime area | Status | Evidence or limitation |
 |---|---|---|
 | ROM build and header | PASS | Four corrected layers rebuilt; header validated |
@@ -176,9 +187,9 @@ directories `evidence/usa-gdb-character-select-20260831/` and
 | Main menu | PASS | Post-Start frame is byte-identical to the USA control |
 | Input response | PASS | Timed Start press/release reached the menu |
 | Character select entry | PASS | A input reached matching display/background/game state |
-| First gameplay entry | UNKNOWN | Not reached on exact v32 |
-| Background/map display | UNKNOWN | Not reached on exact v32 |
-| Sprites, animation, palettes, scrolling | UNKNOWN | Not exercised on exact v32 |
+| First gameplay entry | PASS | ID-0 selection reached matching retail battle state |
+| Background/map display | PASS | First retail arena rendered; stage ID matches control |
+| Sprites, animation, palettes, scrolling | PARTIAL | Rendered in baseline battle; behavior not exercised |
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
@@ -211,23 +222,23 @@ observed from the exact corrected v32 candidate:
 
 | Area | Runtime-evidenced progress |
 |---|---:|
-| Graphics/display | about 8% (through character-select background only) |
-| Game logic | 0% |
-| Input | about 2% (Start and A transitions only) |
+| Graphics/display | about 12% (through first retail arena entry only) |
+| Game logic | about 1% (baseline battle transition only) |
+| Input | about 3% (Start and A transitions only) |
 | Audio | 0% |
 | Save/load | 0% |
-| Overall playable/release progress | no more than 5% |
+| Overall playable/release progress | no more than 8% |
 
 This does not mean the committed static code is absent. It means that code has
 not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-`BOOT -> TITLE`, `TITLE -> MAIN MENU`, and `MAIN MENU -> CHARACTER SELECT` are
-complete for exact v32. The next and only active runtime milestone is
-**CHARACTER SELECT -> FIRST RETAIL BATTLE on the exact v32 hash**, using
-controlled input injection on the same non-displaying harness. This verifies
-the baseline path before any added-roster runtime claim.
+The baseline path through `FIRST RETAIL BATTLE` is complete for exact v32. The
+next and only active runtime milestone is **FIRST RETAIL BATTLE INPUT RESPONSE
+on the exact v32 hash**, using one bounded directional input on the same
+non-displaying harness. Collision, attacks, damage, victory, added roster, and
+added stages remain outside that milestone.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current

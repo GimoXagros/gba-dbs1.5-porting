@@ -315,6 +315,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--press-a-at",
         type=float,
+        action="append",
         help="press the default mGBA A key (X) at this runtime second",
     )
     parser.add_argument("--key-hold-seconds", type=float, default=0.25)
@@ -337,14 +338,12 @@ def main() -> int:
         )
     if args.seconds <= 0:
         raise ValueError("--seconds must be positive")
-    scheduled_inputs = [
-        (at_seconds, key, virtual_key)
-        for at_seconds, key, virtual_key in (
-            (args.press_start_at, "Start", VK_RETURN),
-            (args.press_a_at, "A", VK_X),
-        )
-        if at_seconds is not None
-    ]
+    scheduled_inputs = []
+    if args.press_start_at is not None:
+        scheduled_inputs.append((args.press_start_at, "Start", VK_RETURN))
+    scheduled_inputs.extend(
+        (at_seconds, "A", VK_X) for at_seconds in (args.press_a_at or [])
+    )
     scheduled_inputs.sort()
     if scheduled_inputs:
         if scheduled_inputs[0][0] < 0 or args.key_hold_seconds <= 0:
