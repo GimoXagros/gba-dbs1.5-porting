@@ -51,10 +51,10 @@ Exact static correspondence for all eight retail GBA stages is recorded in
 invalidated the earlier assumption that banks `0x4B` and `0x4C` were wholly
 new; both contain relocated retail content.
 
-## Internal stage build v30 boundary
+## Current internal stage boundary
 
-`build/stage-integrated-v30.gba` (internal only; SHA-256
-`BA9EDDDFAE4499B2D72DCD8DDE3001128F2A4012D054796321750AE9DC9800FE`)
+`build/audit-fix-v32/stage-fixed.gba` (internal only; SHA-256
+`FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED`)
 contains the corrected arena resources, twelve-entry initializer and update
 dispatches, temporary character routes for the three battle stages, and exact
 Ver. 1.5 spawn records. The new IDs are also bounded at each currently

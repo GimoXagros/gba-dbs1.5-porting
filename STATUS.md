@@ -5,9 +5,10 @@ Snapshot date: 2026-08-31 (Asia/Seoul)
 > **Recovery correction:** [`PORT_AUDIT.md`](PORT_AUDIT.md) is the
 > authoritative current status. The earlier 55-60% / 57% planning estimate is
 > withdrawn because it mixed static integration with unverified runtime
-> behavior. The exact v31 candidate currently has direct evidence only for GBA
-> boot/first-frame rendering; overall runtime-evidenced progress is no more
-> than 5%. The single next milestone is `BOOT -> TITLE`.
+> behavior. A roster-record relocation defect in v31 was isolated and fixed.
+> Exact v32 now passes `BOOT -> TITLE` in a non-displaying mGBA run; overall
+> runtime-evidenced progress remains no more than 5%. The single next runtime
+> milestone is `TITLE -> MAIN MENU`.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -28,20 +29,18 @@ memory dump, screenshot, or emulator state.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
 
-The current internal composite candidate is `full-integrated-v31.gba`, identified
+The corrected internal composite candidate is `full-fixed.gba`, identified
 only by SHA-256
-`16F4C7A827F3F9D241A3E5C2AE3D2EB2803447F7693BDD1F88400EA2D97BE4AC`.
-That file is intentionally excluded from Git. Static branch/disassembly checks
-and independent rebuild hash checks have been performed for the newest hooks,
-but no emulator-pass claim is made for this candidate.
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
+That file is intentionally excluded from Git. Its corrected base, stage, and
+progression layer hashes are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
+Exact v32 reaches a title frame whose PNG is byte-identical to the known-good
+reference while mGBA runs on a private, non-interactive desktop.
 
-v31 is the current composite after the recent Shoot display work. Its checked
-build chain is v30 stage integration
-`BA9EDDDFAE4499B2D72DCD8DDE3001128F2A4012D054796321750AE9DC9800FE`
-→ progression/unlock integration
-`DF7EF1537FBCA48C2FA08450A0535230EB46F6E058020CAE01C5859DE0ED0CA5`
-→ Zeed final-boss integration. Repeating all three builds produces the same
-hashes byte-for-byte.
+v31 is retained as superseded history. Its relocated roster records omitted
+the canonical first eight bytes, causing the opening sequence to return to the
+initial frame. v32 corrects only that record origin and advances the guarded
+downstream hashes; no unrelated gameplay implementation was changed.
 
 ## Historical implementation estimate (withdrawn)
 

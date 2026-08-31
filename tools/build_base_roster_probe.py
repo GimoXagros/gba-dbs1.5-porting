@@ -13,11 +13,15 @@ import struct
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 GBA_BASE = 0x08000000
 EXPANDED_BYTES = 0x800000
-RECORD_TABLE = 0x0D3FC0
+# The engine's canonical 0x20-byte record begins eight bytes before the
+# palette/P4-facing pointer used by a few consumers.  Starting at 0x0D3FC0
+# drops fields 0 and 1 from every relocated record and makes the opening demo
+# dereference 0xFFFFFFFF through the consumer at ROM offset 0x83CF8.
+RECORD_TABLE = 0x0D3FB8
 RECORD_BYTES = 0x20
 RESOURCE_ENTRY_COUNT = 15
 EVOLUTION_RECORD_TABLE = RECORD_TABLE + 12 * RECORD_BYTES
-EXPANDED_BASE_TABLE = 0x4A8100
+EXPANDED_BASE_TABLE = 0x4A80F8
 EXPANDED_EVOLUTION_TABLE = EXPANDED_BASE_TABLE + RESOURCE_ENTRY_COUNT * RECORD_BYTES
 HOOK_SITE = 0x08170C
 HOOK_TARGET = 0x5B0000
@@ -48,28 +52,28 @@ FINAL_OPPONENT_TABLE_SITE = 0x08B616
 EXPECTED_FINAL_OPPONENT_ID = 0x0C
 RELOCATED_FINAL_OPPONENT_ID = 0x0F
 RESOURCE_POINTER_RELOCATIONS = {
-    GBA_BASE + RECORD_TABLE - 8: (
-        GBA_BASE + EXPANDED_BASE_TABLE - 8,
+    GBA_BASE + RECORD_TABLE: (
+        GBA_BASE + EXPANDED_BASE_TABLE,
         (0x1F4A0, 0x1F518, 0x82428, 0x8328C, 0x83CF8, 0x840E8,
          0x8440C, 0x85CE8, 0x867B8, 0xB9620, 0xBBAC4, 0xBBB38,
          0xBBB50, 0xBD528, 0xBFAB8, 0xCC234, 0xCC70C, 0x33F1A4,
          0x33F1A8, 0x33F1B4, 0x33F1B8, 0x33F1C4, 0x33F1C8,
          0x3534BC, 0x3534C0, 0x3534C4),
     ),
-    GBA_BASE + RECORD_TABLE: (
-        GBA_BASE + EXPANDED_BASE_TABLE,
-        (0x3534CC,),
-    ),
     GBA_BASE + RECORD_TABLE + 8: (
         GBA_BASE + EXPANDED_BASE_TABLE + 8,
-        (0x3534C8,),
+        (0x3534CC,),
     ),
-    GBA_BASE + EVOLUTION_RECORD_TABLE - 8: (
-        GBA_BASE + EXPANDED_EVOLUTION_TABLE - 8,
-        (0xBFABC, 0x3534D4, 0x377D18),
+    GBA_BASE + RECORD_TABLE + 16: (
+        GBA_BASE + EXPANDED_BASE_TABLE + 16,
+        (0x3534C8,),
     ),
     GBA_BASE + EVOLUTION_RECORD_TABLE: (
         GBA_BASE + EXPANDED_EVOLUTION_TABLE,
+        (0xBFABC, 0x3534D4, 0x377D18),
+    ),
+    GBA_BASE + EVOLUTION_RECORD_TABLE + 8: (
+        GBA_BASE + EXPANDED_EVOLUTION_TABLE + 8,
         (0x3534D0,),
     ),
 }
@@ -342,6 +346,15 @@ def main() -> int:
             record_id=runtime_id - 1, field=7, target=evolution_p1_targets[runtime_id],
         )
 
+    if base_table[:11 * RECORD_BYTES] != source[
+        RECORD_TABLE:RECORD_TABLE + 11 * RECORD_BYTES
+    ]:
+        raise AssertionError("unchanged base records 0..10 moved or changed")
+    if evolution_table[:10 * RECORD_BYTES] != source[
+        EVOLUTION_RECORD_TABLE:EVOLUTION_RECORD_TABLE + 10 * RECORD_BYTES
+    ]:
+        raise AssertionError("unchanged evolution records 0..9 moved or changed")
+
     for target, table, label in (
         (EXPANDED_BASE_TABLE, base_table, "expanded base resource table"),
         (EXPANDED_EVOLUTION_TABLE, evolution_table, "expanded evolution resource table"),
@@ -417,6 +430,12 @@ def main() -> int:
         "record_writes": record_writes,
         "expanded_base_table": EXPANDED_BASE_TABLE,
         "expanded_evolution_table": EXPANDED_EVOLUTION_TABLE,
+        "record_origin_correction": {
+            "base_source": RECORD_TABLE,
+            "evolution_source": EVOLUTION_RECORD_TABLE,
+            "record_bytes": RECORD_BYTES,
+            "opening_consumer_literal_site": 0x83CF8,
+        },
         "resource_pointer_relocations": [
             {
                 "old": f"0x{old:08X}",

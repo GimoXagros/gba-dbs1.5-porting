@@ -32,11 +32,14 @@ Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The current internal composite is built in four checked layers: base roster,
-stage v30, progression/unlocks v5, then the Zeed boss layer (composite v31).
-Each builder refuses an unexpected input SHA-256, so a later stage change must
+The corrected internal composite is built in four checked layers: base roster,
+stage integration, progression/unlocks, then the Zeed boss layer (composite
+v32, SHA-256
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`).
+Each builder refuses an unexpected input SHA-256, so a layer change must
 deliberately advance the downstream hashes before a new composite can be
-produced.
+produced. v32 passes the non-displaying `BOOT -> TITLE` runtime milestone;
+the main menu and gameplay remain unverified.
 
 The current four-layer rebuild still depends on pre-generated ignored asset
 directories. It is reproducible from those fixed inputs, but it is not yet a

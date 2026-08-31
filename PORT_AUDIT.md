@@ -10,10 +10,10 @@ identified below has produced direct evidence for it.
 ## Repository state
 
 - Branch: `codex/progress-snapshot`
-- Audited commit: `9d306e71eb9926b4a57b489dd59318ad445996d4`
+- Recovery-audit base commit: `48b5d3932d92b334454dc9a9bc00ef5f6fcf6ca1`
 - Available repository baseline: `ffa4ddb75cc5277d9e483e018447917480083ee3`
 - Working tree at the start of the audit: clean
-- Commits from baseline through audited commit: 12
+- Commits from baseline through recovery-audit base: 12
 - Configured Git remote: none
 - Tracked ROM, save, extracted binary, screenshot, or emulator state: none
 
@@ -97,66 +97,79 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The current candidate was rebuilt in four guarded layers into the ignored
-`build/audit-v31-20260831/` directory:
+The corrected candidate was rebuilt in four guarded layers into the ignored
+`build/audit-fix-v32/` directory:
 
 | Layer | SHA-256 |
 |---|---|
-| Base roster | `38E5F35AA4C9A92EC0738DE01EC6C1654F0A0CC0BD75289054383FBE9A7E7AB4` |
-| Stage v30 | `BA9EDDDFAE4499B2D72DCD8DDE3001128F2A4012D054796321750AE9DC9800FE` |
-| Progression v5 | `DF7EF1537FBCA48C2FA08450A0535230EB46F6E058020CAE01C5859DE0ED0CA5` |
-| Full composite v31 | `16F4C7A827F3F9D241A3E5C2AE3D2EB2803447F7693BDD1F88400EA2D97BE4AC` |
+| Corrected base roster | `5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA` |
+| Stage integration | `FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED` |
+| Progression integration | `6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623` |
+| Full composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
 valid stored/computed complement byte of `0x6C`.
 
-The layer hashes reproduce the previously recorded v31 hashes byte-for-byte.
-However, this is not yet a clean build from only the two original ROMs:
+The guarded layers are deterministic from their current inputs. However, this
+is not yet a clean build from only the two original ROMs:
 `build/converted-assets` and `build/stage-assets-v9` must already exist, and no
 single checked-in command regenerates both directories and all four layers.
 Closing that gap is required before release packaging.
 
-## Runtime status for exact v31 candidate
+## Boot regression and correction
 
-Emulator: mGBA 0.10.5 release build. Candidate SHA-256:
-`16F4C7A827F3F9D241A3E5C2AE3D2EB2803447F7693BDD1F88400EA2D97BE4AC`.
+The exact v31 composite was rechecked with mGBA on a private Windows desktop,
+with no emulator window visible on the user's monitor. At 45 seconds it had
+returned to the initial white/blue frame instead of reaching the title. The
+base, stage, progression, and full v31 layers shared this failure, while the
+unaltered USA ROM reached the title under the same harness.
 
-The emulator opened the candidate at approximately 59.9 fps and rendered its
-first GBA frame (white inner field with blue border). Verification was then
-stopped before the title screen was observed. The interruption is recorded as
-`UNKNOWN`, not as a ROM failure.
+Binary ablation isolated the failure to the relocated roster literal at ROM
+offset `0x83CF8`. The builder treated `0x0D3FC0` as the start of each 0x20-byte
+record, but the engine consumer at `0x08088250` reads fields at offsets 0, 4,
+and 8 from the canonical record base `0x0D3FB8`. The relocated table therefore
+lost its first eight bytes and supplied `0xFFFFFFFF` fields during the opening
+sequence. The minimal correction relocates from `0x0D3FB8` to `0x4A80F8`,
+preserving all existing pointer values while copying complete records. Builder
+assertions now require unchanged retail records to remain byte-identical.
 
-At the user's request, subsequent verification was run without displaying an
-emulator window on the monitor. A development mGBA build was started hidden,
-offscreen, and on a separate non-interactive Windows desktop. Its startup Lua
-file loaded, but no ROM controller or frame callback was attached; launching
-the ROM first and the script second also produced no attributable callback.
-Those attempts establish a harness limitation only. They do not change the
-candidate's title status from `UNKNOWN` and are not counted as runtime proof.
+## Runtime status for exact v32 candidate
+
+The exact full v32 SHA-256 is
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
+It was run for 45 seconds with development mGBA SHA-256
+`0D9A2779ADD78D41A093C3AF8CEC7D72CC07A5451C8A1E1B167B48CD54950288`
+on a private, non-interactive Windows desktop. The captured 240x160 title
+frame SHA-256 is
+`644C6C5269FB847FF90BB9ADDFECC11462830A96CFCC47D9D33A2620455F387B`,
+byte-identical to the historical known-good title capture. The evidence and
+memory hashes are recorded under ignored directory
+`evidence/full-fixed-gdb-title-20260831-r2/`; its manifest records
+`monitor_visible: false`.
 
 | Runtime area | Status | Evidence or limitation |
 |---|---|---|
-| ROM build and header | PASS | Four layers rebuilt; header validated |
-| GBA boot / first rendered frame | PASS | Exact v31 opened and rendered in mGBA |
-| Initialization beyond first frame | PARTIAL | Execution began; completion not observed |
-| Title/logo | UNKNOWN | Verification stopped before observation |
-| Main menu | UNKNOWN | Not reached on exact v31 |
-| Input response | UNKNOWN | Not exercised on exact v31 |
-| First gameplay entry | UNKNOWN | Not reached on exact v31 |
-| Background/map display | UNKNOWN | Not reached on exact v31 |
-| Sprites, animation, palettes, scrolling | UNKNOWN | Not exercised on exact v31 |
-| Collision, events, battle logic | UNKNOWN | Not exercised on exact v31 |
-| Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v31 runtime proof |
-| Added stage mechanics | UNKNOWN | Static code exists; no exact-v31 runtime proof |
+| ROM build and header | PASS | Four corrected layers rebuilt; header validated |
+| GBA boot / first rendered frame | PASS | Exact v32 rendered through the opening sequence |
+| Initialization beyond first frame | PASS | Exact v32 reached the stable title frame at 45 s |
+| Title/logo | PASS | Exact title PNG matches known-good capture byte-for-byte |
+| Main menu | UNKNOWN | No input was injected into exact v32 |
+| Input response | UNKNOWN | Not exercised on exact v32 |
+| First gameplay entry | UNKNOWN | Not reached on exact v32 |
+| Background/map display | UNKNOWN | Not reached on exact v32 |
+| Sprites, animation, palettes, scrolling | UNKNOWN | Not exercised on exact v32 |
+| Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
+| Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
+| Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
 | Digimon Shoot complete rules and transitions | NOT IMPLEMENTED | Rules, transition state, rewards, win/loss, and exit remain |
 | Tag/rating/opening additions | NOT IMPLEMENTED | Required producers, persistence/UI, and opening remain |
-| Alternate final boss route | UNKNOWN | Static integration exists; no exact-v31 runtime proof |
-| BGM | UNKNOWN | Not verified on exact v31 |
-| SFX | UNKNOWN | Not verified on exact v31 |
+| Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
+| BGM | UNKNOWN | Not verified on exact v32 |
+| SFX | UNKNOWN | Not verified on exact v32 |
 | Save/load | UNKNOWN | Deferred save has not been used |
-| Soft reset / restart | UNKNOWN | Not exercised on exact v31 |
-| Extended stability | UNKNOWN | No exact-v31 soak or regression run |
+| Soft reset / restart | UNKNOWN | Not exercised on exact v32 |
+| Extended stability | UNKNOWN | No exact-v32 soak or regression run |
 
 ## Known implementation gaps
 
@@ -174,11 +187,11 @@ candidate's title status from `UNKNOWN` and are not counted as runtime proof.
 
 The previous 55-60% / 57% figure mixed static implementation with assumed
 runtime readiness and is withdrawn. Based strictly on behavior directly
-observed from the exact v31 candidate:
+observed from the exact corrected v32 candidate:
 
 | Area | Runtime-evidenced progress |
 |---|---:|
-| Graphics/display | about 2% (first frame only) |
+| Graphics/display | about 5% (opening-to-title only) |
 | Game logic | 0% |
 | Input | 0% |
 | Audio | 0% |
@@ -190,15 +203,11 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-**BOOT -> TITLE on the exact v31 hash.**
-
-No new gameplay feature, broad refactor, or unrelated cleanup should begin
-until the title/logo screen is observed reproducibly. A failure must first be
-separated from emulator or automation-harness failure before any ROM code is
-changed. Once this milestone passes, the next milestone may be chosen from the
-new evidence; it is not pre-declared as completed work.
+`BOOT -> TITLE` is complete for exact v32. The next and only active runtime
+milestone is **TITLE -> MAIN MENU on the exact v32 hash**, using controlled
+input injection on the same non-displaying harness. No gameplay feature or
+broad refactor begins until this transition is reproducibly observed.
 
 All further runtime checks must remain non-displaying unless the user changes
-that requirement. A suitable headless or isolated renderer with an
-attributable frame-dump interface is therefore the immediate verification
-dependency for this milestone.
+that requirement. `tools/mgba_headless_gdb_capture.py` provides the current
+private-desktop, attributable frame-and-memory capture boundary.
