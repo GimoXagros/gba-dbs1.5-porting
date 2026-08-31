@@ -32,8 +32,9 @@ Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The corrected internal composite is built in four checked layers: base roster,
-stage integration, progression/unlocks, then the Zeed boss layer (composite
+The corrected internal composite is built from the three hash-identified
+originals, then assembled in four checked layers: base roster, stage
+integration, progression/unlocks, and the Zeed boss layer (composite
 v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`).
 Each builder refuses an unexpected input SHA-256, so a layer change must
@@ -44,7 +45,16 @@ correctness remains unverified. Retail character ID 0 also reaches the first
 baseline battle and consumes one Right input through the retail player path,
 but broader battle behavior remains unverified.
 
-The current four-layer rebuild still depends on pre-generated ignored asset
-directories. It is reproducible from those fixed inputs, but it is not yet a
-single clean build from the original ROMs; see the reproducibility finding in
-[`PORT_AUDIT.md`](PORT_AUDIT.md).
+The single clean-build entry point is:
+
+```powershell
+python tools\build_current_candidate.py `
+  <USA-GBA-original> <WSC-1.0-original> <WSC-1.5-original> <output-directory>
+```
+
+It regenerates the commercial WSC-to-GBA comparison corpus, every currently
+consumed character/evolution/VS/stage/boss asset, and all four ROM layers. It
+fails on any unexpected source, intermediate, asset, or layer SHA-256. Two
+independent empty-directory runs reproduced exact v32 byte-for-byte. This is a
+reproducibility result for the current incomplete candidate, not a complete
+Ver. 1.5 port or a distributable ROM.

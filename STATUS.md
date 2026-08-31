@@ -1,6 +1,6 @@
 # Port status
 
-Snapshot date: 2026-08-31 (Asia/Seoul)
+Snapshot date: 2026-09-01 (Asia/Seoul)
 
 > **Recovery correction:** [`PORT_AUDIT.md`](PORT_AUDIT.md) is the
 > authoritative current status. The earlier 55-60% / 57% planning estimate is
@@ -10,8 +10,10 @@ Snapshot date: 2026-08-31 (Asia/Seoul)
 > non-displaying mGBA runs and reaches the first retail battle; overall
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
-> active correction milestone is now a clean current-candidate build from
-> declared original inputs, removing the ignored pre-generated asset gap.
+> clean current-candidate milestone is now complete: two independent builds
+> from the hash-identified USA GBA, WSC 1.0, and WSC 1.5 originals reproduce
+> exact v32 byte-for-byte. This closes a build-reproducibility gap only; the
+> overall runtime-evidenced progress remains no more than 8%.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -51,6 +53,16 @@ A bounded Right press is now verified at the exact retail consumer in both the
 USA control and v32: hardware input, translated frame input, registers, and
 the current player object's input fields agree. Attacks, collision, damage,
 results, and added-content behavior remain unverified.
+
+`tools/build_current_candidate.py` is now the checked-in main build entry
+point. It regenerates the P4 comparison corpus and all currently consumed
+binary assets from the three original ROMs before assembling the four guarded
+layers. Two builds in separate empty output directories both produced
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
+The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
+palette and tile ranges are read directly from WSC 1.5, while the verified
+sparse 28x18 runtime composition is an explicit checked-in build rule. The
+newly generated VS blob is byte-identical to the prior RAM-derived blob.
 
 v31 is retained as superseded history. Its relocated roster records omitted
 the canonical first eight bytes, causing the opening sequence to return to the
