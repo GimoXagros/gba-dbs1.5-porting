@@ -41,7 +41,8 @@ deliberately advance the downstream hashes before a new composite can be
 produced. v32 passes the non-displaying
 `BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` runtime milestones; roster
 correctness remains unverified. Retail character ID 0 also reaches the first
-baseline battle, but battle behavior remains unverified.
+baseline battle and consumes one Right input through the retail player path,
+but broader battle behavior remains unverified.
 
 The current four-layer rebuild still depends on pre-generated ignored asset
 directories. It is reproducible from those fixed inputs, but it is not yet a

@@ -9,7 +9,9 @@ Snapshot date: 2026-08-31 (Asia/Seoul)
 > Exact v32 now passes `BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` in
 > non-displaying mGBA runs and reaches the first retail battle; overall
 > runtime-evidenced progress is no more than 8%. The single next runtime
-> milestone is `FIRST RETAIL BATTLE INPUT RESPONSE`.
+> milestone was completed by observing the retail Right-input consumer. The
+> active correction milestone is now a clean current-candidate build from
+> declared original inputs, removing the ignored pre-generated asset gap.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -44,6 +46,11 @@ Selecting retail character ID 0 also reaches the same baseline battle state,
 stage byte, and player pointers as the USA control. This is entry proof only;
 battle input, collision, attacks, damage, results, and added-content behavior
 remain unverified.
+
+A bounded Right press is now verified at the exact retail consumer in both the
+USA control and v32: hardware input, translated frame input, registers, and
+the current player object's input fields agree. Attacks, collision, damage,
+results, and added-content behavior remain unverified.
 
 v31 is retained as superseded history. Its relocated roster records omitted
 the canonical first eight bytes, causing the opening sequence to return to the

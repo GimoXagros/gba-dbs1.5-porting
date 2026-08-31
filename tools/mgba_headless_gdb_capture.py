@@ -27,7 +27,9 @@ WM_KEYUP = 0x0101
 VK_F12 = 0x7B
 VK_RETURN = 0x0D
 VK_X = 0x58
+VK_RIGHT = 0x27
 MGBA_GDB_PORT = 2345
+RIGHT_INPUT_CONSUMER = 0x08375140
 
 
 class STARTUPINFOW(ctypes.Structure):
@@ -285,6 +287,25 @@ class GdbRemote:
         return bytes(output)
 
 
+def capture_player_objects(remote: GdbRemote) -> dict[str, object]:
+    pointers_raw = remote.read_memory(0x0300489C, 8)
+    pointers = [
+        int.from_bytes(pointers_raw[offset:offset + 4], "little")
+        for offset in (0, 4)
+    ]
+    result: dict[str, object] = {
+        "input_state_hex": remote.read_memory(0x030012B0, 16).hex(),
+        "player_pointers": [f"0x{pointer:08X}" for pointer in pointers],
+    }
+    for index, pointer in enumerate(pointers, 1):
+        if not 0x02000000 <= pointer <= 0x0203FF00:
+            raise RuntimeError(f"player {index} pointer is outside EWRAM: 0x{pointer:08X}")
+        data = remote.read_memory(pointer, 0x100)
+        result[f"player_{index}_sha256"] = hashlib.sha256(data).hexdigest().upper()
+        result[f"player_{index}_hex"] = data.hex()
+    return result
+
+
 def connect_gdb(port: int, timeout: float) -> socket.socket:
     deadline = time.monotonic() + timeout
     last_error: OSError | None = None
@@ -318,6 +339,12 @@ def parse_args() -> argparse.Namespace:
         action="append",
         help="press the default mGBA A key (X) at this runtime second",
     )
+    parser.add_argument(
+        "--press-right-at",
+        type=float,
+        action="append",
+        help="press the default mGBA Right key at this runtime second",
+    )
     parser.add_argument("--key-hold-seconds", type=float, default=0.25)
     return parser.parse_args()
 
@@ -343,6 +370,10 @@ def main() -> int:
         scheduled_inputs.append((args.press_start_at, "Start", VK_RETURN))
     scheduled_inputs.extend(
         (at_seconds, "A", VK_X) for at_seconds in (args.press_a_at or [])
+    )
+    scheduled_inputs.extend(
+        (at_seconds, "Right", VK_RIGHT)
+        for at_seconds in (args.press_right_at or [])
     )
     scheduled_inputs.sort()
     if scheduled_inputs:
@@ -374,6 +405,8 @@ def main() -> int:
             supported = remote.command("qSupported").decode("ascii", errors="replace")
             initial_stop = remote.command("?").decode("ascii", errors="replace")
             input_events = []
+            pre_input_states = []
+            input_consumer_traces = []
             if not scheduled_inputs:
                 final_stop_bytes = remote.continue_for(args.seconds)
             else:
@@ -381,15 +414,78 @@ def main() -> int:
                 elapsed = 0.0
                 for at_seconds, key, virtual_key in scheduled_inputs:
                     time.sleep(at_seconds - elapsed)
-                    key_down_windows = process.post_key_state(virtual_key, True)
-                    time.sleep(args.key_hold_seconds)
-                    key_up_windows = process.post_key_state(virtual_key, False)
+                    if key == "Right":
+                        remote.interrupt()
+                        pre_input_states.append(
+                            {
+                                "key": key,
+                                "at_seconds": at_seconds,
+                                "state": capture_player_objects(remote),
+                            }
+                        )
+                        insert_result = remote.command(
+                            f"Z0,{RIGHT_INPUT_CONSUMER:x},4"
+                        ).decode("ascii", errors="replace")
+                        if insert_result != "OK":
+                            raise RuntimeError(
+                                f"could not set Right consumer breakpoint: {insert_result}"
+                            )
+                        key_down_windows = process.post_key_state(virtual_key, True)
+                        key_started = time.monotonic()
+                        time.sleep(0.05)
+                        remote.start_continue()
+                        consumer_stop = remote.receive_packet().decode(
+                            "ascii", errors="replace"
+                        )
+                        consumer_state = capture_player_objects(remote)
+                        consumer_state["gba_keyinput_hex"] = remote.read_memory(
+                            0x04000130, 2
+                        ).hex()
+                        consumer_state["frame_input_hex"] = remote.read_memory(
+                            0x03001302, 2
+                        ).hex()
+                        consumer_state["battle_player_selector_hex"] = (
+                            remote.read_memory(0x03004528, 4).hex()
+                        )
+                        consumer_state["registers_hex"] = remote.command("g").decode(
+                            "ascii"
+                        )
+                        remove_result = remote.command(
+                            f"z0,{RIGHT_INPUT_CONSUMER:x},4"
+                        ).decode("ascii", errors="replace")
+                        if remove_result != "OK":
+                            raise RuntimeError(
+                                f"could not remove Right consumer breakpoint: {remove_result}"
+                            )
+                        remote.start_continue()
+                        remaining_hold = args.key_hold_seconds - (
+                            time.monotonic() - key_started
+                        )
+                        if remaining_hold > 0:
+                            time.sleep(remaining_hold)
+                        key_up_windows = process.post_key_state(virtual_key, False)
+                        input_consumer_traces.append(
+                            {
+                                "key": key,
+                                "consumer_address": f"0x{RIGHT_INPUT_CONSUMER:08X}",
+                                "stop": consumer_stop,
+                                "state": consumer_state,
+                            }
+                        )
+                    else:
+                        key_down_windows = process.post_key_state(virtual_key, True)
+                        time.sleep(args.key_hold_seconds)
+                        key_up_windows = process.post_key_state(virtual_key, False)
                     elapsed = at_seconds + args.key_hold_seconds
                     input_events.append(
                         {
                             "key": key,
                             "host_virtual_key": (
-                                "VK_RETURN" if virtual_key == VK_RETURN else "VK_X"
+                                "VK_RETURN"
+                                if virtual_key == VK_RETURN
+                                else "VK_X"
+                                if virtual_key == VK_X
+                                else "VK_RIGHT"
                             ),
                             "at_seconds": at_seconds,
                             "hold_seconds": args.key_hold_seconds,
@@ -437,6 +533,8 @@ def main() -> int:
                     "screenshot_windows": screenshot_windows,
                 },
                 "input_events": input_events,
+                "pre_input_states": pre_input_states,
+                "input_consumer_traces": input_consumer_traces,
                 "gdb": {
                     "initial_stop": initial_stop,
                     "final_stop": final_stop,
