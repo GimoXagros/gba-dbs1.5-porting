@@ -26,6 +26,7 @@ WM_KEYDOWN = 0x0100
 WM_KEYUP = 0x0101
 VK_F12 = 0x7B
 VK_RETURN = 0x0D
+VK_X = 0x58
 MGBA_GDB_PORT = 2345
 
 
@@ -311,6 +312,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="press the default mGBA Start key (Enter) at this runtime second",
     )
+    parser.add_argument(
+        "--press-a-at",
+        type=float,
+        help="press the default mGBA A key (X) at this runtime second",
+    )
     parser.add_argument("--key-hold-seconds", type=float, default=0.25)
     return parser.parse_args()
 
@@ -331,11 +337,25 @@ def main() -> int:
         )
     if args.seconds <= 0:
         raise ValueError("--seconds must be positive")
-    if args.press_start_at is not None:
-        if args.press_start_at < 0 or args.key_hold_seconds <= 0:
+    scheduled_inputs = [
+        (at_seconds, key, virtual_key)
+        for at_seconds, key, virtual_key in (
+            (args.press_start_at, "Start", VK_RETURN),
+            (args.press_a_at, "A", VK_X),
+        )
+        if at_seconds is not None
+    ]
+    scheduled_inputs.sort()
+    if scheduled_inputs:
+        if scheduled_inputs[0][0] < 0 or args.key_hold_seconds <= 0:
             raise ValueError("input timing must be positive")
-        if args.press_start_at + args.key_hold_seconds >= args.seconds:
-            raise ValueError("Start press and release must occur before capture")
+        for (first_at, _, _), (second_at, _, _) in zip(
+            scheduled_inputs, scheduled_inputs[1:]
+        ):
+            if first_at + args.key_hold_seconds > second_at:
+                raise ValueError("scheduled key presses must not overlap")
+        if scheduled_inputs[-1][0] + args.key_hold_seconds >= args.seconds:
+            raise ValueError("all key presses must end before capture")
     output_dir.mkdir(parents=True)
 
     arguments = [
@@ -355,28 +375,31 @@ def main() -> int:
             supported = remote.command("qSupported").decode("ascii", errors="replace")
             initial_stop = remote.command("?").decode("ascii", errors="replace")
             input_events = []
-            if args.press_start_at is None:
+            if not scheduled_inputs:
                 final_stop_bytes = remote.continue_for(args.seconds)
             else:
                 remote.start_continue()
-                time.sleep(args.press_start_at)
-                key_down_windows = process.post_key_state(VK_RETURN, True)
-                time.sleep(args.key_hold_seconds)
-                key_up_windows = process.post_key_state(VK_RETURN, False)
-                time.sleep(
-                    args.seconds - args.press_start_at - args.key_hold_seconds
-                )
+                elapsed = 0.0
+                for at_seconds, key, virtual_key in scheduled_inputs:
+                    time.sleep(at_seconds - elapsed)
+                    key_down_windows = process.post_key_state(virtual_key, True)
+                    time.sleep(args.key_hold_seconds)
+                    key_up_windows = process.post_key_state(virtual_key, False)
+                    elapsed = at_seconds + args.key_hold_seconds
+                    input_events.append(
+                        {
+                            "key": key,
+                            "host_virtual_key": (
+                                "VK_RETURN" if virtual_key == VK_RETURN else "VK_X"
+                            ),
+                            "at_seconds": at_seconds,
+                            "hold_seconds": args.key_hold_seconds,
+                            "key_down_windows": key_down_windows,
+                            "key_up_windows": key_up_windows,
+                        }
+                    )
+                time.sleep(args.seconds - elapsed)
                 final_stop_bytes = remote.interrupt()
-                input_events.append(
-                    {
-                        "key": "Start",
-                        "host_virtual_key": "VK_RETURN",
-                        "at_seconds": args.press_start_at,
-                        "hold_seconds": args.key_hold_seconds,
-                        "key_down_windows": key_down_windows,
-                        "key_up_windows": key_up_windows,
-                    }
-                )
             final_stop = final_stop_bytes.decode("ascii", errors="replace")
             screenshot_windows = process.post_key(VK_F12)
             time.sleep(2.0)

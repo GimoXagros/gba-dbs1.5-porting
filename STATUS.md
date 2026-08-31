@@ -6,9 +6,10 @@ Snapshot date: 2026-08-31 (Asia/Seoul)
 > authoritative current status. The earlier 55-60% / 57% planning estimate is
 > withdrawn because it mixed static integration with unverified runtime
 > behavior. A roster-record relocation defect in v31 was isolated and fixed.
-> Exact v32 now passes `BOOT -> TITLE -> MAIN MENU` in non-displaying mGBA
-> runs; overall runtime-evidenced progress remains no more than 5%. The single
-> next runtime milestone is `MAIN MENU -> CHARACTER SELECT`.
+> Exact v32 now passes `BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` in
+> non-displaying mGBA runs; overall runtime-evidenced progress remains no more
+> than 5%. The single next runtime milestone is
+> `CHARACTER SELECT -> FIRST RETAIL BATTLE`.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -34,9 +35,10 @@ only by SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 That file is intentionally excluded from Git. Its corrected base, stage, and
 progression layer hashes are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
-Exact v32 reaches title and responds to Start with a main-menu frame whose PNG
-is byte-identical to the unmodified USA control while mGBA runs on a private,
-non-interactive desktop.
+Exact v32 reaches title, responds to Start with a main-menu frame byte-identical
+to the USA control, and responds to A by entering the same character-select
+display/background/game state while mGBA runs on a private, non-interactive
+desktop. Character roster correctness remains unverified.
 
 v31 is retained as superseded history. Its relocated roster records omitted
 the canonical first eight bytes, causing the opening sequence to return to the

@@ -157,6 +157,16 @@ VRAM, and OAM hashes also match the USA control. Manifests are under ignored
 directories `evidence/usa-gdb-menu-20260831/` and
 `evidence/full-fixed-gdb-menu-20260831/`, both with `monitor_visible: false`.
 
+A second scheduled input pressed the default mGBA A key at 53.0 seconds and
+captured at 60.0 seconds. Exact v32 and the USA control both entered display
+state `DISPCNT=0x6B40`; palette, VRAM, and EWRAM were byte-identical. Their
+frames differed by 635 of 38,400 pixels and OAM differed from offset `0x210`,
+consistent with a different sprite-animation phase at a wall-clock capture;
+the shared selection background and game state are direct evidence for the
+transition, not for roster correctness. Manifests are under ignored
+directories `evidence/usa-gdb-character-select-20260831/` and
+`evidence/full-fixed-gdb-character-select-20260831/`.
+
 | Runtime area | Status | Evidence or limitation |
 |---|---|---|
 | ROM build and header | PASS | Four corrected layers rebuilt; header validated |
@@ -165,6 +175,7 @@ directories `evidence/usa-gdb-menu-20260831/` and
 | Title/logo | PASS | Exact title PNG matches known-good capture byte-for-byte |
 | Main menu | PASS | Post-Start frame is byte-identical to the USA control |
 | Input response | PASS | Timed Start press/release reached the menu |
+| Character select entry | PASS | A input reached matching display/background/game state |
 | First gameplay entry | UNKNOWN | Not reached on exact v32 |
 | Background/map display | UNKNOWN | Not reached on exact v32 |
 | Sprites, animation, palettes, scrolling | UNKNOWN | Not exercised on exact v32 |
@@ -200,9 +211,9 @@ observed from the exact corrected v32 candidate:
 
 | Area | Runtime-evidenced progress |
 |---|---:|
-| Graphics/display | about 6% (opening, title, and main menu only) |
+| Graphics/display | about 8% (through character-select background only) |
 | Game logic | 0% |
-| Input | about 1% (Start transition only) |
+| Input | about 2% (Start and A transitions only) |
 | Audio | 0% |
 | Save/load | 0% |
 | Overall playable/release progress | no more than 5% |
@@ -212,11 +223,11 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-`BOOT -> TITLE` and `TITLE -> MAIN MENU` are complete for exact v32. The next
-and only active runtime milestone is **MAIN MENU -> CHARACTER SELECT on the
-exact v32 hash**, using controlled input injection on the same non-displaying
-harness. No gameplay feature or broad refactor begins until this transition is
-reproducibly observed.
+`BOOT -> TITLE`, `TITLE -> MAIN MENU`, and `MAIN MENU -> CHARACTER SELECT` are
+complete for exact v32. The next and only active runtime milestone is
+**CHARACTER SELECT -> FIRST RETAIL BATTLE on the exact v32 hash**, using
+controlled input injection on the same non-displaying harness. This verifies
+the baseline path before any added-roster runtime claim.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current
