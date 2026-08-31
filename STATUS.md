@@ -81,7 +81,7 @@ and corrected progress are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
 | Added stage content and mechanics | 65% | Train vents/bounce, suction, remaining vertical branches |
 | Alternate final boss | 70% | End-to-end runtime route, loss/continue/victory regression |
 | Digimon Shoot | 45% | Rules/objects, transition state, reward, win/loss, exit |
-| Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, opening implementation |
+| Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, and cold-boot opening dispatch/implementation |
 | Build tooling and static integration | 85% | Full final-candidate audit and release packaging |
 | Final emulator/save QA and BPS release | 0% | Deferred until all content is connected |
 
@@ -149,6 +149,11 @@ object-construction consumers.
 6. Generate and verify a BPS patch whose application to the documented USA ROM
    reproduces the validated candidate byte-for-byte. Publish the patch,
    application instructions, and hashes—never a ROM image.
+
+The opening/presentation initializer population is now bounded more precisely:
+the declared originals contain 18 relevant calls in the commercial GBA and WSC
+1.0 ROMs and 24 in WSC 1.5. The six-call delta is confirmed, but its cold-boot
+dispatcher attribution is not; it is not counted as integrated opening logic.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

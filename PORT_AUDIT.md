@@ -234,6 +234,21 @@ manifests record `monitor_visible: false`.
 | Soft reset / restart | UNKNOWN | Not exercised on exact v32 |
 | Extended stability | UNKNOWN | No exact-v32 soak or regression run |
 
+### Opening/presentation evidence correction (2026-09-01)
+
+The previously cited 18-to-24 initializer-call increase is real, reproducible
+from the declared originals, and relevant to match/presentation setup. It does
+not by itself establish that the six extra WSC 1.5 calls are selected by the
+cold-boot opening. `tools/analyze_opening_initializer_population.py` now records
+the 18 GBA, 18 WSC 1.0, and 24 WSC 1.5 call locations and limits the claim to
+the expanded initializer population. Cold-boot dispatcher attribution remains
+unimplemented and unverified; see `records/opening-presentation.md`.
+
+A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
+start the Lua script. It generated no frame, RAM, or completion evidence and is
+classified as inconclusive. No monitor-visible window was used, and no further
+runtime attempt was made in this milestone.
+
 ## Known implementation gaps
 
 - Train vents/bounce behavior, Iraira suction, and remaining vertical-stage

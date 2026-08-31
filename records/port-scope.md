@@ -20,7 +20,7 @@ implementation input.
 | Final boss | ZeedMillenniummon alternate/second final-boss path | Statically integrated | Reachable Normal-or-harder/no-continue two-phase route, converted battle graphics, sentinel relocation; final runtime regression deferred |
 | Minigame | Digimon Shoot | Palette, tiles, maps, descriptors, initializer slot ID 11, native movement pattern/configuration/two presentation callbacks, threshold scan, exact converted three-rate palette animation, stage-11 main-loop route, dedicated core loop, scroll-palette state machine, native timer palette callback, normal display callback, and scanline threshold callback integrated statically in v30 | Connected Shoot object/rules callbacks, remaining transition state, menu/reward route, win/loss, and exit transitions |
 | Progression | Tag/reward/rating and related collection state | Impmon and Extra Guilmon pending/permanent unlock semantics integrated statically in current composite v32 | Digimon Shoot completion producer, remaining tag/reward/rating population, new-save and progressed-save persistence, collection display |
-| Opening/presentation | Extended opening with added roster/evolution duels | Population confirmed; binary mapping pending | Cold-boot playback through full extended sequence and skip transition |
+| Opening/presentation | Extended opening with added roster/evolution duels | Expanded match/presentation initializer population confirmed (18 calls in GBA/WSC 1.0, 24 in WSC 1.5); cold-boot attribution and dispatch mapping pending | Static cold-boot dispatch proof, then playback through full extended sequence and skip transition |
 
 ## Activation gates
 
