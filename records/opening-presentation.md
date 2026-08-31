@@ -16,6 +16,13 @@ phrase "population confirmed" was therefore too broad when read as runtime
 opening proof. The corrected claim is: **the expanded initializer population is
 confirmed; its cold-boot opening attribution and dispatch are pending**.
 
+An ordered mnemonic-shape comparison also prevents a second unsafe shortcut.
+The first six WSC 1.0/1.5 callback blocks correspond strongly (similarity
+`0.96..1.00`), but the later ordered scores fall as the 1.5 code is rearranged
+and changed. The six extra calls therefore cannot be treated as a simple
+append-only three-pair patch. Their actual dispatch table and semantic pairing
+must be mapped.
+
 The result is reproduced from the three declared originals with:
 
 ```text
@@ -25,7 +32,7 @@ python tools/analyze_opening_initializer_population.py <USA-GBA> <WSC-1.0> <WSC-
 The generated manifest records the exact source hashes, all call locations,
 routine signatures, and the deliberately limited claim scope. The current
 manifest SHA-256 is
-`C0B7E46E89375B4B88B259FC02C68F75265BCB70B14319DDCD37E5AD7A8FD348`.
+`B44C4ACE23FB1212439F99CB7A5B28778C50C81459028A555535D36B847FA48E`.
 
 ## Non-displaying reference-capture attempt
 

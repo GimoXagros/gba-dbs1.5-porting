@@ -10,10 +10,17 @@ the call sites to a runtime route.
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import pathlib
 import struct
+import sys
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR.parent / "vendor"))
+
+from capstone import CS_ARCH_X86, CS_MODE_16, Cs  # type: ignore
 
 
 GBA_BASE = 0x08000000
@@ -36,6 +43,7 @@ EXPECTED_WSC15_CALLS = (
     0x82D4, 0x86AB, 0x88F9, 0x8AAD, 0x8C66, 0x8EB1,
     0x94EA, 0x9717, 0x9979, 0x9B92, 0x9D9F, 0xA067,
 )
+WSC_CALLBACK_PROLOGUE = bytes.fromhex("50 51 52 53 56 57 06 1E")
 
 
 def sha256(data: bytes) -> str:
@@ -95,6 +103,30 @@ def callback_pair_before(bank: bytes, call: int) -> dict[str, int] | None:
     return None
 
 
+def function_start_before(bank: bytes, call: int) -> int:
+    start = bank.rfind(WSC_CALLBACK_PROLOGUE, max(0, call - 0x600), call)
+    if start < 0:
+        raise ValueError(f"no callback prologue before call at {call:04X}")
+    return start
+
+
+def word_references(bank: bytes, target: int) -> list[int]:
+    needle = struct.pack("<H", target)
+    refs: list[int] = []
+    cursor = 0
+    while True:
+        cursor = bank.find(needle, cursor)
+        if cursor < 0:
+            return refs
+        refs.append(cursor)
+        cursor += 1
+
+
+def instruction_shape(bank: bytes, start: int, end: int) -> list[str]:
+    engine = Cs(CS_ARCH_X86, CS_MODE_16)
+    return [insn.mnemonic for insn in engine.disasm(bank[start:end], start)]
+
+
 def wsc_population(
     data: bytes, bank_number: int, target: int, label: str
 ) -> dict[str, object]:
@@ -103,10 +135,14 @@ def wsc_population(
     calls = find_wsc_near_calls(bank, target)
     entries = []
     for call in calls:
+        function_start = function_start_before(bank, call)
         entries.append({
             "cpu_address": call,
             "rom_offset": bank_start + call,
+            "callback_function_start": function_start,
+            "start_word_references_in_bank": word_references(bank, function_start),
             "callback_pair_before_call": callback_pair_before(bank, call),
+            "_instruction_shape": instruction_shape(bank, function_start, call + 3),
         })
     routine = bank[target:target + 0xBB]
     return {
@@ -171,6 +207,23 @@ def main() -> int:
             "calls remain unproven."
         ),
     }
+
+    correspondence = []
+    wsc10_entries = result["wsc_10"]["calls"]  # type: ignore[index]
+    wsc15_entries = result["wsc_15"]["calls"]  # type: ignore[index]
+    for index, (old, new) in enumerate(zip(wsc10_entries, wsc15_entries)):
+        score = difflib.SequenceMatcher(
+            None, old["_instruction_shape"], new["_instruction_shape"]
+        ).ratio()
+        correspondence.append({
+            "index": index,
+            "wsc_10_function_start": old["callback_function_start"],
+            "wsc_15_function_start": new["callback_function_start"],
+            "pre_call_mnemonic_similarity": round(score, 6),
+        })
+    for entry in (*wsc10_entries, *wsc15_entries):
+        entry["pre_call_instruction_count"] = len(entry.pop("_instruction_shape"))
+    result["first_18_ordered_correspondence"] = correspondence
 
     if tuple(gba_calls) != EXPECTED_GBA_CALLS:
         raise ValueError(f"unexpected GBA call population: {gba_calls}")
