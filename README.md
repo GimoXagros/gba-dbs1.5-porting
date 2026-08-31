@@ -38,8 +38,8 @@ v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`).
 Each builder refuses an unexpected input SHA-256, so a layer change must
 deliberately advance the downstream hashes before a new composite can be
-produced. v32 passes the non-displaying `BOOT -> TITLE` runtime milestone;
-the main menu and gameplay remain unverified.
+produced. v32 passes the non-displaying `BOOT -> TITLE -> MAIN MENU` runtime
+milestones; character selection and gameplay remain unverified.
 
 The current four-layer rebuild still depends on pre-generated ignored asset
 directories. It is reproducible from those fixed inputs, but it is not yet a

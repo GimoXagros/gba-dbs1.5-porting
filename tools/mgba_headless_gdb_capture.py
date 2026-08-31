@@ -25,6 +25,7 @@ DESKTOP_ALL_ACCESS = 0x01FF
 WM_KEYDOWN = 0x0100
 WM_KEYUP = 0x0101
 VK_F12 = 0x7B
+VK_RETURN = 0x0D
 MGBA_GDB_PORT = 2345
 
 
@@ -159,7 +160,7 @@ class PrivateDesktopProcess:
     def pid(self) -> int:
         return int(self.process.dwProcessId)
 
-    def post_key(self, virtual_key: int) -> int:
+    def post_key_state(self, virtual_key: int, pressed: bool) -> int:
         windows: list[int] = []
         callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
         self._enum_desktop_windows.argtypes = [
@@ -178,10 +179,16 @@ class PrivateDesktopProcess:
 
         if not self._enum_desktop_windows(self.desktop, collect, 0):
             raise ctypes.WinError(ctypes.get_last_error())
+        message = WM_KEYDOWN if pressed else WM_KEYUP
+        parameter = 1 if pressed else 0xC0000001
         for window in windows:
-            self._post_message(window, WM_KEYDOWN, virtual_key, 1)
-            self._post_message(window, WM_KEYUP, virtual_key, 0xC0000001)
+            self._post_message(window, message, virtual_key, parameter)
         return len(windows)
+
+    def post_key(self, virtual_key: int) -> int:
+        windows = self.post_key_state(virtual_key, True)
+        self.post_key_state(virtual_key, False)
+        return windows
 
     def close(self) -> None:
         if getattr(self, "process", None):
@@ -248,11 +255,17 @@ class GdbRemote:
         return response
 
     def continue_for(self, seconds: float) -> bytes:
+        self.start_continue()
+        time.sleep(seconds)
+        return self.interrupt()
+
+    def start_continue(self) -> None:
         self.connection.sendall(self._packet(b"c"))
         acknowledgement = self._read_byte()
         if acknowledgement != b"+":
             raise RuntimeError(f"GDB continue was not acknowledged: {acknowledgement!r}")
-        time.sleep(seconds)
+
+    def interrupt(self) -> bytes:
         self.connection.sendall(b"\x03")
         return self.receive_packet()
 
@@ -293,6 +306,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--seconds", type=float, default=45.0)
+    parser.add_argument(
+        "--press-start-at",
+        type=float,
+        help="press the default mGBA Start key (Enter) at this runtime second",
+    )
+    parser.add_argument("--key-hold-seconds", type=float, default=0.25)
     return parser.parse_args()
 
 
@@ -310,6 +329,13 @@ def main() -> int:
         raise RuntimeError(
             f"unexpected ROM SHA-256: expected {expected_hash}, got {rom_hash}"
         )
+    if args.seconds <= 0:
+        raise ValueError("--seconds must be positive")
+    if args.press_start_at is not None:
+        if args.press_start_at < 0 or args.key_hold_seconds <= 0:
+            raise ValueError("input timing must be positive")
+        if args.press_start_at + args.key_hold_seconds >= args.seconds:
+            raise ValueError("Start press and release must occur before capture")
     output_dir.mkdir(parents=True)
 
     arguments = [
@@ -328,9 +354,30 @@ def main() -> int:
             remote = GdbRemote(connection)
             supported = remote.command("qSupported").decode("ascii", errors="replace")
             initial_stop = remote.command("?").decode("ascii", errors="replace")
-            final_stop = remote.continue_for(args.seconds).decode(
-                "ascii", errors="replace"
-            )
+            input_events = []
+            if args.press_start_at is None:
+                final_stop_bytes = remote.continue_for(args.seconds)
+            else:
+                remote.start_continue()
+                time.sleep(args.press_start_at)
+                key_down_windows = process.post_key_state(VK_RETURN, True)
+                time.sleep(args.key_hold_seconds)
+                key_up_windows = process.post_key_state(VK_RETURN, False)
+                time.sleep(
+                    args.seconds - args.press_start_at - args.key_hold_seconds
+                )
+                final_stop_bytes = remote.interrupt()
+                input_events.append(
+                    {
+                        "key": "Start",
+                        "host_virtual_key": "VK_RETURN",
+                        "at_seconds": args.press_start_at,
+                        "hold_seconds": args.key_hold_seconds,
+                        "key_down_windows": key_down_windows,
+                        "key_up_windows": key_up_windows,
+                    }
+                )
+            final_stop = final_stop_bytes.decode("ascii", errors="replace")
             screenshot_windows = process.post_key(VK_F12)
             time.sleep(2.0)
             screenshots = sorted(output_dir.glob("*.png"))
@@ -367,6 +414,7 @@ def main() -> int:
                     "monitor_visible": False,
                     "screenshot_windows": screenshot_windows,
                 },
+                "input_events": input_events,
                 "gdb": {
                     "initial_stop": initial_stop,
                     "final_stop": final_stop,

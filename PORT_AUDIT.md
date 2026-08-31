@@ -148,14 +148,23 @@ memory hashes are recorded under ignored directory
 `evidence/full-fixed-gdb-title-20260831-r2/`; its manifest records
 `monitor_visible: false`.
 
+The next controlled run pressed the default mGBA Start key at 45.0 seconds,
+held it for 0.25 seconds, and captured at 52.0 seconds. Exact v32 produced
+menu-frame SHA-256
+`CFDA553C0C6B14BB65E8A34543E3A657B92338751B207644A9D42D2786C24BF2`,
+byte-identical to the unmodified USA ROM under the same timings. Palette,
+VRAM, and OAM hashes also match the USA control. Manifests are under ignored
+directories `evidence/usa-gdb-menu-20260831/` and
+`evidence/full-fixed-gdb-menu-20260831/`, both with `monitor_visible: false`.
+
 | Runtime area | Status | Evidence or limitation |
 |---|---|---|
 | ROM build and header | PASS | Four corrected layers rebuilt; header validated |
 | GBA boot / first rendered frame | PASS | Exact v32 rendered through the opening sequence |
 | Initialization beyond first frame | PASS | Exact v32 reached the stable title frame at 45 s |
 | Title/logo | PASS | Exact title PNG matches known-good capture byte-for-byte |
-| Main menu | UNKNOWN | No input was injected into exact v32 |
-| Input response | UNKNOWN | Not exercised on exact v32 |
+| Main menu | PASS | Post-Start frame is byte-identical to the USA control |
+| Input response | PASS | Timed Start press/release reached the menu |
 | First gameplay entry | UNKNOWN | Not reached on exact v32 |
 | Background/map display | UNKNOWN | Not reached on exact v32 |
 | Sprites, animation, palettes, scrolling | UNKNOWN | Not exercised on exact v32 |
@@ -191,9 +200,9 @@ observed from the exact corrected v32 candidate:
 
 | Area | Runtime-evidenced progress |
 |---|---:|
-| Graphics/display | about 5% (opening-to-title only) |
+| Graphics/display | about 6% (opening, title, and main menu only) |
 | Game logic | 0% |
-| Input | 0% |
+| Input | about 1% (Start transition only) |
 | Audio | 0% |
 | Save/load | 0% |
 | Overall playable/release progress | no more than 5% |
@@ -203,10 +212,11 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-`BOOT -> TITLE` is complete for exact v32. The next and only active runtime
-milestone is **TITLE -> MAIN MENU on the exact v32 hash**, using controlled
-input injection on the same non-displaying harness. No gameplay feature or
-broad refactor begins until this transition is reproducibly observed.
+`BOOT -> TITLE` and `TITLE -> MAIN MENU` are complete for exact v32. The next
+and only active runtime milestone is **MAIN MENU -> CHARACTER SELECT on the
+exact v32 hash**, using controlled input injection on the same non-displaying
+harness. No gameplay feature or broad refactor begins until this transition is
+reproducibly observed.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current
