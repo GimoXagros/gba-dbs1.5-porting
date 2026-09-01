@@ -124,6 +124,30 @@ and `61D50D39A87F35677BAC5BDEE1991D84AF8E9D2242A664284754744B8D77E589`,
 respectively; they claim static source lineage only and do not claim working
 GBA rules.
 
+The graph-wide lineage pass also binds the child-object generator `9229` to
+WSC 1.0 physical `5A93` and commercial GBA `0x0837273C`. That commercial
+function proves the native GBA object allocator at `0x08352374` and the
+presentation constructor at `0x080127E4`. The new generator's three far
+resource arguments resolve to:
+
+| Kind | WSC 1.5 physical source | Deterministic GBA-form analysis output |
+|---|---:|---:|
+| P1 command container | `0x3D1E30` | 384 bytes, three commands / 20 payload items |
+| P0 animation container | `0x22FF80` | 128 bytes, two layouts / 80 layout-record bytes |
+| P2 palette | `0x3D7AF0` | 40 bytes, converted BGR555 palette |
+
+`tools/analyze_shoot_spawn_resource_conversion.py` verifies the rules against
+the exact WSC 1.0/GBA resource ancestors before converting the Ver. 1.5
+sources. The Shoot-specific P1 oracle covers seven commercial commands and 42
+payload items: `FFxx` timing scales by 4/5, a nonzero sixth word moves to the
+two GBA extension words as `(word + 0x032C, 0x0835)`, and all payloads and
+8-byte A records then match the commercial GBA byte-for-byte. The P0 oracle's
+784 logical bytes match exactly; the remaining eight bytes in the comparison
+belong to the next commercial structure. The P2 oracle matches all 40 bytes.
+Two independent reports reproduce SHA-256
+`E8C1F9318EC605427781F00BF848AE464B0BEE3B9F89B96456212B3ECBFA7614`.
+These generated resources are not installed in v35 yet.
+
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.

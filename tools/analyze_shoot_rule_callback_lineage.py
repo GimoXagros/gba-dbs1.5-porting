@@ -156,6 +156,7 @@ def main() -> int:
     }
     score_windows = (32, 64, 96, 140)
     targets = dict(TARGETS)
+    target_offsets = set(targets.values())
     if args.graph:
         graph = json.loads(args.graph.read_text(encoding="utf-8"))
         if (
@@ -164,7 +165,14 @@ def main() -> int:
         ):
             raise SystemExit("refusing unknown Shoot callback graph")
         for start in graph["callback_entries"]:
-            targets.setdefault(f"graph_{start:04x}", start)
+            if start not in target_offsets:
+                targets[f"graph_{start:04x}"] = start
+                target_offsets.add(start)
+        for edge in graph["same_segment_calls"]:
+            start = edge["target"]
+            if start not in target_offsets:
+                targets[f"helper_{start:04x}"] = start
+                target_offsets.add(start)
 
     results = []
     for label, start in targets.items():

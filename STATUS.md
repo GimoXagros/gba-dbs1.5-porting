@@ -152,9 +152,12 @@ The rules code beginning at `4090:9908` is now bounded separately as 6,096
 reachable bytes, 43 callback entries, and three fully resolved indirect
 tables. Commercial WSC 1.0/GBA comparison binds its `94C1`/`9570`/`9617`
 chain to GBA `0x08372110`/`0x083721FC`/`0x08372320` and proves five native
-runtime-call mappings. This is static translation evidence only: none of the
-rules graph is installed in v35 yet. Rules, reward, win/loss, and exit remain
-release gates, and the runtime-evidenced percentage is unchanged.
+runtime-call mappings. The `9229` child generator is additionally bound to
+commercial GBA `0x0837273C`; its P1/P0/P2 sources are resolved and converted
+by rules checked against the complete commercial ancestor resources. This is
+static translation evidence only: none of the rules graph or generated Shoot
+child resources is installed in v35 yet. Rules, reward, win/loss, and exit
+remain release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
