@@ -123,9 +123,22 @@ raw `0x39FC37..0x39FCDA` and
 is `0x08088250..0x08088310`, which maps WSC constructor `4FFF:23F4` to
 `0x080127E4` and companion loader `4FFF:2389` to `0x080132EC`. A direct native
 counterpart for the callbacks' primary loader `4FFF:226E` is not yet proven.
-Therefore the remaining work includes converting the two directly consumed
-resource fields, resolving that primary-loader boundary, and attaching a safe
-second GBA presentation object; a callback-only chain splice would be
+
+`tools/analyze_opening_aux_resource_reuse.py` now closes the pixel/palette
+conversion part of that boundary without claiming the callback implementation.
+For record 49, WSC P0 at `0x3D3E20` (33 tiles / `0x420` bytes) converts exactly
+to the native GBA P0 container at `0x082D94D8`, including its tile descriptor
+at `0x082D95CC`; WSC P2 at `0x3D7880` converts exactly to the 40-byte GBA
+palette block at `0x082D99F4`. For record 50, WSC P0 at `0x3D5620` (12 tiles /
+`0x180` bytes) converts exactly to `0x082F91CC`, with descriptor
+`0x082F9260`, and WSC P2 at `0x3D6960` converts exactly to palette block
+`0x082F93E8`. All four converted containers are byte-identical to data in the
+unmodified USA GBA ROM, and their native pointer references are asserted.
+
+Therefore no duplicate auxiliary tile or palette payload is needed. The
+remaining work is to resolve the primary-loader/object-initialization boundary,
+wire these resident assets into a safe second GBA presentation object, and
+translate the callback state machines; a callback-only chain splice would be
 incomplete.
 
 ## Reproduction
@@ -137,6 +150,7 @@ python tools/analyze_opening_initializer_population.py <USA-GBA> <WSC-1.0> <WSC-
 python tools/analyze_gba_opening_dispatch.py <USA-GBA> --output evidence/gba-opening-callback-graph.json
 python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output evidence/wsc-opening-callback-graph.json
 python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-additions.json
+python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
 ```
 
 Current generated-manifest SHA-256 values are:
@@ -145,6 +159,7 @@ Current generated-manifest SHA-256 values are:
 - GBA callback graph: `77E64A38FEDE93B1712758D0C67F674D3C9A4F723F77689403D060A4A80E981A`
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
+- auxiliary resource reuse proof: `C2FCB3663F96CE56B44007E21DFD703F73045BA4B148D2295427D26EAA838790`
 
 ## Runtime evidence boundary
 
@@ -157,8 +172,8 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Convert WSC 1.5 presentation records 11..14 and replacement auxiliary
-   records 49/50 into the native GBA resource/object ABI.
+1. Build WSC 1.5 presentation records 11..14 and wire the already resident
+   auxiliary P0/P2 assets for records 49/50 into the native GBA object ABI.
 2. Translate the four added linear callbacks and aligned selector-3→13 change
    into the commercial GBA opening state machine.
 3. Preserve the complete 19-linear + 5-choice graph through the single

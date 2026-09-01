@@ -24,8 +24,11 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > mapped. The two added choices are now integrated statically; the four added
 > linear callbacks remain untranslated. Static dependency recovery additionally
 > proves that the complex first/fourth additions require replacement resource
-> records 50/49 and that the unchanged GBA presentation view still needs
-> rebuilt selector records 11..14. No emulator or supplied save was used
+> records 50/49. Their directly consumed P0 animation/tile containers and P2
+> palettes convert byte-for-byte to assets already resident in the commercial
+> USA GBA ROM, so no duplicate graphics payload is required; callback/object
+> wiring and the unchanged GBA presentation view's selector records 11..14
+> still remain. No emulator or supplied save was used
 > for v33.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -174,10 +177,13 @@ choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
 `[13,14]` and `[12,11]`. Internal v33 translates those two cases/callbacks and
 the dispatcher extension into GBA ARM code while preserving retail states
 0..2. Its commercial presentation resource view is not yet rebuilt for the
-new selectors. The four added linear callbacks, replacement resource records
-49/50, presentation records 11..14, and aligned selector-3→13 change remain
-unfinished. No v33 runtime evidence exists, so the static integration does not
-increase playable/release progress.
+new selectors. Static conversion now proves that the directly consumed P0/P2
+assets for replacement records 49/50 already exist byte-identically in the
+commercial GBA ROM, but they are not yet wired into the added callbacks. The
+four added linear callbacks, that resource/object wiring, presentation records
+11..14, and aligned selector-3→13 change remain unfinished. No v33 runtime
+evidence exists, so the static integration does not increase playable/release
+progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

@@ -267,14 +267,17 @@ The four added linear callbacks at `7077`, `7407`, `7698`, and `7992` are now
 bounded to the chain edge from GBA `0x08085118` to `0x08085454`; the exact
 assignment and selector instructions are ROM offsets `0x08516C` and
 `0x0851CC`. The first and fourth additions also require WSC 1.5 replacement
-resource records 50 and 49. Those records replace all five old pointer targets
-and are not present in the current GBA build. The commercial object-creator
-lineage maps WSC `4FFF:23F4`/`4FFF:2389` to GBA
+resource records 50 and 49. Those records replace all five old WSC pointer
+targets and are not wired as replacement records in the current GBA build.
+However, a guarded conversion of the fields the callbacks actually consume
+proves that both P0 animation/tile containers and both P2 palettes already
+exist byte-for-byte in the unmodified USA GBA ROM. The commercial
+object-creator lineage maps WSC `4FFF:23F4`/`4FFF:2389` to GBA
 `0x080127E4`/`0x080132EC`. The new callbacks instead pair the confirmed
 companion loader with WSC primary loader `4FFF:226E`, whose direct GBA
-counterpart is not yet proven. The four callbacks, records 49/50,
-presentation records 11..14, and aligned selector-3→13 change remain
-unimplemented. No v33 runtime evidence was collected. See
+counterpart is not yet proven. The four callbacks, native reuse/object wiring
+for records 49/50, presentation records 11..14, and aligned selector-3→13
+change remain unimplemented. No v33 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -320,10 +323,10 @@ The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
 complete for exact v32. The clean v33 build, static opening callback graphs,
 two added choice callbacks, and modulo-5 dispatcher are also complete. The next
 active milestone remains **EXTENDED OPENING/PRESENTATION IMPLEMENTATION**:
-convert the missing presentation and auxiliary resource records, translate the
-four added linear callbacks and aligned selector-3→13 behavior, then preserve
-the full graph through the same main build path. Broader runtime verification
-remains deferred and non-displaying.
+wire the resident auxiliary resources and missing presentation records,
+translate the four added linear callbacks and aligned selector-3→13 behavior,
+then preserve the full graph through the same main build path. Broader runtime
+verification remains deferred and non-displaying.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current
