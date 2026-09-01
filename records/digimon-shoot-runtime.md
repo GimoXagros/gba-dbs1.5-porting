@@ -83,11 +83,53 @@ GBA trailer. The callback retains both source position comparisons and calls
 the scroll helper only when Shoot flags `0x4000`, `0x20`, and `0x10` are all
 clear.
 
+## Rules callback boundary
+
+The first connected rules unit is now bounded statically, but it is not yet
+installed in the GBA candidate. `tools/analyze_shoot_rule_callback_graph.py`
+starts at controller `4090:9908`, its four selected families, and every
+callback pointer reached from them. The source-verified graph contains 2,051
+instruction starts, 6,096 code bytes in 16 ranges, 43 callback entries, 46
+callback-pointer edges, and 14 same-overlay calls.
+
+All three indirect jumps are resolved rather than left as guessed exits:
+
+- controller `996A` indexes the exact 64-word table at `996F`; its targets are
+  `99EF` (18 entries), `99F1` (10), `9A0E` (20), and `9A1B` (16);
+- shared object constructor `173D` has six source table cases, while the three
+  reachable Shoot call sites pass only cases 0 and 2, selecting `174E` and
+  `175D`;
+- Shoot state dispatcher `8F24` has ten entries at `8FDB`; state 0 selects
+  `8F29`, while states 1..9 select `8F65`.
+
+The graph imports ten WSC runtime routines: `4FFF:0BA4`, `0BC7`, `19A8`,
+`19BF`, `1BD9`, `1CB5`, `23F4`, `24CB`, `26CB`, and `2862`. A separate
+commercial-lineage proof now binds three callbacks and five of those imports
+without assigning names from guesswork:
+
+| WSC 1.5 callback | WSC 1.0 physical ancestor | Commercial USA GBA callback |
+|---:|---:|---:|
+| `94C1` | `56D9` | `0x08372110` |
+| `9570` | `577A` | `0x083721FC` |
+| `9617` | `5821` | `0x08372320` |
+
+The paired commercial call sites prove `4FFF:1BD9`→GBA `0x08012560`,
+`19BF`→`0x0801233C`, `19A8`→`0x08012348`, `24CB`→`0x08012874`, and
+`2862`→`0x08012A84`. The completion state's `4090:181E` object-release path
+has commercial GBA counterpart `0x083524C4`. The deterministic reports are
+generated as `build/shoot-rule-graph-v2.json` and
+`build/shoot-commercial-lineage-v1.json`. Their reproducible SHA-256 values
+are `37BAFE3EE49314F58024BD322DA1DEC33C8A7316DA0984242985FA4262DF5281`
+and `61D50D39A87F35677BAC5BDEE1991D84AF8E9D2242A664284754744B8D77E589`,
+respectively; they claim static source lineage only and do not claim working
+GBA rules.
+
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is the connected Shoot object/rules callbacks
-beginning at `4090:9908`, followed by reward/exit paths. Installing isolated
-completion-bit writes would bypass the source mode and is not an acceptable
-completion path.
+The next implementation unit is translation of controller `4090:9908` and its
+bounded 1.5-only callback families, reusing only the commercially proved GBA
+counterparts above. It must then be connected to the reward/exit paths.
+Installing isolated completion-bit writes would bypass the source mode and is
+not an acceptable completion path.

@@ -148,7 +148,13 @@ display callback with a translation of WSC `5EEA:0C3A` and connects the
 translated scanline threshold callback `5EEA:0D42`. The Shoot flag `0x400`
 transition branch still falls back to the matching retail GBA callback until
 the private state used by WSC `5EEA:0D87/0E0B` is mapped without guessing.
-Rules, reward, win/loss, and exit remain release gates.
+The rules code beginning at `4090:9908` is now bounded separately as 6,096
+reachable bytes, 43 callback entries, and three fully resolved indirect
+tables. Commercial WSC 1.0/GBA comparison binds its `94C1`/`9570`/`9617`
+chain to GBA `0x08372110`/`0x083721FC`/`0x08372320` and proves five native
+runtime-call mappings. This is static translation evidence only: none of the
+rules graph is installed in v35 yet. Rules, reward, win/loss, and exit remain
+release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
