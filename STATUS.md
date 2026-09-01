@@ -10,13 +10,14 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > non-displaying mGBA runs and reaches the first retail battle; overall
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
-> clean current-candidate milestone is now complete: three independent builds
-> from the hash-identified USA GBA, WSC 1.0, and WSC 1.5 originals reproduce
-> internal v35 byte-for-byte. Its modulo-5 dispatcher, added choice states 3
+> clean current-candidate milestone is now complete: the hash-identified USA
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v36 byte-for-byte in
+> two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated
-> and reproducible at SHA-256
-> `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`.
+> and Shoot child P1/P0/P2 resource layer are statically integrated and
+> reproducible at SHA-256
+> `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -33,7 +34,8 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v35.
+> save was used for v36. The Shoot resources are deliberately disconnected;
+> no rule callback reaches them yet.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -53,13 +55,15 @@ memory dump, screenshot, or emulator state.
 - Static ZeedMillenniummon alternate final-boss integration.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
+- Source-bound Digimon Shoot child P1/P0/P2 resources installed under an
+  Expected Writes contract; callback connectivity remains pending.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v35, identified only by SHA-256
-`9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`.
+The current static internal composite is v36, identified only by SHA-256
+`4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -80,10 +84,10 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling six guarded
-layers. Three builds in separate empty output directories all produced v35
+binary assets from the three original ROMs before assembling seven guarded
+layers. Two builds in separate empty output directories both produced v36
 SHA-256
-`9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`.
+`4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -154,9 +158,12 @@ tables. Commercial WSC 1.0/GBA comparison binds its `94C1`/`9570`/`9617`
 chain to GBA `0x08372110`/`0x083721FC`/`0x08372320` and proves five native
 runtime-call mappings. The `9229` child generator is additionally bound to
 commercial GBA `0x0837273C`; its P1/P0/P2 sources are resolved and converted
-by rules checked against the complete commercial ancestor resources. This is
-static translation evidence only: none of the rules graph or generated Shoot
-child resources is installed in v35 yet. Rules, reward, win/loss, and exit
+by rules checked against the complete commercial ancestor resources. v36
+installs those three generated resources at `0x5B9000`, `0x5B9200`, and
+`0x5B9300`. An independent verifier confines the diff to those ranges and
+proves that the only pointers into the new window are the containers' own
+internal pointers. The rules graph and callback connection are still absent,
+so the resources are not runtime-reachable. Rules, reward, win/loss, and exit
 remain release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
@@ -189,8 +196,9 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v35 translates those two cases/callbacks and
-the dispatcher extension into GBA ARM code while preserving retail states
+`[13,14]` and `[12,11]`. Internal v35, retained as v36's opening-linear
+intermediate, translates those two cases/callbacks and the dispatcher
+extension into GBA ARM code while preserving retail states
 0..2. Its dedicated 15-record presentation view preserves commercial
 selectors 0..10 and supplies selectors 11..14. Static conversion proves that
 their P1/P2 resources and selector 11/13 P0 resources reuse byte-identical
@@ -212,7 +220,7 @@ reuse of unused GBA opening slot 3 for records 50 and 49 without overwriting
 retained commercial auxiliary objects. An independent verifier confines all
 2,199 changed bytes to the three hooks and declared expansion ranges,
 disassembles the four callback call graphs, and checks the exact converted
-seven-entry event table. No v35 runtime evidence exists, so the static integration
+seven-entry event table. No v36 runtime evidence exists, so the static integration
 does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in

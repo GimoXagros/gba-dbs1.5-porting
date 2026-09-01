@@ -146,14 +146,35 @@ two GBA extension words as `(word + 0x032C, 0x0835)`, and all payloads and
 belong to the next commercial structure. The P2 oracle matches all 40 bytes.
 Two independent reports reproduce SHA-256
 `E8C1F9318EC605427781F00BF848AE464B0BEE3B9F89B96456212B3ECBFA7614`.
-These generated resources are not installed in v35 yet.
+## Installed disconnected resource layer (v36)
+
+`tools/build_shoot_rule_resources.py` now regenerates the three child assets
+from the hash-identified source ROMs after rerunning the complete commercial
+oracle above. `tools/build_shoot_resource_integration.py` installs P1 at
+`0x5B9000` (384 bytes), P0 at `0x5B9200` (128 bytes), and P2 at `0x5B9300`
+(40 bytes). The input is exact v35, the builder asserts the complete
+`0x5B851C..0x5B9328` ownership window is still `FF`, rejects any pre-existing
+aligned ROM pointer into the planned range, and confines the final diff to the
+three Expected Writes.
+
+`tools/verify_shoot_resource_integration.py` does not import the converter.
+It independently checks the fixed asset hashes, three-command/20-item P1
+topology, two-layout/zero-descriptor P0 topology, 20-word P2 palette, and the
+complete aligned pointer population. The only pointers into the new interval
+are eleven internal container pointers; no callback or external consumer
+reaches the assets. Its deterministic report SHA-256 is
+`1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F`.
+Two clean original-source builds reproduce internal v36 SHA-256
+`4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
+This is storage and container evidence only, not runtime reachability.
 
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is translation of controller `4090:9908` and its
-bounded 1.5-only callback families, reusing only the commercially proved GBA
-counterparts above. It must then be connected to the reward/exit paths.
+The next implementation unit is translation of the `9083`/`912A` spawn parent,
+child callbacks `94C1`/`9570`/`9617`, and generator `9229` against the proved
+commercial GBA ABI. It must then be connected through controller `4090:9908`
+and onward to the reward/exit paths.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

@@ -22,6 +22,9 @@ OPENING_P1_CORPUS_SHA256 = (
 OPENING_LINEAR_VERIFICATION_SHA256 = (
     "15BA39813EE3B54BFA3181251432310E558420D2491A8FF4AAE8825D5DC6FB80"
 )
+SHOOT_RESOURCE_VERIFICATION_SHA256 = (
+    "1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -57,13 +60,20 @@ EXPECTED_OPENING_ASSETS = {
     "opening-p0.bin": "2F085D49410AFAEA4A5AC9EEF7ECC806CFF6E8095FFAA8305EC801A551829151",
     "opening-presentation.json": "32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278",
 }
+EXPECTED_SHOOT_ASSETS = {
+    "shoot-spawn-p1.bin": "6E854C5F2138D74B9860843DF8DBC3144AEB71CB04BF5F1875B0E73F26DB4E78",
+    "shoot-spawn-p0.bin": "023A9E47227DC88431A6EE129F40D79944A3173E365DF0B10F615C6D7738D6B8",
+    "shoot-spawn-p2.bin": "33172ACF7FAB5731C38D6328D0E7A677EEEF32198103C2114E9EA2BB6249885C",
+    "shoot-rule-resources.json": "8843C960221876323FF16E72587AC49B37B69FEF22A2128E81AA5035357E8246",
+}
 EXPECTED_LAYERS = {
     "base.gba": "5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA",
     "stage.gba": "FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED",
     "progression.gba": "6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623",
     "boss.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
     "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
-    "current-candidate.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
+    "opening-linear.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
+    "current-candidate.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
 }
 
 
@@ -103,8 +113,9 @@ def main() -> int:
     assets = output / "converted-assets"
     stages = output / "stage-assets"
     opening_assets = output / "opening-assets"
+    shoot_assets = output / "shoot-assets"
     intermediate = output / "intermediate"
-    for directory in (output, assets, stages, opening_assets, intermediate):
+    for directory in (output, assets, stages, opening_assets, shoot_assets, intermediate):
         directory.mkdir(parents=True, exist_ok=True)
 
     corpus = intermediate / "p4-base-conversion-corpus.json"
@@ -164,11 +175,20 @@ def main() -> int:
         opening_p1_corpus,
         opening_assets,
     )
+    run(
+        "build_shoot_rule_resources.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        shoot_assets,
+    )
 
     for name, expected in EXPECTED_ASSETS.items():
         require_hash(assets / name, expected, name)
     for name, expected in EXPECTED_OPENING_ASSETS.items():
         require_hash(opening_assets / name, expected, name)
+    for name, expected in EXPECTED_SHOOT_ASSETS.items():
+        require_hash(shoot_assets / name, expected, name)
 
     run("build_stage_assets.py", args.wsc15, stages)
     for name, expected in EXPECTED_STAGE_ASSETS.items():
@@ -179,6 +199,7 @@ def main() -> int:
     progression = output / "progression.gba"
     boss = output / "boss.gba"
     opening_choice = output / "opening-choice.gba"
+    opening_linear = output / "opening-linear.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -195,6 +216,14 @@ def main() -> int:
         "build_opening_linear_integration.py",
         opening_choice,
         args.wsc15,
+        opening_linear,
+        "--manifest",
+        output / "opening-linear.json",
+    )
+    run(
+        "build_shoot_resource_integration.py",
+        opening_linear,
+        shoot_assets,
         candidate,
         "--manifest",
         output / "current-candidate.json",
@@ -205,7 +234,7 @@ def main() -> int:
     run(
         "analyze_opening_linear_integration.py",
         opening_choice,
-        candidate,
+        opening_linear,
         args.wsc15,
         "--output",
         opening_linear_verification,
@@ -215,14 +244,29 @@ def main() -> int:
         OPENING_LINEAR_VERIFICATION_SHA256,
         "opening linear integration verification",
     )
+    shoot_resource_verification = intermediate / "shoot-resource-verification.json"
+    run(
+        "verify_shoot_resource_integration.py",
+        opening_linear,
+        candidate,
+        args.wsc15,
+        "--output",
+        shoot_resource_verification,
+    )
+    require_hash(
+        shoot_resource_verification,
+        SHOOT_RESOURCE_VERIFICATION_SHA256,
+        "Shoot resource integration verification",
+    )
 
     manifest = {
         "schema": 1,
         "kind": "reproducible-current-candidate-build",
         "claim_scope": (
             "exact current integration candidate including the five-state "
-            "opening choice path, selector records 11..14, and the four "
-            "added linear opening callbacks; runtime validation, remaining "
+            "opening choice path, selector records 11..14, the four added "
+            "linear opening callbacks, and the disconnected Shoot child "
+            "resource layer; runtime validation, callback connectivity, remaining "
             "Ver. 1.5 content completion, and final QA excluded"
         ),
         "sources": {
@@ -234,10 +278,12 @@ def main() -> int:
             "p4_base_conversion_corpus_sha256": CORPUS_SHA256,
             "opening_p1_conversion_corpus_sha256": OPENING_P1_CORPUS_SHA256,
             "opening_linear_verification_sha256": OPENING_LINEAR_VERIFICATION_SHA256,
+            "shoot_resource_verification_sha256": SHOOT_RESOURCE_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,
         "opening_assets": EXPECTED_OPENING_ASSETS,
+        "shoot_assets": EXPECTED_SHOOT_ASSETS,
         "layers": EXPECTED_LAYERS,
         "output": "current-candidate.gba",
     }
