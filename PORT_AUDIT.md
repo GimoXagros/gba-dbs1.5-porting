@@ -226,7 +226,7 @@ manifests record `monitor_visible: false`.
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
 | Digimon Shoot complete rules and transitions | NOT IMPLEMENTED | Rules, transition state, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | NOT IMPLEMENTED | Required producers, persistence/UI, and opening remain |
+| Tag/rating/opening additions | NOT IMPLEMENTED | Opening graph is bounded statically; GBA translation plus tag/rating producers and persistence/UI remain |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -236,13 +236,20 @@ manifests record `monitor_visible: false`.
 
 ### Opening/presentation evidence correction (2026-09-01)
 
-The previously cited 18-to-24 initializer-call increase is real, reproducible
-from the declared originals, and relevant to match/presentation setup. It does
-not by itself establish that the six extra WSC 1.5 calls are selected by the
-cold-boot opening. `tools/analyze_opening_initializer_population.py` now records
-the 18 GBA, 18 WSC 1.0, and 24 WSC 1.5 call locations and limits the claim to
-the expanded initializer population. Cold-boot dispatcher attribution remains
-unimplemented and unverified; see `records/opening-presentation.md`.
+The 18-to-24 initializer increase is now connected to the registered cold-boot
+roots rather than inferred from call counts. Static callback recovery proves
+that the commercial GBA and WSC 1.0 openings each contain a 15-callback linear
+path and three choice callbacks. WSC 1.5 contains 19 linear callbacks and five
+choices. Every population member is graph-reachable from its version's
+registered root.
+
+Monotonic instruction-shape alignment identifies four WSC 1.5-only linear
+callbacks at `7077`, `7407`, `7698`, and `7992`, plus choice callbacks at
+`9C17` and `9E40`. Object-selector extraction also confirms the expanded
+roster/evolution inputs. The exact selection conditions and presentation
+meaning of the two new choices remain unmapped, and none of the six callbacks
+has been translated into the GBA candidate. See
+`records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
 start the Lua script. It generated no frame, RAM, or completion evidence and is
@@ -281,12 +288,13 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer and
-the clean current-candidate build are complete for exact v32. The next active
-milestone is **EXTENDED OPENING/PRESENTATION IMPLEMENTATION**: map the WSC 1.5
-population and its GBA consumers, then integrate the missing additions through
-the same main build path. This is a static implementation milestone; broader
-runtime verification remains deferred and non-displaying.
+The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer, the
+clean current-candidate build, and the static opening callback graphs are
+complete for exact v32. The next active milestone is **EXTENDED
+OPENING/PRESENTATION IMPLEMENTATION**: identify the two new choice conditions,
+translate the four added linear callbacks and two choices, and integrate them
+through the same main build path. Broader runtime verification remains deferred
+and non-displaying.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current

@@ -1,26 +1,18 @@
 #!/usr/bin/env python3
-"""Audit the initializer population previously attributed to the opening.
+"""Audit the initializer populations used by the opening graph analyzers.
 
-The counts are useful structural evidence, but they do not by themselves prove
-that the WSC 1.5-only initializers are dispatched by the cold-boot opening.
-This tool therefore reports topology and consumer signatures without assigning
-the call sites to a runtime route.
+This tool deliberately limits itself to call locations and consumer routine
+signatures. Root registration, callback edges, and reachability are recovered
+by analyze_gba_opening_dispatch.py and analyze_wsc_opening_dispatch.py.
 """
 
 from __future__ import annotations
 
 import argparse
-import difflib
 import hashlib
 import json
 import pathlib
 import struct
-import sys
-
-SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR.parent / "vendor"))
-
-from capstone import CS_ARCH_X86, CS_MODE_16, Cs  # type: ignore
 
 
 GBA_BASE = 0x08000000
@@ -87,44 +79,11 @@ def find_wsc_near_calls(bank: bytes, target: int) -> list[int]:
     return matches
 
 
-def callback_pair_before(bank: bytes, call: int) -> dict[str, int] | None:
-    # mov word ptr [si], imm16; inc si; inc si; mov word ptr [si], imm16
-    pattern_prefix = bytes.fromhex("C7 04")
-    for start in range(max(0, call - 0x50), call - 9):
-        if bank[start:start + 2] != pattern_prefix:
-            continue
-        if bank[start + 4:start + 8] != bytes.fromhex("46 46 C7 04"):
-            continue
-        return {
-            "first": struct.unpack_from("<H", bank, start + 2)[0],
-            "second": struct.unpack_from("<H", bank, start + 8)[0],
-            "source_address": start,
-        }
-    return None
-
-
 def function_start_before(bank: bytes, call: int) -> int:
     start = bank.rfind(WSC_CALLBACK_PROLOGUE, max(0, call - 0x600), call)
     if start < 0:
         raise ValueError(f"no callback prologue before call at {call:04X}")
     return start
-
-
-def word_references(bank: bytes, target: int) -> list[int]:
-    needle = struct.pack("<H", target)
-    refs: list[int] = []
-    cursor = 0
-    while True:
-        cursor = bank.find(needle, cursor)
-        if cursor < 0:
-            return refs
-        refs.append(cursor)
-        cursor += 1
-
-
-def instruction_shape(bank: bytes, start: int, end: int) -> list[str]:
-    engine = Cs(CS_ARCH_X86, CS_MODE_16)
-    return [insn.mnemonic for insn in engine.disasm(bank[start:end], start)]
 
 
 def wsc_population(
@@ -140,9 +99,6 @@ def wsc_population(
             "cpu_address": call,
             "rom_offset": bank_start + call,
             "callback_function_start": function_start,
-            "start_word_references_in_bank": word_references(bank, function_start),
-            "callback_pair_before_call": callback_pair_before(bank, call),
-            "_instruction_shape": instruction_shape(bank, function_start, call + 3),
         })
     routine = bank[target:target + 0xBB]
     return {
@@ -150,7 +106,6 @@ def wsc_population(
         "bank": bank_number,
         "target_cpu_address": target,
         "call_count": len(calls),
-        "candidate_pair_count": len(calls) // 2,
         "calls": entries,
         "routine_signature": {
             "sha256_first_0xBB_bytes": sha256(routine),
@@ -190,7 +145,6 @@ def main() -> int:
         "gba": {
             "consumer_address": gba_target,
             "call_count": len(gba_calls),
-            "candidate_pair_count": len(gba_calls) // 2,
             "call_offsets": gba_calls,
         },
         "wsc_10": wsc_population(wsc10, 0x39, 0xFCDA, "WSC 1.0"),
@@ -198,32 +152,14 @@ def main() -> int:
         "observations": {
             "commercial_gba_matches_wsc_10_call_count": len(gba_calls) == 18,
             "wsc_15_additional_calls": 24 - 18,
-            "wsc_15_additional_candidate_pairs": (24 - 18) // 2,
         },
         "claim_scope": (
-            "The 18/18/24 topology and shared match/presentation signatures are "
-            "confirmed. Candidate pair counts are arithmetic only. Static "
-            "cold-boot dispatch and runtime reachability of the six WSC 1.5-only "
-            "calls remain unproven."
+            "The 18/18/24 initializer populations and shared match/presentation "
+            "signatures are confirmed. This manifest does not infer pairing or "
+            "dispatch from list order; the separate callback-graph manifests "
+            "establish static cold-boot provenance and reachability."
         ),
     }
-
-    correspondence = []
-    wsc10_entries = result["wsc_10"]["calls"]  # type: ignore[index]
-    wsc15_entries = result["wsc_15"]["calls"]  # type: ignore[index]
-    for index, (old, new) in enumerate(zip(wsc10_entries, wsc15_entries)):
-        score = difflib.SequenceMatcher(
-            None, old["_instruction_shape"], new["_instruction_shape"]
-        ).ratio()
-        correspondence.append({
-            "index": index,
-            "wsc_10_function_start": old["callback_function_start"],
-            "wsc_15_function_start": new["callback_function_start"],
-            "pre_call_mnemonic_similarity": round(score, 6),
-        })
-    for entry in (*wsc10_entries, *wsc15_entries):
-        entry["pre_call_instruction_count"] = len(entry.pop("_instruction_shape"))
-    result["first_18_ordered_correspondence"] = correspondence
 
     if tuple(gba_calls) != EXPECTED_GBA_CALLS:
         raise ValueError(f"unexpected GBA call population: {gba_calls}")
