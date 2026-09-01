@@ -296,13 +296,18 @@ Shoot spawn P2, while converted `3D6B16` already exists in the commercial GBA
 at `0x080D3078`.
 
 The P1 boundary remains intentionally open. `3CF410` contains six logical
-commands/34 payload items, four referenced A records, and one non-null 10-byte
-B record. `3BD730` contains thirteen commands/109 payload items and fifty
-referenced A records. The existing generic parser rejects the first on a
-terminal zero-count table interpretation and the second on a leading B-record
-underflow; the Shoot spawn converter is also incompatible because it copies
-only one A record per relative and forces every B pointer to zero. A direct-
-format commercial oracle is required before conversion and installation.
+commands/34 payload items, has maximum payload word-1 index 3, and includes one
+non-null 10-byte B record. `3BD730` contains thirteen commands/109 payload
+items and has maximum word-1 index 49. These index maxima do not establish
+four or fifty A records: they only bound guarded source prefixes. The first A
+target is a prefixed `FFFF` variant, while the second is a prefixed animation
+container with a structurally parsed 58 layouts and 1,072 layout-record bytes.
+The existing generic parser rejects the first on a terminal zero-count table
+interpretation and the second on a leading B-record underflow; the Shoot spawn
+converter is also incompatible because it copies only one A record per
+relative and forces every B pointer to zero. The direct-format commercial
+oracle below proves payload and B behavior independently; each A-target
+conversion remains unproved before installation.
 
 The same report statically binds `ES:065C/065E` to GBA player pointer slots
 `0x0300489C/0x030048A0`. The rules presentation uses Ver. 1.5-only auxiliary
@@ -310,9 +315,24 @@ object slot `ES:071E`, allocated by `4090:172A` with callback `5134` and ID
 `0x343`; WSC 1.0 has no corresponding storage reference. Native GBA allocator
 `0x08352374` is therefore only a candidate until its argument ABI and object
 lifetime are proved. Two independent report runs reproduce SHA-256
-`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+`0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915`.
 The analyzer reads only the three hash-identified original ROM inputs; it
 modifies no candidate and uses neither an emulator nor the supplied save.
+
+`tools/analyze_direct_p1_commercial_oracle.py` separates command-payload and B
+behavior from the unresolved A-target formats. Twelve guarded commercial
+WSC 1.0→USA GBA pairs contain 92 commands and 283 payload items. All 283 match
+the full Shoot-lineage expansion, including 17 spawn items that require the
+word-5 tail relocation; the other 266 match the zero-tail rule directly. The
+pair at WSC `2B09C0`→GBA `34DFE0` also proves six non-null 10-byte B records
+byte-for-byte, while all 86 null B commands remain null.
+
+Both Ver. 1.5 initializer P1 sources have zero non-null word-5 items, so their
+34/109 payload items and null/non-null B behavior are now commercially bounded.
+This does not convert either A target. The report explicitly marks each A
+mapping unresolved and reproduces SHA-256
+`755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3`.
+It performs no ROM writes, runtime validation, or save access.
 
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
 the platform random-number ABI. The guarded commercial GBA oracle calls it

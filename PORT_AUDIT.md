@@ -244,19 +244,38 @@ spawn-palette source `0x3D7AF0`, while `0x3D6B16` converts byte-for-byte to
 commercial GBA data at `0x080D3078`.
 
 The two P1 sources are explicitly not fed through an incompatible converter.
-They contain 6/13 logical commands and 34/109 payload items, require 4/50
-A-table records, and the first also requires a relocated non-null 10-byte B
-record. The existing generic parser rejects them for distinct structural
-reasons, while the spawn-specific converter assumes one A record per relative
-and all-zero B pointers. A commercial direct-format oracle must prove the new
-converter before installation. The same report maps WSC player slots
+They contain 6/13 logical commands and 34/109 payload items; their largest
+payload word-1 indices are 3/49. Those values bound guarded source prefixes,
+not complete A-table populations. The A targets are instead classified as a
+prefixed `FFFF` variant and a prefixed animation container; the latter exposes
+58 layouts and 1,072 layout-record bytes through a structural parse, but no
+cross-platform A-target conversion is claimed. The first P1 source also
+requires a relocated non-null 10-byte B record. The existing generic parser
+rejects the sources for distinct structural reasons, while the spawn-specific
+converter assumes one A record per relative and all-zero B pointers. The
+commercial oracle below proves the payload and B rules; A-target conversion
+remains a separate requirement before installation. The same report maps WSC
+player slots
 `ES:065C/065E` to GBA pointer slots `0x0300489C/0x030048A0` and isolates the
 Ver. 1.5-only auxiliary object `ES:071E`; no matching WSC 1.0 storage reference
 exists, so its native allocator/lifetime remains unresolved rather than being
 assigned a guessed GBA RAM address. Two report runs reproduce SHA-256
-`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+`0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915`.
 This analysis writes no ROM bytes and changes neither v41 nor the runtime
 progress percentage.
+
+`tools/analyze_direct_p1_commercial_oracle.py` now guards twelve exact WSC 1.0
+to USA GBA P1 container pairs comprising 92 commands and 283 payload items.
+All 283 match the complete Shoot-lineage 12-to-16-byte conversion; 266 also
+match the zero-tail subset, while the 17 remaining spawn items prove the
+word-5 tail relocation. A commercial non-null-B pair proves six 10-byte B
+records byte-for-byte, alongside 86 exact null pointers. Both Ver. 1.5
+initializer sources have zero non-null word-5 items, so their 34/109 payload
+populations are inside the proved conversion rule. This does not prove either
+platform-specific A target: their conversion remains separately gated. Two
+report runs reproduce SHA-256
+`755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3`.
+The oracle is read-only and uses neither runtime nor the supplied save.
 
 The commercial-lineage analyzer's earlier function-address mapping was
 correct, but its report accidentally hashed `0x371xx` slices while labeling

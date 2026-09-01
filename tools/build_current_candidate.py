@@ -29,7 +29,10 @@ SHOOT_AUDIO_LINEAGE_SHA256 = (
     "0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E"
 )
 SHOOT_INITIALIZER_RESOURCE_SHA256 = (
-    "F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2"
+    "0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915"
+)
+DIRECT_P1_COMMERCIAL_ORACLE_SHA256 = (
+    "755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3"
 )
 SHOOT_CHILD_VERIFICATION_SHA256 = (
     "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
@@ -177,6 +180,20 @@ def main() -> int:
         shoot_initializer_resources,
         SHOOT_INITIALIZER_RESOURCE_SHA256,
         "Shoot initializer resource boundary",
+    )
+    direct_p1_oracle = intermediate / "direct-p1-commercial-oracle.json"
+    run(
+        "analyze_direct_p1_commercial_oracle.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        direct_p1_oracle,
+    )
+    require_hash(
+        direct_p1_oracle,
+        DIRECT_P1_COMMERCIAL_ORACLE_SHA256,
+        "direct P1 commercial oracle",
     )
 
     animation_specs = (
@@ -406,6 +423,8 @@ def main() -> int:
             "opening_linear_verification_sha256": OPENING_LINEAR_VERIFICATION_SHA256,
             "shoot_resource_verification_sha256": SHOOT_RESOURCE_VERIFICATION_SHA256,
             "shoot_audio_lineage_sha256": SHOOT_AUDIO_LINEAGE_SHA256,
+            "shoot_initializer_resource_sha256": SHOOT_INITIALIZER_RESOURCE_SHA256,
+            "direct_p1_commercial_oracle_sha256": DIRECT_P1_COMMERCIAL_ORACLE_SHA256,
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
             "shoot_ce_sound_verification_sha256": SHOOT_CE_SOUND_VERIFICATION_SHA256,
             "shoot_parent_verification_sha256": SHOOT_PARENT_VERIFICATION_SHA256,

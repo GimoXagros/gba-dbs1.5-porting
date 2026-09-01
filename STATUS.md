@@ -49,7 +49,10 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > by `4090:7168`: five P0 containers and four P2 blocks are structurally bounded,
 > one P2 block reuses the installed Shoot palette source, and another is already
 > byte-identical to commercial GBA data at `0x080D3078`. The two P1 containers
-> are a distinct self-delimiting format and are not yet converted. The report
+> are a distinct self-delimiting format and are not yet converted. A separate
+> twelve-pair commercial oracle proves all 283 P1 payload conversions and six
+> non-null B records; both initializer payload sets satisfy that proved rule.
+> Their two platform-specific A targets remain unconverted. The report
 > also isolates Ver. 1.5-only sound `D2` and auxiliary object `ES:071E` as
 > unresolved native dependencies. No candidate ROM bytes or runtime percentage
 > changed.
@@ -227,7 +230,7 @@ oracle; identical PRNG sequences are not claimed. Therefore a standalone
 `9908/9A1B` hook would remain unreachable and is not an acceptable port.
 `tools/analyze_shoot_initializer_resources.py` now resolves the complete
 initializer resource call population and reproduces report SHA-256
-`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+`0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915`.
 It proves deterministic conversion boundaries for five P0 and four P2
 resources, but rejects both initializer P1 resources from the existing generic
 and spawn-specific converters. The expanded audio-lineage report additionally
@@ -238,6 +241,15 @@ The `7168` initializer, its resources/menu route, the upper states, and
 `9908/9A1B` must be integrated as one reachable layer. Runtime reachability
 and audible playback are not claimed. Rules, reward, win/loss, and exit remain
 release gates, and the runtime-evidenced percentage is unchanged.
+
+The direct-P1 commercial oracle now covers twelve WSC 1.0→USA GBA pairs,
+92 commands, and 283 payload items. It proves every Shoot-lineage payload
+expansion and six non-null 10-byte B records exactly. Both Ver. 1.5 initializer
+P1 payload populations have zero word-5 tail values and fall within the proved
+zero-tail rule. Their prefixed `FFFF` and prefixed-animation A targets remain
+separate unimplemented conversion gates. The deterministic report SHA-256 is
+`755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3`;
+no candidate bytes, runtime evidence, or supplied-save state are involved.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
