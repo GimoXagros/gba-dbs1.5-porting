@@ -213,9 +213,9 @@ def main() -> int:
                 range_record(new, 0x9617, 0x966A),
             ],
             "gba": [
-                range_record(gba, 0x37110, 0x371FC),
-                range_record(gba, 0x371FC, 0x37320),
-                range_record(gba, 0x37320, 0x373D8),
+                range_record(gba, 0x372110, 0x3721FC),
+                range_record(gba, 0x3721FC, 0x372320),
+                range_record(gba, 0x372320, 0x3723D8),
             ],
         },
         "claim_scope": (

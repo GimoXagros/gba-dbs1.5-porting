@@ -25,6 +25,9 @@ OPENING_LINEAR_VERIFICATION_SHA256 = (
 SHOOT_RESOURCE_VERIFICATION_SHA256 = (
     "1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F"
 )
+SHOOT_CHILD_VERIFICATION_SHA256 = (
+    "7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -73,7 +76,8 @@ EXPECTED_LAYERS = {
     "boss.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
     "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
     "opening-linear.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
-    "current-candidate.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
+    "shoot-resources.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
+    "current-candidate.gba": "537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E",
 }
 
 
@@ -200,6 +204,7 @@ def main() -> int:
     boss = output / "boss.gba"
     opening_choice = output / "opening-choice.gba"
     opening_linear = output / "opening-linear.gba"
+    shoot_resources = output / "shoot-resources.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -224,6 +229,15 @@ def main() -> int:
         "build_shoot_resource_integration.py",
         opening_linear,
         shoot_assets,
+        shoot_resources,
+        "--manifest",
+        output / "shoot-resources.json",
+    )
+    run(
+        "build_shoot_child_integration.py",
+        shoot_resources,
+        args.gba,
+        args.wsc15,
         candidate,
         "--manifest",
         output / "current-candidate.json",
@@ -248,7 +262,7 @@ def main() -> int:
     run(
         "verify_shoot_resource_integration.py",
         opening_linear,
-        candidate,
+        shoot_resources,
         args.wsc15,
         "--output",
         shoot_resource_verification,
@@ -258,6 +272,21 @@ def main() -> int:
         SHOOT_RESOURCE_VERIFICATION_SHA256,
         "Shoot resource integration verification",
     )
+    shoot_child_verification = intermediate / "shoot-child-verification.json"
+    run(
+        "verify_shoot_child_integration.py",
+        shoot_resources,
+        candidate,
+        args.gba,
+        args.wsc15,
+        "--output",
+        shoot_child_verification,
+    )
+    require_hash(
+        shoot_child_verification,
+        SHOOT_CHILD_VERIFICATION_SHA256,
+        "Shoot child integration verification",
+    )
 
     manifest = {
         "schema": 1,
@@ -265,9 +294,10 @@ def main() -> int:
         "claim_scope": (
             "exact current integration candidate including the five-state "
             "opening choice path, selector records 11..14, the four added "
-            "linear opening callbacks, and the disconnected Shoot child "
-            "resource layer; runtime validation, callback connectivity, remaining "
-            "Ver. 1.5 content completion, and final QA excluded"
+            "linear opening callbacks, the Shoot child resource layer, and the "
+            "resident 9229->94C1->9570->9617 child generator/callback family; "
+            "external parent entry, the WSC audio-state request, runtime validation, "
+            "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
         "sources": {
             "gba_usa_sha256": GBA_SHA256,
@@ -279,6 +309,7 @@ def main() -> int:
             "opening_p1_conversion_corpus_sha256": OPENING_P1_CORPUS_SHA256,
             "opening_linear_verification_sha256": OPENING_LINEAR_VERIFICATION_SHA256,
             "shoot_resource_verification_sha256": SHOOT_RESOURCE_VERIFICATION_SHA256,
+            "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

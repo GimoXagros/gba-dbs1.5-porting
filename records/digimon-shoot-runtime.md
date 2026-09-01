@@ -85,8 +85,9 @@ clear.
 
 ## Rules callback boundary
 
-The first connected rules unit is now bounded statically, but it is not yet
-installed in the GBA candidate. `tools/analyze_shoot_rule_callback_graph.py`
+The complete first rules unit is now bounded statically, but only its first
+child-object family is installed in the GBA candidate.
+`tools/analyze_shoot_rule_callback_graph.py`
 starts at controller `4090:9908`, its four selected families, and every
 callback pointer reached from them. The source-verified graph contains 2,051
 instruction starts, 6,096 code bytes in 16 ranges, 43 callback entries, 46
@@ -118,11 +119,14 @@ The paired commercial call sites prove `4FFF:1BD9`→GBA `0x08012560`,
 `2862`→`0x08012A84`. The completion state's `4090:181E` object-release path
 has commercial GBA counterpart `0x083524C4`. The deterministic reports are
 generated as `build/shoot-rule-graph-v2.json` and
-`build/shoot-commercial-lineage-v1.json`. Their reproducible SHA-256 values
+`build/shoot-commercial-lineage-v2.json`. Their reproducible SHA-256 values
 are `37BAFE3EE49314F58024BD322DA1DEC33C8A7316DA0984242985FA4262DF5281`
-and `61D50D39A87F35677BAC5BDEE1991D84AF8E9D2242A664284754744B8D77E589`,
+and `7F705C9F2623C93E0C90682DB9C90990188789A0ED6BCD8B633FB7C8040B7602`,
 respectively; they claim static source lineage only and do not claim working
-GBA rules.
+GBA rules. The prior v1 lineage report used the correct callback addresses and
+call-target mapping, but accidentally hashed `0x371xx` byte slices while
+labeling `0x372xxx` ranges. v2 corrects that byte attribution; no callback
+address mapping changed.
 
 The graph-wide lineage pass also binds the child-object generator `9229` to
 WSC 1.0 physical `5A93` and commercial GBA `0x0837273C`. That commercial
@@ -168,13 +172,41 @@ Two clean original-source builds reproduce internal v36 SHA-256
 `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 This is storage and container evidence only, not runtime reachability.
 
+## Installed resident child family (v37)
+
+`tools/build_shoot_child_integration.py` installs translations of generator
+`9229` and callbacks `94C1`, `9570`, and `9617` at `0x5B9400`, `0x5B9800`,
+`0x5B9C00`, and `0x5BA000`. The generator constructs child ID `0x410B`,
+connects the v36 P1/P0/P2 resources, sets the initial callback, and emits event
+0. The initial and homing callbacks use the proved native angle, X/Y trig,
+event, and presentation-update calls; they advance internally to `9570` and
+then `9617`. The completion callback releases the child and clears Shoot flag
+`0x40`.
+
+The builder requires exact v36 input, exact WSC 1.5 source-range hashes, exact
+commercial GBA oracle hashes, a builder-owned all-`FF` interval, no
+pre-existing aligned pointers into the code window, and four Expected Writes.
+`tools/verify_shoot_child_integration.py` is independent of the builder. It
+checks the exact changed-byte set and fixed function hashes, disassembles the
+final-placement ARM7TDMI code, rejects unsupported instructions, verifies all
+native branch targets, and proves the three resource pointers and internal
+callback chain. Its report SHA-256 is
+`7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2`.
+Two clean original-source builds reproduce internal v37 SHA-256
+`537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+
+This is resident internal-chain evidence, not runtime reachability. No pointer
+outside the inserted window reaches generator `9229`. Parent `912A` remains
+unconnected because the WSC generator path also makes an audio-state request
+whose native GBA mapping is not yet proved. That request is deliberately
+excluded rather than guessed.
+
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is translation of the `9083`/`912A` spawn parent,
-child callbacks `94C1`/`9570`/`9617`, and generator `9229` against the proved
-commercial GBA ABI. It must then be connected through controller `4090:9908`
-and onward to the reward/exit paths.
+The next implementation unit is mapping the audio-state request, translating
+the `9083`/`912A` spawn parent, and connecting the resident generator through
+controller `4090:9908` and onward to the remaining reward/exit paths.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

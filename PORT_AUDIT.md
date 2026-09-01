@@ -51,8 +51,9 @@ native source port nor an emulator-assisted port.
   progression/unlock changes, and alternate final-boss data/code.
 - Digimon Shoot stage routing, graphics/palette data, core-loop route, timer
   callback, normal display callback, and scanline-threshold callback.
-- Disconnected Digimon Shoot child P1/P0/P2 resources at guarded expansion
-  offsets; their rule callback consumer is not installed yet.
+- Digimon Shoot child P1/P0/P2 resources plus the resident
+  `9229 -> 94C1 -> 9570 -> 9617` generator/callback family at guarded expansion
+  offsets. The family is internally connected but has no external parent entry.
 - Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
   callbacks, converted motion/event tables, four added linear callbacks,
   selector-3→13 predecessor hook, and sequential auxiliary slot-3 reuse.
@@ -65,7 +66,7 @@ do not by themselves prove that the corresponding gameplay paths work.
 - WSC-to-GBA graphics, palette, map, descriptor, object-record, and table
   conversion helpers.
 - ROM survey, disassembly, probe, smoke-build, and manifest generation tools.
-- Five guarded builders used for the current composite candidate.
+- Guarded builders used for every current composite layer.
 
 ### C. Emulation or compatibility layer
 
@@ -102,7 +103,7 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The current static candidate was rebuilt in seven guarded layers into two
+The current static candidate was rebuilt in eight guarded layers into two
 ignored clean output directories:
 
 | Layer | SHA-256 |
@@ -113,7 +114,8 @@ ignored clean output directories:
 | Zeed boss / runtime-evidenced composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
 | Opening choice/resources / static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
 | Four linear callbacks / static intermediate v35 | `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F` |
-| Disconnected Shoot child resources / current static composite v36 | `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C` |
+| Disconnected Shoot child resources / static intermediate v36 | `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C` |
+| Resident Shoot child generator/callback family / current static composite v37 | `537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -124,7 +126,7 @@ The clean-build gap is now closed for the current candidate.
 WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 and opening-P1
 conversion corpora, all fourteen consumed character/evolution/VS/boss blobs,
 the opening P0 blob, all twelve consumed stage blobs, the three Shoot child
-resources, and all seven ROM layers.
+resources, and all eight ROM layers.
 Every source, intermediate, asset, and layer is checked against its expected
 SHA-256.
 
@@ -136,13 +138,13 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v36
-SHA `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
+Two new runs in separate empty output directories each regenerated exact v37
+SHA `537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v36 build checks.
+the v37 build checks.
 
 `tools/analyze_opening_linear_integration.py` independently compares v34 with
 v35. It confines all 2,199 changed bytes to three predecessor hooks and eleven
@@ -163,6 +165,24 @@ container topology, and all eleven post-insertion pointers. Every pointer is
 internal to the containers, so this is disconnected storage evidence rather
 than a runtime-consumption claim. The report SHA-256 is
 `1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F`.
+
+The eighth layer installs ARM7TDMI translations of WSC generator `9229` and
+callbacks `94C1`, `9570`, and `9617` at four builder-owned ranges. The builder
+checks exact v36 input and WSC/GBA oracle hashes, an all-`FF` ownership window,
+zero pre-existing aligned pointers into that window, and four Expected Writes.
+An independent verifier re-derives the exact diff, disassembles the final ROM
+placement, rejects instructions outside the target ISA, checks native call
+graphs, and proves the three resource literals and complete internal callback
+chain. Its deterministic report SHA-256 is
+`7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2`.
+No external pointer reaches generator `9229`; parent `912A`, the WSC audio-state
+request, and runtime reachability are explicitly outside this layer.
+
+The commercial-lineage analyzer's earlier function-address mapping was
+correct, but its report accidentally hashed `0x371xx` slices while labeling
+the callbacks at `0x372xxx`. The ranges are corrected without changing the
+mapped callback addresses. Corrected report SHA-256 is
+`7F705C9F2623C93E0C90682DB9C90990188789A0ED6BCD8B633FB7C8040B7602`.
 
 ## Boot regression and correction
 
@@ -257,8 +277,8 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v36 installs the child P1/P0/P2 resources, but the pointer audit proves they are disconnected; rule callbacks, transition state, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v36 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v37 installs the child resources and internally connected `9229 -> 94C1 -> 9570 -> 9617` family; external parent/controller entry, audio-state handling, remaining rules, transitions, rewards, win/loss, and exit remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v37 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -312,9 +332,9 @@ timers, fades, motion, and event IDs. Callback 10 uses the exact seven-event
 source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
-boundary, and event table in the v36 opening-linear intermediate. These are static
+boundary, and event table in the v37 opening-linear intermediate. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v36 runtime evidence was collected. See
+proof. No v37 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -326,8 +346,8 @@ runtime attempt was made in this milestone.
 
 - Train vents/bounce behavior, Iraira suction, and remaining vertical-stage
   engine branches.
-- Digimon Shoot rules/object callbacks, private transition state, reward,
-  win/loss, menu, and exit behavior.
+- Digimon Shoot external parent/controller connection, remaining rules/object
+  callbacks, private transition and audio state, reward, win/loss, menu, and exit.
 - Tag/reward/rating persistence and associated UI.
 - Extended opening visual/audio/timing/transition/skip behavior on the final
   integrated candidate; runtime validation remains deliberately deferred.
@@ -356,12 +376,13 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v36 build preserves the complete static
-19-linear + 5-choice opening graph and installs the disconnected Shoot child
-resource layer.
+complete for exact v32. The clean v37 build preserves the complete static
+19-linear + 5-choice opening graph and installs the internally connected Shoot
+child generator/callback family over the v36 resource layer.
 The next active implementation milestone returns to the largest known content
 gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must replace the bounded
-spawn/transition fallbacks, connect object/rule callbacks and reward/menu
+spawn/transition fallbacks, connect the external parent/controller, remaining
+object/rule callbacks, audio state, and reward/menu
 outcomes, and remain reproducible through the same main build. Runtime
 verification remains deferred and non-displaying until all declared content
 is integrated.
