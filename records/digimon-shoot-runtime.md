@@ -211,7 +211,8 @@ the 185 independently bounded WSC 1.0 payloads `00..B8`; therefore no retail
 GBA sound ID is claimed for it. The upper state graph also issues sound `D2`,
 request type 2, at offsets `7976`, `79F9`, and `7CC6`. Its 32-byte command
 payload is likewise unique to Ver. 1.5 and has no exact WSC 1.0 match, but it
-has not yet been decoded into a bounded GBA-native track. The deterministic
+is decoded and installed by the later v43 layer as native ID `0x5C`; the three
+request sites remain unconnected. The deterministic
 expanded lineage report SHA-256 is
 `0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
 Two clean original-source builds reproduce internal v39 SHA-256
@@ -350,9 +351,34 @@ and had zero aligned pre-existing pointers. The Expected Writes layer changes
 198 internal pointers, zero external pointers into the new window, exact asset
 hashes, and unchanged gaps; report SHA-256 is
 `7114A9C7B8CA51F8C52254EB03C3771F90B0CBB63B2D19D3D9B50ABA34A3576B`.
-Current v42 SHA-256 is
+Static intermediate v42 SHA-256 is
 `AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E`.
 No initializer or menu code points into this resource window yet.
+
+`tools/analyze_shoot_d2_sound.py` guards the source `A0`/`A1`/`A2`/`A3`
+handlers and proves D2 setup `A1=09`, `A2=01`, `C1=00`, `A3=20`. Nine packed
+notes `20,18,17,16,15,14,13,12,11` last 40+8×5=80 ticks, with right-only
+source volume `0x0F`. Commercial WSC 1.0 sound `B5` uses the same `A2=01`
+wave and maps to USA GBA sound `0x56`, whose track selects voice `0x1F`.
+Analysis report SHA-256 is
+`ECB4780B4EC38D44B6F5FC0B11D7E45A7BF0D30214474D5A45778F91CC231E0B`.
+
+v43 appends native ID `0x5C` while preserving IDs `00..5B`. It changes only
+the eight-byte table entry and 67-byte song. Independent verification checks
+all pitches/times, 80 total ticks, right pan, voice `0x1F`, native pitch MOD,
+diff containment, and pointer population; report SHA-256 is
+`A636C763D0AF93DA8E47D9BC67DDBD8F1895D1A4BF95C1AE0029CF2A3C79B473`.
+Conditional source hardware-channel-3 sweep and audible parity are deferred.
+
+The interpreter decode also corrects CE `A1 72`: it is hardware sweep control,
+not note duration. The source schedule remains 60 ticks, with M4A `FINE`
+ending the longer gate. CE's header and `A0` steps all have zero left nibbles,
+so v44 changes one pan byte from center to right and preserves D2. Independent
+report SHA-256 is
+`A087DCD31E27A17615AEB897BD037F090F69C699D1EB2C6384674D4B2F0A0ABA`.
+Current static v44 SHA-256 is
+`000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB`.
+No emulator or supplied save was used.
 
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
 the platform random-number ABI. The guarded commercial GBA oracle calls it
@@ -370,7 +396,7 @@ until the dedicated initializer bypass is ported.
 
 The next implementation unit must translate and connect the menu route,
 `4090:7168` initializer/resources using the verified P1 blob and bounded P0/P2
-assets, bind the `071E` object lifetime, reconstruct `D2`, and install the
+assets, bind the `071E` object lifetime, connect native `0x5C`, and install the
 upper state populations before
 installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
 `9908` alone would remain unreachable.

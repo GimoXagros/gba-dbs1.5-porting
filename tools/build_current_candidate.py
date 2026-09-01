@@ -40,6 +40,15 @@ SHOOT_INITIALIZER_P1_VERIFICATION_SHA256 = (
 SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256 = (
     "7114A9C7B8CA51F8C52254EB03C3771F90B0CBB63B2D19D3D9B50ABA34A3576B"
 )
+SHOOT_D2_ANALYSIS_SHA256 = (
+    "ECB4780B4EC38D44B6F5FC0B11D7E45A7BF0D30214474D5A45778F91CC231E0B"
+)
+SHOOT_D2_VERIFICATION_SHA256 = (
+    "A636C763D0AF93DA8E47D9BC67DDBD8F1895D1A4BF95C1AE0029CF2A3C79B473"
+)
+SHOOT_CE_STEREO_VERIFICATION_SHA256 = (
+    "A087DCD31E27A17615AEB897BD037F090F69C699D1EB2C6384674D4B2F0A0ABA"
+)
 SHOOT_CHILD_VERIFICATION_SHA256 = (
     "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
 )
@@ -111,7 +120,9 @@ EXPECTED_LAYERS = {
     "shoot-child.gba": "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492",
     "shoot-ce.gba": "9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B",
     "shoot-parent.gba": "B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06",
-    "current-candidate.gba": "AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E",
+    "shoot-initializer-resources.gba": "AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E",
+    "shoot-d2.gba": "7BB890FEC50BBAB796B5F94FE7761EAE9C4A284BB8E3CC9FA75A12FD20FB2264",
+    "current-candidate.gba": "000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB",
 }
 
 
@@ -183,6 +194,20 @@ def main() -> int:
         shoot_audio_lineage,
         SHOOT_AUDIO_LINEAGE_SHA256,
         "Shoot audio request lineage",
+    )
+    shoot_d2_analysis = intermediate / "shoot-d2-analysis.json"
+    run(
+        "analyze_shoot_d2_sound.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_d2_analysis,
+    )
+    require_hash(
+        shoot_d2_analysis,
+        SHOOT_D2_ANALYSIS_SHA256,
+        "Shoot D2 sound boundary",
     )
     shoot_initializer_resources = intermediate / "shoot-initializer-resources.json"
     run(
@@ -297,6 +322,8 @@ def main() -> int:
     shoot_child = output / "shoot-child.gba"
     shoot_ce = output / "shoot-ce.gba"
     shoot_parent = output / "shoot-parent.gba"
+    shoot_initializer_resources_layer = output / "shoot-initializer-resources.gba"
+    shoot_d2 = output / "shoot-d2.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -356,6 +383,24 @@ def main() -> int:
         "build_shoot_initializer_resource_integration.py",
         shoot_parent,
         shoot_assets,
+        shoot_initializer_resources_layer,
+        "--manifest",
+        output / "shoot-initializer-resources.json",
+    )
+    run(
+        "build_shoot_d2_sound_integration.py",
+        shoot_initializer_resources_layer,
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        shoot_d2,
+        "--manifest",
+        output / "shoot-d2.json",
+    )
+    run(
+        "build_shoot_ce_stereo_correction.py",
+        shoot_d2,
+        args.wsc15,
         candidate,
         "--manifest",
         output / "current-candidate.json",
@@ -441,7 +486,7 @@ def main() -> int:
     run(
         "verify_shoot_initializer_resource_integration.py",
         shoot_parent,
-        candidate,
+        shoot_initializer_resources_layer,
         shoot_assets,
         "--output",
         shoot_initializer_resource_integration_verification,
@@ -450,6 +495,36 @@ def main() -> int:
         shoot_initializer_resource_integration_verification,
         SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256,
         "Shoot initializer resource integration independent verification",
+    )
+    shoot_d2_verification = intermediate / "shoot-d2-verification.json"
+    run(
+        "verify_shoot_d2_sound_integration.py",
+        shoot_initializer_resources_layer,
+        shoot_d2,
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_d2_verification,
+    )
+    require_hash(
+        shoot_d2_verification,
+        SHOOT_D2_VERIFICATION_SHA256,
+        "Shoot D2 sound integration independent verification",
+    )
+    shoot_ce_stereo_verification = intermediate / "shoot-ce-stereo-verification.json"
+    run(
+        "verify_shoot_ce_stereo_correction.py",
+        shoot_d2,
+        candidate,
+        args.wsc15,
+        "--output",
+        shoot_ce_stereo_verification,
+    )
+    require_hash(
+        shoot_ce_stereo_verification,
+        SHOOT_CE_STEREO_VERIFICATION_SHA256,
+        "Shoot CE stereo correction independent verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -477,7 +552,9 @@ def main() -> int:
             "Ver. 1.5-only CE-to-GBA-0x5B pitch/timing/volume-decay reconstruction "
             "and internally connected 9083->90F3->912A->91AB->91EF parent chain, "
             "plus the independently verified resource-only placement of all converted "
-            "7168 initializer P1/P0/P2 assets; "
+            "7168 initializer P1/P0/P2 assets, and the bounded Ver. 1.5-only "
+            "D2-to-GBA-0x5C pitch/timing/stereo/modulation reconstruction; "
+            "the final one-byte CE layer also corrects its source-proved right-only pan; "
             "external controller 9908/9A1B entry, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -499,6 +576,9 @@ def main() -> int:
             "shoot_initializer_resource_integration_verification_sha256": (
                 SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256
             ),
+            "shoot_d2_analysis_sha256": SHOOT_D2_ANALYSIS_SHA256,
+            "shoot_d2_verification_sha256": SHOOT_D2_VERIFICATION_SHA256,
+            "shoot_ce_stereo_verification_sha256": SHOOT_CE_STEREO_VERIFICATION_SHA256,
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
             "shoot_ce_sound_verification_sha256": SHOOT_CE_SOUND_VERIFICATION_SHA256,
             "shoot_parent_verification_sha256": SHOOT_PARENT_VERIFICATION_SHA256,

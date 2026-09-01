@@ -80,8 +80,9 @@ It must be bypassed when the dedicated initializer is connected.
 Static initializer-resource analysis now resolves its complete direct call
 population to five P0, two P1, and four P2 sources. P0/P2 conversion is
 bounded, and v42 installs the two verified P1 containers together with all
-non-reused initializer P0/P2 assets. Ver. 1.5-only sound `D2` and
-auxiliary object `ES:071E` remain native integration gates. Resource-boundary
+non-reused initializer P0/P2 assets. v43 installs Ver. 1.5-only sound `D2` as
+native ID `0x5C`, but its upper-state request sites are not connected. The
+auxiliary object `ES:071E` remains the native allocation/lifetime gate. Resource-boundary
 report SHA-256 is
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`;
 the report installs no GBA code or data.
