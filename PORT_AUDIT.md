@@ -286,7 +286,13 @@ owns a seven-entry event table and requires a bespoke translation. Exact
 commercial WSC 1.0/GBA instruction pairs additionally derive a guarded timing
 and motion plan for all four additions. Those derived constants remain an
 implementation inference until non-displaying runtime timing and transition
-QA. No v34 runtime evidence was collected. See
+QA. Static lifetime analysis also proves that WSC objects `0x0952` and
+`0x0994` are active only in non-overlapping callbacks 7 and 10. Commercial GBA
+opening construction uses slots 0..2; unused slot 3 at `0x030029F8` has no
+aligned retail-ROM pointer and ends exactly at task-count field `0x03002A48`.
+It can be reconstructed sequentially for records 50 and 49 without clobbering
+the retained commercial auxiliary objects. The construction, update, and skip
+list code remains unimplemented. No v34 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -301,9 +307,9 @@ runtime attempt was made in this milestone.
 - Digimon Shoot rules/object callbacks, private transition state, reward,
   win/loss, menu, and exit behavior.
 - Tag/reward/rating persistence and associated UI.
-- Four added linear opening callbacks, native second-slot lifetime/cleanup for
-  the already resident auxiliary records, aligned selector-3→13 behavior, and
-  complete extended opening/presentation sequence.
+- Four added linear opening callbacks, bounded slot-3 construction/update/skip
+  handling for the already resident auxiliary records, aligned selector-3→13
+  behavior, and complete extended opening/presentation sequence.
 - End-to-end added-fighter evolution paths and alternate-boss outcomes.
 - Audio parity, save/load parity, reset behavior, and stability regression.
 - Final BPS generation/round-trip validation after all content and QA gates.

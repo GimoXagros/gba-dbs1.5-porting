@@ -316,7 +316,7 @@ def main() -> int:
             "complex_auxiliary_callbacks": [7, 10],
             "remaining_decisions": [
                 "derive the commercial GBA timing/motion conversion for each changed constant",
-                "activate and clean native object slot 1 on normal and skip paths",
+                "construct and reuse the separately bounded extra GBA opening-object slot on normal and skip paths",
                 "assemble the four ARM callbacks and splice the predecessor edge",
             ],
         },

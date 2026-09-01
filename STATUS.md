@@ -193,9 +193,11 @@ and auxiliary-object translation. Exact commercial WSC 1.0/GBA instruction
 pairs now also bound a static per-constant timing/motion plan for all four
 additions. That plan remains an implementation inference until the deferred
 non-displaying runtime QA. The four ARM callbacks, auxiliary-object
-lifetime/cleanup, and aligned selector-3→13 change remain unfinished. No v34
-runtime evidence exists, so the static integration does not increase
-playable/release progress.
+construction/updates/skip lists, and aligned selector-3→13 change remain
+unfinished. Static lifetime analysis now bounds sequential reuse of unused GBA
+opening slot 3 for records 50 and 49 without overwriting retained commercial
+auxiliary objects. No v34 runtime evidence exists, so the static integration
+does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

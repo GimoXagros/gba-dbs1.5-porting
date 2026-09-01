@@ -367,11 +367,12 @@ def main() -> int:
             "resource_record_bytes": RESOURCE_RECORD_BYTES,
             "object_base": GBA_OBJECT_BASE,
             "object_stride": GBA_OBJECT_STRIDE,
-            "supported_opening_slots": [0, 1],
+            "commercially_observed_opening_slots": [0, 1, 2],
+            "additional_slot_static_plan": 3,
             "bounded_use": (
-                "pass an auxiliary record view with selector 0 and the chosen "
-                "opening-object slot; slot activation and cleanup remain part "
-                "of the untranslated callback state machine"
+                "pass an auxiliary record view with selector 0; the separate "
+                "lifetime proof bounds sequential reuse of opening-object "
+                "slot 3, whose activation and cleanup remain untranslated"
             ),
         },
         "conclusion": (

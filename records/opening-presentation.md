@@ -203,11 +203,22 @@ target at `0x03002908 + slot*0x50`. Passing either complete view with selector
 ABI; no direct translation of `4FFF:226E` is required.
 
 Therefore no duplicate auxiliary payload is needed. The remaining boundary is
-the state-machine decision: activate the commercial second object slot only
-for the two complex callbacks, preserve its event/motion state, and clean it up
-on both normal and skip transitions. That slot lifetime and the four callback
-translations remain unimplemented; a callback-only chain splice would be
-incomplete.
+now bounded by `tools/analyze_opening_aux_object_lifetime.py`. WSC 1.5 creates
+objects `0x0952` and `0x0994` during opening setup, but their complete
+bank-local reference populations confine active use to callbacks 7 and 10,
+respectively. Those callback ranges do not overlap.
+
+The commercial GBA consumer uses opening slots 0, 1, and 2 at
+`0x03002908 + slot*0x50`. Slot 3 is `0x030029F8`; it has no aligned literal
+reference anywhere in the retail ROM and its 0x50-byte extent ends exactly at
+the independently referenced task-count field `0x03002A48`. The retained
+commercial auxiliary objects at `0x03002778` and `0x030027C8` therefore do not
+need to be overwritten. The bounded translation plan is to construct record
+50 in slot 3 during the callback-6→7 transition, use/include it only in
+callback 7, then reconstruct record 49 in the same slot during the
+callback-9→10 transition and use/include it only in callback 10. The slot
+construction, updates, skip lists, and four callback translations remain
+unimplemented; a callback-only chain splice would be incomplete.
 
 ## Reproduction
 
@@ -221,6 +232,7 @@ python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> -
 python tools/analyze_opening_linear_callback_semantics.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-semantics.json
 python tools/analyze_opening_linear_timing_translation.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-timing.json
 python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
+python tools/analyze_opening_aux_object_lifetime.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-object-lifetime.json
 python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
 python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
 ```
@@ -231,9 +243,10 @@ Current generated-manifest SHA-256 values are:
 - GBA callback graph: `77E64A38FEDE93B1712758D0C67F674D3C9A4F723F77689403D060A4A80E981A`
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
-- linear-callback semantic ledger: `41976737DE0BF34E59FD1CE1C8DBA731A1889988A0EE547B5ED97845A2375914`
+- linear-callback semantic ledger: `1CBBA71D6DD9EE7A7D3D902A16B26A1DC232D05C660886B740DD209E6DB8DBFC`
 - linear-callback timing plan: `97EAF415097BFF9AEF3C29DC2904F1C24556EBA10B1BC08A644335C0BBD6780F`
-- auxiliary resource/native object-path proof: `55F9F0D67EAB44228D52575E91F4668F51ACF5E208C105FC40D6BE39A8AB9E94`
+- auxiliary resource/native object-path proof: `52D7F0602C94C8D434F314C0CF318CD80F187F68BB1F88FE10A5C05AA6DF70FA`
+- auxiliary object lifetime/slot plan: `499C7A8AAC5B7B864A8CA2EB4956224C889331ADB74D4E70AB80250BF9DC9E8D`
 - opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
 - opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`
 
@@ -248,8 +261,8 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Translate the two complex callbacks with bounded activation and cleanup of
-   the proven native second-slot records 49/50.
+1. Translate the two complex callbacks with construction, sequential slot-3
+   reuse, updates, and skip-list handling for native records 50/49.
 2. Translate the four added linear callbacks and aligned selector-3→13 change
    into the commercial GBA opening state machine.
 3. Preserve the complete 19-linear + 5-choice graph through the single
