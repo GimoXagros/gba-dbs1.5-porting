@@ -189,10 +189,13 @@ inputs are already resident, and the exact commercial consumer at
 strides. This removes the need to translate the otherwise unmapped WSC primary
 loader. Their source state machines are also fixed now: callbacks 7/8/9 map to
 commercial GBA template lineages, while callback 10 is a bespoke event-table
-and auxiliary-object translation. The four ARM callbacks, per-constant timing
-conversion, second-slot lifetime/cleanup, and aligned selector-3→13 change
-remain unfinished. No v34 runtime evidence exists, so the static integration
-does not increase playable/release progress.
+and auxiliary-object translation. Exact commercial WSC 1.0/GBA instruction
+pairs now also bound a static per-constant timing/motion plan for all four
+additions. That plan remains an implementation inference until the deferred
+non-displaying runtime QA. The four ARM callbacks, auxiliary-object
+lifetime/cleanup, and aligned selector-3→13 change remain unfinished. No v34
+runtime evidence exists, so the static integration does not increase
+playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

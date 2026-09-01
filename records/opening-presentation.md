@@ -146,8 +146,25 @@ object on event `0x25`.
 The shared table at `0x7976` is exactly
 `[(0x0B,6),(0x0C,9),(0x0D,30),(0x0E,24),(0x23,24),(0x24,8),(0x25,500)]`.
 Skip populations are one object for callbacks 8/9 and two objects for 7/10.
-These are source semantics, not an ARM implementation claim. Per-constant GBA
-timing/motion translation and both normal/skip slot lifetimes remain gates.
+These are source semantics, not an ARM implementation claim.
+
+`tools/analyze_opening_linear_timing_translation.py` additionally anchors the
+implementation constants to exact commercial WSC 1.0/GBA instruction pairs.
+The retail conversion uses a 4/5 duration scale, while motion ratios vary by
+template family. Applying those bounded rules produces this static plan:
+
+| Added callback | GBA timers | Fade decrement | Basis |
+|---:|---|---:|---|
+| 7 | setup 8; events `0x21/22/23` at 72/41/33; fade 83; successor 86 | 11 | commercial template 7 |
+| 8 | setup 8; event `0x1A` at 53; fade 76; successor 136 | 16 | commercial template 8 |
+| 9 | setup 8; event `0x1D` at 120; fade 108; successor 136 | 14 | commercial template 9 |
+| 10 | setup 8; fade 132; successor 78; table durations 4/7/24/19/19/6/400 | 7 | absolute timing plus nearest motion family |
+
+Changed successor timers are translated as a signed delta from the matching
+commercial WSC/GBA pair rather than by blindly scaling the absolute value.
+These constants are implementation inferences, not runtime evidence; perceptual
+timing and transition correctness remain part of the deferred non-displaying
+QA. Both normal/skip auxiliary-object lifetimes also remain gates.
 
 Records 49 and 50 at WSC 1.5 raw offsets `0x740620` and `0x740640` are not
 relocations of their WSC 1.0 counterparts: all five pointer targets are
@@ -202,6 +219,7 @@ python tools/analyze_gba_opening_dispatch.py <USA-GBA> --output evidence/gba-ope
 python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output evidence/wsc-opening-callback-graph.json
 python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-additions.json
 python tools/analyze_opening_linear_callback_semantics.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-semantics.json
+python tools/analyze_opening_linear_timing_translation.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-timing.json
 python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
 python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
 python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
@@ -214,6 +232,7 @@ Current generated-manifest SHA-256 values are:
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
 - linear-callback semantic ledger: `41976737DE0BF34E59FD1CE1C8DBA731A1889988A0EE547B5ED97845A2375914`
+- linear-callback timing plan: `97EAF415097BFF9AEF3C29DC2904F1C24556EBA10B1BC08A644335C0BBD6780F`
 - auxiliary resource/native object-path proof: `55F9F0D67EAB44228D52575E91F4668F51ACF5E208C105FC40D6BE39A8AB9E94`
 - opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
 - opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`

@@ -279,11 +279,14 @@ record and creates an object at `0x03002908 + slot*0x50`; its constructor and
 companion calls are `0x080127E4` and `0x080132EC`. Therefore the native
 translation can use the existing complete records and does not require a
 direct counterpart for WSC primary loader `4FFF:226E`. The four callbacks,
-second-slot activation/cleanup, and aligned selector-3→13 change remain
+auxiliary-object activation/cleanup, and aligned selector-3→13 change remain
 unimplemented. Their source state machines are nevertheless bounded: the
 first three map to commercial GBA callback-template lineages 7/8/9; the fourth
-owns a seven-entry event table and requires a bespoke translation. No v34
-runtime evidence was collected. See
+owns a seven-entry event table and requires a bespoke translation. Exact
+commercial WSC 1.0/GBA instruction pairs additionally derive a guarded timing
+and motion plan for all four additions. Those derived constants remain an
+implementation inference until non-displaying runtime timing and transition
+QA. No v34 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
