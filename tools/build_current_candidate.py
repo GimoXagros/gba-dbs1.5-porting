@@ -19,6 +19,9 @@ CORPUS_SHA256 = "6E648C301837662DCC26613B1D237E55CF356277C3BE13AFA530A45927D7B8E
 OPENING_P1_CORPUS_SHA256 = (
     "B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887"
 )
+OPENING_LINEAR_VERIFICATION_SHA256 = (
+    "15BA39813EE3B54BFA3181251432310E558420D2491A8FF4AAE8825D5DC6FB80"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -59,7 +62,8 @@ EXPECTED_LAYERS = {
     "stage.gba": "FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED",
     "progression.gba": "6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623",
     "boss.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
-    "current-candidate.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
+    "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
+    "current-candidate.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
 }
 
 
@@ -174,6 +178,7 @@ def main() -> int:
     stage = output / "stage.gba"
     progression = output / "progression.gba"
     boss = output / "boss.gba"
+    opening_choice = output / "opening-choice.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -183,19 +188,41 @@ def main() -> int:
         "--manifest", output / "progression.json")
     run("build_boss_integration.py", progression, assets, boss,
         "--manifest", output / "boss.json")
-    run("build_opening_integration.py", boss, args.wsc15, candidate,
+    run("build_opening_integration.py", boss, args.wsc15, opening_choice,
         "--asset-dir", opening_assets,
-        "--manifest", output / "current-candidate.json")
+        "--manifest", output / "opening-choice.json")
+    run(
+        "build_opening_linear_integration.py",
+        opening_choice,
+        args.wsc15,
+        candidate,
+        "--manifest",
+        output / "current-candidate.json",
+    )
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
+    opening_linear_verification = intermediate / "opening-linear-verification.json"
+    run(
+        "analyze_opening_linear_integration.py",
+        opening_choice,
+        candidate,
+        args.wsc15,
+        "--output",
+        opening_linear_verification,
+    )
+    require_hash(
+        opening_linear_verification,
+        OPENING_LINEAR_VERIFICATION_SHA256,
+        "opening linear integration verification",
+    )
 
     manifest = {
         "schema": 1,
         "kind": "reproducible-current-candidate-build",
         "claim_scope": (
             "exact current integration candidate including the five-state "
-            "opening choice path and selector records 11..14; four added "
-            "linear opening callbacks, final "
+            "opening choice path, selector records 11..14, and the four "
+            "added linear opening callbacks; runtime validation, remaining "
             "Ver. 1.5 content completion, and final QA excluded"
         ),
         "sources": {
@@ -206,6 +233,7 @@ def main() -> int:
         "intermediate": {
             "p4_base_conversion_corpus_sha256": CORPUS_SHA256,
             "opening_p1_conversion_corpus_sha256": OPENING_P1_CORPUS_SHA256,
+            "opening_linear_verification_sha256": OPENING_LINEAR_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

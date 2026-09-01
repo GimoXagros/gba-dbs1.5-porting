@@ -52,7 +52,8 @@ native source port nor an emulator-assisted port.
 - Digimon Shoot stage routing, graphics/palette data, core-loop route, timer
   callback, normal display callback, and scanline-threshold callback.
 - Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
-  callbacks, and converted motion/event tables.
+  callbacks, converted motion/event tables, four added linear callbacks,
+  selector-3→13 predecessor hook, and sequential auxiliary slot-3 reuse.
 
 These are real GBA-side code/data changes. Their presence and static structure
 do not by themselves prove that the corresponding gameplay paths work.
@@ -99,7 +100,7 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The current static candidate was rebuilt in five guarded layers into two
+The current static candidate was rebuilt in six guarded layers into three
 ignored clean output directories:
 
 | Layer | SHA-256 |
@@ -108,7 +109,8 @@ ignored clean output directories:
 | Stage integration | `FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED` |
 | Progression integration | `6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623` |
 | Zeed boss / runtime-evidenced composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
-| Opening-choice/resources / current static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
+| Opening choice/resources / static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
+| Four linear callbacks / current static composite v35 | `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -118,7 +120,7 @@ The clean-build gap is now closed for the current candidate.
 `tools/build_current_candidate.py` takes the hash-identified USA GBA, retail
 WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 and opening-P1
 conversion corpora, all fourteen consumed character/evolution/VS/boss blobs,
-the opening P0 blob, all twelve consumed stage blobs, and all five ROM layers.
+the opening P0 blob, all twelve consumed stage blobs, and all six ROM layers.
 Every source, intermediate, asset, and layer is checked against its expected
 SHA-256.
 
@@ -130,13 +132,22 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v34
-SHA `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
+Three new runs in separate empty output directories each regenerated exact v35
+SHA `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v34 build checks.
+the v35 build checks.
+
+`tools/analyze_opening_linear_integration.py` independently compares v34 with
+v35. It confines all 2,199 changed bytes to three predecessor hooks and eleven
+declared expansion placements, disassembles the exact four ARM callback call
+graphs, verifies successor selectors and native helper calls, isolates event
+`0x1E` to callback 9, and checks callback 10's converted seven-entry event
+table. Its deterministic report SHA-256 is
+`15BA39813EE3B54BFA3181251432310E558420D2491A8FF4AAE8825D5DC6FB80`.
+This is static evidence only.
 
 ## Boot regression and correction
 
@@ -232,7 +243,7 @@ manifests record `monitor_visible: false`.
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
 | Digimon Shoot complete rules and transitions | NOT IMPLEMENTED | Rules, transition state, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | Opening choice states 3/4, modulo-5 dispatch, and selector resources 11..14 are integrated in untested v34; four linear additions plus tag/rating producers and persistence/UI remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is integrated in untested v35; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -266,33 +277,29 @@ All four P1/P2 resources and selector 11/13 P0 resources reuse byte-identical
 commercial assets. Only selector 12/14 P0 containers are newly converted and
 inserted.
 
-The four added linear callbacks at `7077`, `7407`, `7698`, and `7992` are now
-bounded to the chain edge from GBA `0x08085118` to `0x08085454`; the exact
+The four added linear callbacks at `7077`, `7407`, `7698`, and `7992` are
+inserted at the chain edge from GBA `0x08085118` to `0x08085454`; the exact
 assignment and selector instructions are ROM offsets `0x08516C` and
-`0x0851CC`. The first and fourth additions also require WSC 1.5 replacement
-resource records 50 and 49. A guarded conversion proves that both P0
-animation/tile containers and both P2 palettes already exist byte-for-byte in
-the unmodified USA GBA ROM. Their P1 sources are also identical to WSC 1.0
-records 41 and 39, whose complete native GBA views are `0x080D44D8` and
-`0x080D4498`. The commercial consumer at `0x08088250` selects a 0x20-byte
-record and creates an object at `0x03002908 + slot*0x50`; its constructor and
-companion calls are `0x080127E4` and `0x080132EC`. Therefore the native
-translation can use the existing complete records and does not require a
-direct counterpart for WSC primary loader `4FFF:226E`. The four callbacks,
-auxiliary-object activation/cleanup, and aligned selector-3→13 change remain
-unimplemented. Their source state machines are nevertheless bounded: the
-first three map to commercial GBA callback-template lineages 7/8/9; the fourth
-owns a seven-entry event table and requires a bespoke translation. Exact
-commercial WSC 1.0/GBA instruction pairs additionally derive a guarded timing
-and motion plan for all four additions. Those derived constants remain an
-implementation inference until non-displaying runtime timing and transition
-QA. Static lifetime analysis also proves that WSC objects `0x0952` and
-`0x0994` are active only in non-overlapping callbacks 7 and 10. Commercial GBA
-opening construction uses slots 0..2; unused slot 3 at `0x030029F8` has no
-aligned retail-ROM pointer and ends exactly at task-count field `0x03002A48`.
-It can be reconstructed sequentially for records 50 and 49 without clobbering
-the retained commercial auxiliary objects. The construction, update, and skip
-list code remains unimplemented. No v34 runtime evidence was collected. See
+`0x0851CC`. The selector changes from 3 to 13 and the successor now runs four
+new ARM callbacks before returning to the original `0x08085454` callback.
+
+The first and fourth additions use WSC 1.5 replacement resource records 50
+and 49. Their P0/P1/P2 inputs map to complete native GBA views at
+`0x080D44D8` and `0x080D4498`. Internal v35 constructs record 50 in unused
+opening slot 3 (`0x030029F8`) before callback 7, then reconstructs record 49
+in the same slot before callback 10. The slot is updated and included in the
+two-object skip populations only for callbacks 7 and 10; callbacks 8 and 9
+use the one-object population. This follows the proven non-overlapping WSC
+lifetimes without overwriting the retained commercial auxiliary objects.
+
+Callbacks 7/8/9 follow the bounded commercial template lineages with converted
+timers, fades, motion, and event IDs. Callback 10 uses the exact seven-event
+source order with converted durations and activates the record-49 object on
+event `0x25`. The independent verifier checks the callback call targets,
+successors, selectors, native construction/update/skip adapters, changed-byte
+boundary, and event table in the final candidate. These are static
+implementation facts, not visual, audio, timing, transition, or skip runtime
+proof. No v35 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -307,9 +314,8 @@ runtime attempt was made in this milestone.
 - Digimon Shoot rules/object callbacks, private transition state, reward,
   win/loss, menu, and exit behavior.
 - Tag/reward/rating persistence and associated UI.
-- Four added linear opening callbacks, bounded slot-3 construction/update/skip
-  handling for the already resident auxiliary records, aligned selector-3→13
-  behavior, and complete extended opening/presentation sequence.
+- Extended opening visual/audio/timing/transition/skip behavior on the final
+  integrated candidate; runtime validation remains deliberately deferred.
 - End-to-end added-fighter evolution paths and alternate-boss outcomes.
 - Audio parity, save/load parity, reset behavior, and stability regression.
 - Final BPS generation/round-trip validation after all content and QA gates.
@@ -335,14 +341,14 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v34 build, static opening callback graphs,
-two added choice callbacks, modulo-5 dispatcher, and selector resources 11..14
-are also complete. The next
-active milestone remains **EXTENDED OPENING/PRESENTATION IMPLEMENTATION**:
-wire the resident auxiliary resources, translate the four added linear
-callbacks and aligned selector-3→13 behavior,
-then preserve the full graph through the same main build path. Broader runtime
-verification remains deferred and non-displaying.
+complete for exact v32. The clean v35 build now preserves the complete static
+19-linear + 5-choice opening graph, including both auxiliary record lifetimes.
+The next active implementation milestone returns to the largest known content
+gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must replace the bounded
+spawn/transition fallbacks, connect object/rule callbacks and reward/menu
+outcomes, and remain reproducible through the same main build. Runtime
+verification remains deferred and non-displaying until all declared content
+is integrated.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current

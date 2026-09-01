@@ -213,12 +213,47 @@ The commercial GBA consumer uses opening slots 0, 1, and 2 at
 reference anywhere in the retail ROM and its 0x50-byte extent ends exactly at
 the independently referenced task-count field `0x03002A48`. The retained
 commercial auxiliary objects at `0x03002778` and `0x030027C8` therefore do not
-need to be overwritten. The bounded translation plan is to construct record
-50 in slot 3 during the callback-6→7 transition, use/include it only in
-callback 7, then reconstruct record 49 in the same slot during the
-callback-9→10 transition and use/include it only in callback 10. The slot
-construction, updates, skip lists, and four callback translations remain
-unimplemented; a callback-only chain splice would be incomplete.
+need to be overwritten. Internal v35 implements the bounded translation plan:
+it constructs record 50 in slot 3 during the callback-6→7 transition,
+uses/includes it only in callback 7, then reconstructs record 49 in the same
+slot during the callback-9→10 transition and uses/includes it only in callback
+10. Callbacks 8 and 9 retain one-object skip populations; callbacks 7 and 10
+use two.
+
+## Added linear-chain GBA integration
+
+`tools/build_opening_linear_integration.py` consumes exact v34 and installs
+the four ARM callbacks plus native adapters at these guarded expansion ranges:
+
+| Role | GBA address | Bytes |
+|---|---:|---:|
+| Added callback 7 | `0x085B6000` | 508 |
+| Added callback 8 | `0x085B6800` | 308 |
+| Added callback 9 | `0x085B7000` | 400 |
+| Added callback 10 | `0x085B7800` | 484 |
+| Predecessor successor hook | `0x085B8000` | 16 |
+| Predecessor record-50 hook | `0x085B8040` | 20 |
+| Primary/auxiliary constructors | `0x085B8100`, `0x085B8200` | 112, 104 |
+| Object update / skip adapters | `0x085B8300`, `0x085B8400` | 56, 164 |
+| Converted callback-10 event table | `0x085B8500` | 28 |
+
+The predecessor selector word at ROM offset `0x0851CC` changes from 3 to 13.
+The successor assignment at `0x08516C` branches through the new chain, and
+the stack-cleanup edge at `0x0851E8` constructs record 50 in slot 3. Callback
+9 initializes the source-derived countdown state and reconstructs record 49
+before callback 10. Callback 10 consumes the converted table
+`[(0x0B,4),(0x0C,7),(0x0D,24),(0x0E,19),(0x23,19),(0x24,6),(0x25,400)]`,
+activates the auxiliary object on event `0x25`, and returns to the commercial
+successor with selector 3.
+
+`tools/analyze_opening_linear_integration.py` independently compares exact
+v34 and v35. It confines all 2,199 changed bytes to the declared hooks and
+placements, disassembles all callback call targets, checks successors and
+selectors, ensures event `0x1E` occurs only in callback 9, and verifies the
+converted event table. Three full builds from the three original ROMs produced
+identical v35 SHA-256
+`9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`.
+This establishes reproducible static integration, not runtime behavior.
 
 ## Reproduction
 
@@ -235,6 +270,7 @@ python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.0> <WSC-1.5>
 python tools/analyze_opening_aux_object_lifetime.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-object-lifetime.json
 python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
 python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
+python tools/analyze_opening_linear_integration.py <v34-candidate> <v35-candidate> <WSC-1.5> --output evidence/opening-linear-integration.json
 ```
 
 Current generated-manifest SHA-256 values are:
@@ -249,10 +285,12 @@ Current generated-manifest SHA-256 values are:
 - auxiliary object lifetime/slot plan: `499C7A8AAC5B7B864A8CA2EB4956224C889331ADB74D4E70AB80250BF9DC9E8D`
 - opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
 - opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`
+- opening linear build manifest: `03EDEE1360CB95379F2AAA9AC25F25378579B5252D408A30DDA12650F57B72D3`
+- opening linear static verification: `15BA39813EE3B54BFA3181251432310E558420D2491A8FF4AAE8825D5DC6FB80`
 
 ## Runtime evidence boundary
 
-The graph, reachability, and v34 integration results above are static evidence.
+The graph, reachability, and v35 integration results above are static evidence.
 No emulator was run for this milestone. A prior WSC 1.0 hidden/chromeless BizHawk attempt parsed
 its command line but did not start the Lua capture and produced no PNG, RAM
 dump, completion log, or runtime evidence. It remains `INCONCLUSIVE` and is not
@@ -261,11 +299,7 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Translate the two complex callbacks with construction, sequential slot-3
-   reuse, updates, and skip-list handling for native records 50/49.
-2. Translate the four added linear callbacks and aligned selector-3→13 change
-   into the commercial GBA opening state machine.
-3. Preserve the complete 19-linear + 5-choice graph through the single
-   reproducible candidate build.
-4. Only after all declared port content is integrated, run a non-displaying
+1. Preserve the complete 19-linear + 5-choice graph while the remaining
+   non-opening Ver. 1.5 content is integrated.
+2. Only after all declared port content is integrated, run a non-displaying
    cold boot through the full extended sequence and verify skip-to-title.
