@@ -270,17 +270,17 @@ The four added linear callbacks at `7077`, `7407`, `7698`, and `7992` are now
 bounded to the chain edge from GBA `0x08085118` to `0x08085454`; the exact
 assignment and selector instructions are ROM offsets `0x08516C` and
 `0x0851CC`. The first and fourth additions also require WSC 1.5 replacement
-resource records 50 and 49. Those records replace all five old WSC pointer
-targets and are not wired as replacement records in the current GBA build.
-However, a guarded conversion of the fields the callbacks actually consume
-proves that both P0 animation/tile containers and both P2 palettes already
-exist byte-for-byte in the unmodified USA GBA ROM. The commercial
-object-creator lineage maps WSC `4FFF:23F4`/`4FFF:2389` to GBA
-`0x080127E4`/`0x080132EC`. The new callbacks instead pair the confirmed
-companion loader with WSC primary loader `4FFF:226E`, whose direct GBA
-counterpart is not yet proven. The four callbacks, native reuse/object wiring
-for records 49/50, and aligned selector-3→13 change remain unimplemented. No
-v34 runtime evidence was collected. See
+resource records 50 and 49. A guarded conversion proves that both P0
+animation/tile containers and both P2 palettes already exist byte-for-byte in
+the unmodified USA GBA ROM. Their P1 sources are also identical to WSC 1.0
+records 41 and 39, whose complete native GBA views are `0x080D44D8` and
+`0x080D4498`. The commercial consumer at `0x08088250` selects a 0x20-byte
+record and creates an object at `0x03002908 + slot*0x50`; its constructor and
+companion calls are `0x080127E4` and `0x080132EC`. Therefore the native
+translation can use the existing complete records and does not require a
+direct counterpart for WSC primary loader `4FFF:226E`. The four callbacks,
+second-slot activation/cleanup, and aligned selector-3→13 change remain
+unimplemented. No v34 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -295,9 +295,9 @@ runtime attempt was made in this milestone.
 - Digimon Shoot rules/object callbacks, private transition state, reward,
   win/loss, menu, and exit behavior.
 - Tag/reward/rating persistence and associated UI.
-- Four added linear opening callbacks, replacement presentation/auxiliary
-  resource records, aligned selector-3→13 behavior, and complete extended
-  opening/presentation sequence.
+- Four added linear opening callbacks, native second-slot lifetime/cleanup for
+  the already resident auxiliary records, aligned selector-3→13 behavior, and
+  complete extended opening/presentation sequence.
 - End-to-end added-fighter evolution paths and alternate-boss outcomes.
 - Audio parity, save/load parity, reset behavior, and stability regression.
 - Final BPS generation/round-trip validation after all content and QA gates.

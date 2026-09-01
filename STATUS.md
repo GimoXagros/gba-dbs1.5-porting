@@ -182,12 +182,14 @@ the dispatcher extension into GBA ARM code while preserving retail states
 selectors 0..10 and supplies selectors 11..14. Static conversion proves that
 their P1/P2 resources and selector 11/13 P0 resources reuse byte-identical
 commercial assets; only selector 12/14 P0 containers are newly emitted.
-Static conversion also proves that the directly consumed P0/P2
-assets for replacement records 49/50 already exist byte-identically in the
-commercial GBA ROM, but they are not yet wired into the added callbacks. The
-four added linear callbacks, that auxiliary resource/object wiring, and aligned
-selector-3→13 change remain unfinished. No v34 runtime evidence exists, so the
-static integration does not increase playable/release progress.
+Static conversion also proves that replacement records 49/50 map to complete
+native GBA record views at `0x080D4498` and `0x080D44D8`: their P0/P1/P2
+inputs are already resident, and the exact commercial consumer at
+`0x08088250` supports the required 0x20-byte record and 0x50-byte object-slot
+strides. This removes the need to translate the otherwise unmapped WSC primary
+loader. The four added linear callbacks, second-slot lifetime/cleanup, and
+aligned selector-3→13 change remain unfinished. No v34 runtime evidence exists,
+so the static integration does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

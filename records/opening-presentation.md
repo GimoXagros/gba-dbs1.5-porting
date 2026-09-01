@@ -135,8 +135,7 @@ through WSC loaders `4FFF:226E` and `4FFF:2389`. The commercial WSC creators at
 raw `0x39FC37..0x39FCDA` and
 `0x75A58C..0x75A62F` use 0x20-byte resource records; their native GBA consumer
 is `0x08088250..0x08088310`, which maps WSC constructor `4FFF:23F4` to
-`0x080127E4` and companion loader `4FFF:2389` to `0x080132EC`. A direct native
-counterpart for the callbacks' primary loader `4FFF:226E` is not yet proven.
+`0x080127E4` and companion loader `4FFF:2389` to `0x080132EC`.
 
 `tools/analyze_opening_aux_resource_reuse.py` now closes the pixel/palette
 conversion part of that boundary without claiming the callback implementation.
@@ -149,10 +148,27 @@ palette block at `0x082D99F4`. For record 50, WSC P0 at `0x3D5620` (12 tiles /
 `0x082F93E8`. All four converted containers are byte-identical to data in the
 unmodified USA GBA ROM, and their native pointer references are asserted.
 
-Therefore no duplicate auxiliary tile or palette payload is needed. The
-remaining work is to resolve the primary-loader/object-initialization boundary,
-wire these resident assets into a safe second GBA presentation object, and
-translate the callback state machines; a callback-only chain splice would be
+The same proof now closes the full native record path rather than only the
+pixel/palette subset. WSC 1.5 record 49 P1 is byte-identical for its complete
+`0x90`-byte bounded container to WSC 1.0 record 39 P1; record 50 P1 is
+byte-identical for `0xB4` bytes to WSC 1.0 record 41 P1. The corresponding
+complete GBA record views are:
+
+| WSC 1.5 record | Native GBA record view | First three consumer fields |
+|---:|---:|---|
+| 49 | `0x080D4498` | `0x082D94D8`, `0x082D9428`, `0x082D99F4` |
+| 50 | `0x080D44D8` | `0x082F91CC`, `0x082F90A0`, `0x082F93E8` |
+
+The hash-guarded GBA consumer selects `record + selector*0x20` and creates the
+target at `0x03002908 + slot*0x50`. Passing either complete view with selector
+0 therefore replaces both WSC low-level loader calls through the native GBA
+ABI; no direct translation of `4FFF:226E` is required.
+
+Therefore no duplicate auxiliary payload is needed. The remaining boundary is
+the state-machine decision: activate the commercial second object slot only
+for the two complex callbacks, preserve its event/motion state, and clean it up
+on both normal and skip transitions. That slot lifetime and the four callback
+translations remain unimplemented; a callback-only chain splice would be
 incomplete.
 
 ## Reproduction
@@ -164,7 +180,7 @@ python tools/analyze_opening_initializer_population.py <USA-GBA> <WSC-1.0> <WSC-
 python tools/analyze_gba_opening_dispatch.py <USA-GBA> --output evidence/gba-opening-callback-graph.json
 python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output evidence/wsc-opening-callback-graph.json
 python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-additions.json
-python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
+python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
 python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
 python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
 ```
@@ -175,7 +191,7 @@ Current generated-manifest SHA-256 values are:
 - GBA callback graph: `77E64A38FEDE93B1712758D0C67F674D3C9A4F723F77689403D060A4A80E981A`
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
-- auxiliary resource reuse proof: `C2FCB3663F96CE56B44007E21DFD703F73045BA4B148D2295427D26EAA838790`
+- auxiliary resource/native object-path proof: `55F9F0D67EAB44228D52575E91F4668F51ACF5E208C105FC40D6BE39A8AB9E94`
 - opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
 - opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`
 
@@ -190,8 +206,8 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Wire the already resident auxiliary P0/P2 assets for records 49/50 into the
-   native GBA object ABI.
+1. Translate the two complex callbacks with bounded activation and cleanup of
+   the proven native second-slot records 49/50.
 2. Translate the four added linear callbacks and aligned selector-3→13 change
    into the commercial GBA opening state machine.
 3. Preserve the complete 19-linear + 5-choice graph through the single
