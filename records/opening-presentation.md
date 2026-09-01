@@ -91,12 +91,26 @@ requires all expansion targets to be blank, and records every placement hash.
 Frame durations use the retail-derived rule `floor(WSC * 4 / 5)` and signed
 motion terms use truncation toward zero of `WSC * 5 / 4`; coordinates and
 event IDs are unchanged. Two independent clean builds from the three original
-ROMs produced byte-identical internal v33 SHA-256
-`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
-This is static callback-code integration evidence only. The commercial GBA
-presentation resource view at `0x080D42B8` is still unchanged in v33; its
-Ver. 1.5 records for selectors 11..14 must be rebuilt and repointed before the
-new cases can be treated as complete presentation integrations.
+ROMs produced byte-identical internal v34 SHA-256
+`33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
+This is static callback-code and resource integration evidence only.
+
+The commercial GBA presentation view at `0x080D42B8` corresponds to WSC
+resource records 24..34 for selectors 0..10. Ver. 1.5 records 35..38 supply
+selectors 11..14. `tools/build_opening_presentation_assets.py` proves that all
+four P1 containers are byte-identical to their commercial selector 5..8 source
+lineages, all four P2 palettes convert exactly to resident GBA palettes, and
+selectors 11/13 share the exact resident commercial P0. Only selector 12 and
+14 P0 containers are nonresident; their guarded converted blob is placed at
+`0x0850D000..0x08540920`. The rebuilt 15-record view at `0x085B5400`
+preserves selectors 0..10 byte-for-byte and supplies the three native pointers
+consumed by `0x08088250` for each new selector.
+
+Two clean builds produced opening P0 SHA-256
+`2F085D49410AFAEA4A5AC9EEF7ECC806CFF6E8095FFAA8305EC801A551829151`,
+resource-view SHA-256
+`8EFF8EC1B0CBBD7334563D8EA55B920E67BA8D88883FD334F7929E29B615DBD3`,
+and identical v34 manifests. Runtime behavior remains unverified.
 
 ## Added linear-chain dependency boundary
 
@@ -151,6 +165,8 @@ python tools/analyze_gba_opening_dispatch.py <USA-GBA> --output evidence/gba-ope
 python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output evidence/wsc-opening-callback-graph.json
 python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-additions.json
 python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
+python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
+python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
 ```
 
 Current generated-manifest SHA-256 values are:
@@ -160,10 +176,12 @@ Current generated-manifest SHA-256 values are:
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
 - auxiliary resource reuse proof: `C2FCB3663F96CE56B44007E21DFD703F73045BA4B148D2295427D26EAA838790`
+- opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
+- opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`
 
 ## Runtime evidence boundary
 
-The graph, reachability, and v33 integration results above are static evidence.
+The graph, reachability, and v34 integration results above are static evidence.
 No emulator was run for this milestone. A prior WSC 1.0 hidden/chromeless BizHawk attempt parsed
 its command line but did not start the Lua capture and produced no PNG, RAM
 dump, completion log, or runtime evidence. It remains `INCONCLUSIVE` and is not
@@ -172,8 +190,8 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Build WSC 1.5 presentation records 11..14 and wire the already resident
-   auxiliary P0/P2 assets for records 49/50 into the native GBA object ABI.
+1. Wire the already resident auxiliary P0/P2 assets for records 49/50 into the
+   native GBA object ABI.
 2. Translate the four added linear callbacks and aligned selector-3→13 change
    into the commercial GBA opening state machine.
 3. Preserve the complete 19-linear + 5-choice graph through the single

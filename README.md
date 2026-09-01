@@ -35,8 +35,8 @@ that evidence from user-supplied, hash-identified inputs.
 The current static internal composite is built from the three hash-identified
 originals, then assembled in five checked layers: base roster, stage
 integration, progression/unlocks, the Zeed boss layer, and the opening-choice
-layer (composite v33, SHA-256
-`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`).
+layer (composite v34, SHA-256
+`33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`).
 Each builder refuses an unexpected input SHA-256, so a layer change must
 deliberately advance the downstream hashes before a new composite can be
 produced. Exact v32, SHA-256
@@ -54,9 +54,10 @@ python tools\build_current_candidate.py `
   <USA-GBA-original> <WSC-1.0-original> <WSC-1.5-original> <output-directory>
 ```
 
-It regenerates the commercial WSC-to-GBA comparison corpus, every currently
-consumed character/evolution/VS/stage/boss asset, and all five ROM layers. It
-fails on any unexpected source, intermediate, asset, or layer SHA-256. Two
-independent empty-directory runs reproduced exact v33 byte-for-byte. This is a
+It regenerates the commercial WSC-to-GBA comparison corpora, every currently
+consumed character/evolution/VS/stage/boss/opening asset, and all five ROM
+layers. It fails on any unexpected source, intermediate, asset, or layer
+SHA-256. Two independent empty-directory runs reproduced exact v34
+byte-for-byte. This is a
 reproducibility result for the current incomplete candidate, not a complete
 Ver. 1.5 port or a distributable ROM.

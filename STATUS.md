@@ -12,9 +12,10 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: two independent builds
 > from the hash-identified USA GBA, WSC 1.0, and WSC 1.5 originals reproduce
-> exact v32 byte-for-byte. The main build now advances to internal v33, whose
-> modulo-5 dispatcher and added choice states 3 and 4 are statically translated
-> and reproducible at SHA-256 `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+> exact v32 byte-for-byte. The main build now advances to internal v34, whose
+> modulo-5 dispatcher, added choice states 3 and 4, and selector resource
+> records 11..14 are statically integrated and reproducible at SHA-256
+> `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -27,9 +28,10 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > records 50/49. Their directly consumed P0 animation/tile containers and P2
 > palettes convert byte-for-byte to assets already resident in the commercial
 > USA GBA ROM, so no duplicate graphics payload is required; callback/object
-> wiring and the unchanged GBA presentation view's selector records 11..14
-> still remain. No emulator or supplied save was used
-> for v33.
+> wiring still remains. The selector view is now rebuilt: P1/P2 and selector
+> 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
+> selector 12/14 P0 containers are newly converted. No emulator or supplied
+> save was used for v34.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -52,8 +54,8 @@ memory dump, screenshot, or emulator state.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 
-The current static internal composite is v33, identified only by SHA-256
-`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+The current static internal composite is v34, identified only by SHA-256
+`33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -76,8 +78,8 @@ results, and added-content behavior remain unverified.
 point. It regenerates the P4 comparison corpus and all currently consumed
 binary assets from the three original ROMs before assembling five guarded
 layers. Two builds in separate empty
-output directories both produced v33 SHA-256
-`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+output directories both produced v34 SHA-256
+`33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -174,16 +176,18 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v33 translates those two cases/callbacks and
+`[13,14]` and `[12,11]`. Internal v34 translates those two cases/callbacks and
 the dispatcher extension into GBA ARM code while preserving retail states
-0..2. Its commercial presentation resource view is not yet rebuilt for the
-new selectors. Static conversion now proves that the directly consumed P0/P2
+0..2. Its dedicated 15-record presentation view preserves commercial
+selectors 0..10 and supplies selectors 11..14. Static conversion proves that
+their P1/P2 resources and selector 11/13 P0 resources reuse byte-identical
+commercial assets; only selector 12/14 P0 containers are newly emitted.
+Static conversion also proves that the directly consumed P0/P2
 assets for replacement records 49/50 already exist byte-identically in the
 commercial GBA ROM, but they are not yet wired into the added callbacks. The
-four added linear callbacks, that resource/object wiring, presentation records
-11..14, and aligned selector-3→13 change remain unfinished. No v33 runtime
-evidence exists, so the static integration does not increase playable/release
-progress.
+four added linear callbacks, that auxiliary resource/object wiring, and aligned
+selector-3→13 change remain unfinished. No v34 runtime evidence exists, so the
+static integration does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

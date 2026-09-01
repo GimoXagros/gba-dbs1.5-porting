@@ -60,7 +60,10 @@ def parse_wsc_descriptor(rom: bytes, offset: int) -> tuple[int, int] | None:
     if (length < 0x20 or length % 0x20 or destination != 0x2000
             or not 0x80 <= bank <= 0xFF or bank_offset + length > 0x10000):
         return None
-    physical = ((bank & 0x7F) << 16) | bank_offset
+    bank_count = len(rom) >> 16
+    if not bank_count or bank_count & (bank_count - 1):
+        return None
+    physical = ((bank & (bank_count - 1)) << 16) | bank_offset
     if physical + length > len(rom):
         return None
     return length, physical
@@ -104,7 +107,12 @@ def build_asset(
 
     bank = (secondary >> 16) & 0xFF
     segment = secondary & 0xFFFF
-    descriptor_start = ((bank & 0x7F) << 16) | ((segment << 4) & 0xFFFF)
+    bank_count = len(wsc) >> 16
+    if not bank_count or bank_count & (bank_count - 1):
+        raise SystemExit("WSC ROM must contain a power-of-two number of banks")
+    descriptor_start = (
+        ((bank & (bank_count - 1)) << 16) | ((segment << 4) & 0xFFFF)
+    )
     descriptors: list[tuple[int, int]] = []
     cursor = descriptor_start
     while True:

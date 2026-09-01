@@ -16,6 +16,9 @@ GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC10_SHA256 = "58220B9C050C3BF29B4953885C9576BE103EA8E00A7BCB96CCA18607E19E9735"
 WSC15_SHA256 = "C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7"
 CORPUS_SHA256 = "6E648C301837662DCC26613B1D237E55CF356277C3BE13AFA530A45927D7B8E2"
+OPENING_P1_CORPUS_SHA256 = (
+    "B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -47,12 +50,16 @@ EXPECTED_STAGE_ASSETS = {
     "stage-waterfall-palette.bin": "0D1BD11C34F9740A5DB031B24E7050354C91CE4E458372EBA692E6A8C4A104F1",
     "stage-waterfall-tiles.bin": "413FDA31AA6494F3AE6B4104AA03C48E351CBB377D239D10800FA10604027330",
 }
+EXPECTED_OPENING_ASSETS = {
+    "opening-p0.bin": "2F085D49410AFAEA4A5AC9EEF7ECC806CFF6E8095FFAA8305EC801A551829151",
+    "opening-presentation.json": "32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278",
+}
 EXPECTED_LAYERS = {
     "base.gba": "5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA",
     "stage.gba": "FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED",
     "progression.gba": "6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623",
     "boss.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
-    "current-candidate.gba": "05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D",
+    "current-candidate.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
 }
 
 
@@ -91,13 +98,25 @@ def main() -> int:
     output = args.output_dir.resolve()
     assets = output / "converted-assets"
     stages = output / "stage-assets"
+    opening_assets = output / "opening-assets"
     intermediate = output / "intermediate"
-    for directory in (output, assets, stages, intermediate):
+    for directory in (output, assets, stages, opening_assets, intermediate):
         directory.mkdir(parents=True, exist_ok=True)
 
     corpus = intermediate / "p4-base-conversion-corpus.json"
     run("analyze_p4_conversion.py", args.gba, args.wsc10, "--output", corpus)
     require_hash(corpus, CORPUS_SHA256, "P4 conversion corpus")
+    opening_p1_corpus = intermediate / "opening-p1-conversion-corpus.json"
+    run(
+        "analyze_p1_conversion.py", args.gba, args.wsc10,
+        "--wsc-table", "0x390300", "--gba-table", "0x0D42A0",
+        "--records", 11, "--output", opening_p1_corpus,
+    )
+    require_hash(
+        opening_p1_corpus,
+        OPENING_P1_CORPUS_SHA256,
+        "opening P1 conversion corpus",
+    )
 
     animation_specs = (
         ("id12-base", "0x29B8A0", "0x448000"),
@@ -133,9 +152,19 @@ def main() -> int:
         "--manifest", assets / "evolution-p4.json")
     run("build_zeed_boss_assets.py", args.gba, args.wsc15, assets / "zeed-boss.bin",
         "--manifest", assets / "zeed-boss.json")
+    run(
+        "build_opening_presentation_assets.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        opening_p1_corpus,
+        opening_assets,
+    )
 
     for name, expected in EXPECTED_ASSETS.items():
         require_hash(assets / name, expected, name)
+    for name, expected in EXPECTED_OPENING_ASSETS.items():
+        require_hash(opening_assets / name, expected, name)
 
     run("build_stage_assets.py", args.wsc15, stages)
     for name, expected in EXPECTED_STAGE_ASSETS.items():
@@ -155,6 +184,7 @@ def main() -> int:
     run("build_boss_integration.py", progression, assets, boss,
         "--manifest", output / "boss.json")
     run("build_opening_integration.py", boss, args.wsc15, candidate,
+        "--asset-dir", opening_assets,
         "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -164,7 +194,8 @@ def main() -> int:
         "kind": "reproducible-current-candidate-build",
         "claim_scope": (
             "exact current integration candidate including the five-state "
-            "opening choice path; four added linear opening callbacks, final "
+            "opening choice path and selector records 11..14; four added "
+            "linear opening callbacks, final "
             "Ver. 1.5 content completion, and final QA excluded"
         ),
         "sources": {
@@ -172,9 +203,13 @@ def main() -> int:
             "wsc_10_sha256": WSC10_SHA256,
             "wsc_15_sha256": WSC15_SHA256,
         },
-        "intermediate": {"p4_base_conversion_corpus_sha256": CORPUS_SHA256},
+        "intermediate": {
+            "p4_base_conversion_corpus_sha256": CORPUS_SHA256,
+            "opening_p1_conversion_corpus_sha256": OPENING_P1_CORPUS_SHA256,
+        },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,
+        "opening_assets": EXPECTED_OPENING_ASSETS,
         "layers": EXPECTED_LAYERS,
         "output": "current-candidate.gba",
     }

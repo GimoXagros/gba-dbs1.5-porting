@@ -108,7 +108,7 @@ ignored clean output directories:
 | Stage integration | `FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED` |
 | Progression integration | `6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623` |
 | Zeed boss / runtime-evidenced composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
-| Opening-choice / current static composite v33 | `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D` |
+| Opening-choice/resources / current static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -116,10 +116,11 @@ valid stored/computed complement byte of `0x6C`.
 
 The clean-build gap is now closed for the current candidate.
 `tools/build_current_candidate.py` takes the hash-identified USA GBA, retail
-WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 conversion corpus,
-all fourteen consumed character/evolution/VS/boss blobs, all twelve consumed
-stage blobs, and all five ROM layers. Every source, intermediate, asset, and
-layer is checked against its expected SHA-256.
+WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 and opening-P1
+conversion corpora, all fourteen consumed character/evolution/VS/boss blobs,
+the opening P0 blob, all twelve consumed stage blobs, and all five ROM layers.
+Every source, intermediate, asset, and layer is checked against its expected
+SHA-256.
 
 The former VS presentation generator required two ignored 64 KiB emulator RAM
 dumps. Direct attribution proved that the Patamon/Tailmon palettes and planar
@@ -129,13 +130,13 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v33
-SHA `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+Two new runs in separate empty output directories each regenerated exact v34
+SHA `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v33 build checks.
+the v34 build checks.
 
 ## Boot regression and correction
 
@@ -231,7 +232,7 @@ manifests record `monitor_visible: false`.
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
 | Digimon Shoot complete rules and transitions | NOT IMPLEMENTED | Rules, transition state, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | Opening choice states 3/4 and modulo-5 dispatch are integrated in untested v33; four linear additions plus tag/rating producers and persistence/UI remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | Opening choice states 3/4, modulo-5 dispatch, and selector resources 11..14 are integrated in untested v34; four linear additions plus tag/rating producers and persistence/UI remain |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -255,13 +256,15 @@ roster/evolution inputs. The split state is a high-nibble cycle: GBA/WSC 1.0
 advance modulo 3, while WSC 1.5 advances modulo 5. New state 3 selects callback
 `9E40` with pair `[13,14]`; state 4 selects `9C17` with `[12,11]`.
 
-Internal v33 now translates those two added case setup blocks, both callbacks,
+Internal v34 now translates those two added case setup blocks, both callbacks,
 their motion/event tables, and the five-state dispatcher into GBA ARM code.
 States 0..2 branch to the unchanged commercial GBA cases. The builder hashes
 the exact WSC source ranges and reused GBA ranges, refuses nonblank expansion
-targets, and is part of the clean main build. Its resource pointer still uses
-the unchanged commercial presentation view, so selector records 11..14 are
-not yet complete.
+targets, and is part of the clean main build. A dedicated 15-record resource
+view preserves commercial selectors 0..10 and adds Ver. 1.5 selectors 11..14.
+All four P1/P2 resources and selector 11/13 P0 resources reuse byte-identical
+commercial assets. Only selector 12/14 P0 containers are newly converted and
+inserted.
 
 The four added linear callbacks at `7077`, `7407`, `7698`, and `7992` are now
 bounded to the chain edge from GBA `0x08085118` to `0x08085454`; the exact
@@ -276,8 +279,8 @@ object-creator lineage maps WSC `4FFF:23F4`/`4FFF:2389` to GBA
 `0x080127E4`/`0x080132EC`. The new callbacks instead pair the confirmed
 companion loader with WSC primary loader `4FFF:226E`, whose direct GBA
 counterpart is not yet proven. The four callbacks, native reuse/object wiring
-for records 49/50, presentation records 11..14, and aligned selector-3→13
-change remain unimplemented. No v33 runtime evidence was collected. See
+for records 49/50, and aligned selector-3→13 change remain unimplemented. No
+v34 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -320,11 +323,12 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v33 build, static opening callback graphs,
-two added choice callbacks, and modulo-5 dispatcher are also complete. The next
+complete for exact v32. The clean v34 build, static opening callback graphs,
+two added choice callbacks, modulo-5 dispatcher, and selector resources 11..14
+are also complete. The next
 active milestone remains **EXTENDED OPENING/PRESENTATION IMPLEMENTATION**:
-wire the resident auxiliary resources and missing presentation records,
-translate the four added linear callbacks and aligned selector-3→13 behavior,
+wire the resident auxiliary resources, translate the four added linear
+callbacks and aligned selector-3→13 behavior,
 then preserve the full graph through the same main build path. Broader runtime
 verification remains deferred and non-displaying.
 

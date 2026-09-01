@@ -57,7 +57,18 @@ BATTLE_STATE = 0x03002310
 PRESENTATION_TIMER = 0x03002674
 PRESENTATION_PARAMS = 0x0300267C
 PRESENTATION_FLAGS = 0x03002A50
-PRESENTATION_RESOURCE = 0x080D42B8
+COMMERCIAL_PRESENTATION_RESOURCE = 0x0D42B8
+COMMERCIAL_PRESENTATION_RESOURCE_HASH = (
+    "0BEA8D4B6A937E0414EFC4BFCDC2EDF333F05A28462E708DE96F9E7A883F544D"
+)
+PRESENTATION_RESOURCE_TABLE = 0x5B5400
+PRESENTATION_RESOURCE = GBA_BASE + PRESENTATION_RESOURCE_TABLE
+PRESENTATION_RECORD_BYTES = 0x20
+PRESENTATION_RECORD_COUNT = 15
+OPENING_P0_SHA256 = "2F085D49410AFAEA4A5AC9EEF7ECC806CFF6E8095FFAA8305EC801A551829151"
+OPENING_PRESENTATION_MANIFEST_SHA256 = (
+    "32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278"
+)
 DISPLAY_OBJECT_LEFT = 0x03002908
 DISPLAY_OBJECT_RIGHT = 0x03002958
 DISPLAY_CONTROL = 0x030012CB
@@ -167,6 +178,56 @@ def convert_motion_table(rows: list[tuple[int, ...]]) -> bytes:
             pad1,
         ))
     return b"".join(struct.pack("<8H", *row) for row in converted)
+
+
+def load_presentation_assets(
+    source: bytes, asset_dir: pathlib.Path
+) -> tuple[bytes, int, bytes, list[dict[str, object]]]:
+    manifest_path = asset_dir / "opening-presentation.json"
+    manifest_raw = manifest_path.read_bytes()
+    if sha256(manifest_raw) != OPENING_PRESENTATION_MANIFEST_SHA256:
+        raise SystemExit("opening presentation manifest changed")
+    manifest = json.loads(manifest_raw)
+    if manifest.get("kind") != "native-opening-presentation-selector-assets":
+        raise SystemExit("unexpected opening presentation manifest kind")
+    sources = manifest.get("sources", {})
+    if sources.get("wsc15_sha256") != WSC15_SHA256:
+        raise SystemExit("opening presentation manifest WSC source changed")
+    files = manifest.get("files", [])
+    if len(files) != 1 or files[0].get("name") != "opening-p0.bin":
+        raise SystemExit("unexpected opening presentation file population")
+    p0_target = int(files[0]["target_base"])
+    p0 = (asset_dir / "opening-p0.bin").read_bytes()
+    if sha256(p0) != OPENING_P0_SHA256 or sha256(p0) != files[0].get("sha256"):
+        raise SystemExit("opening P0 asset hash changed")
+    if len(p0) != int(files[0]["bytes"]):
+        raise SystemExit("opening P0 asset size changed")
+
+    commercial = source[
+        COMMERCIAL_PRESENTATION_RESOURCE:
+        COMMERCIAL_PRESENTATION_RESOURCE + PRESENTATION_RECORD_COUNT * PRESENTATION_RECORD_BYTES
+    ]
+    if sha256(commercial) != COMMERCIAL_PRESENTATION_RESOURCE_HASH:
+        raise SystemExit("commercial presentation resource view changed")
+    table = bytearray(commercial)
+    records = manifest.get("records", [])
+    if [int(record["selector"]) for record in records] != [11, 12, 13, 14]:
+        raise SystemExit("opening selector resource population changed")
+    for record in records:
+        selector = int(record["selector"])
+        fields = [int(value) for value in record["gba_fields"]]
+        if len(fields) != 3:
+            raise SystemExit(f"opening selector {selector} field population changed")
+        local = selector * PRESENTATION_RECORD_BYTES
+        table[local:local + PRESENTATION_RECORD_BYTES] = bytes(PRESENTATION_RECORD_BYTES)
+        struct.pack_into(
+            "<3I", table, local, *(GBA_BASE + target for target in fields)
+        )
+    if table[:11 * PRESENTATION_RECORD_BYTES] != commercial[
+        :11 * PRESENTATION_RECORD_BYTES
+    ]:
+        raise AssertionError("commercial presentation selectors 0..10 changed")
+    return p0, p0_target, bytes(table), records
 
 
 def build_dispatch() -> bytes:
@@ -514,6 +575,7 @@ def main() -> int:
     parser.add_argument("input", type=pathlib.Path)
     parser.add_argument("wsc15", type=pathlib.Path)
     parser.add_argument("output", type=pathlib.Path)
+    parser.add_argument("--asset-dir", type=pathlib.Path, required=True)
     parser.add_argument("--manifest", type=pathlib.Path)
     args = parser.parse_args()
 
@@ -533,6 +595,9 @@ def main() -> int:
             raise SystemExit(f"reused commercial GBA opening range changed: {label}")
     if struct.unpack_from("<I", source, CHOICE_HOOK_SITE)[0] != EXPECTED_CHOICE_HOOK_WORD:
         raise SystemExit("commercial opening choice hook site changed")
+    opening_p0, opening_p0_target, presentation_table, presentation_records = (
+        load_presentation_assets(source, args.asset_dir)
+    )
 
     state4_left = convert_pair_table(read_pair_table(bank, 0x9E24))
     state4_right = convert_pair_table(read_pair_table(bank, 0x9E32))
@@ -583,6 +648,12 @@ def main() -> int:
         (STATE3_TABLE_RIGHT, state3_right, "state-3 right motion table"),
         (STATE4_TABLE_LEFT, state4_left, "state-4 left event table"),
         (STATE4_TABLE_RIGHT, state4_right, "state-4 right event table"),
+        (opening_p0_target, opening_p0, "opening selector 12/14 P0 assets"),
+        (
+            PRESENTATION_RESOURCE_TABLE,
+            presentation_table,
+            "expanded opening presentation resource view",
+        ),
     )
 
     patched = bytearray(source)
@@ -612,8 +683,9 @@ def main() -> int:
         "schema": 1,
         "kind": "internal-opening-choice-integration-build",
         "claim_scope": (
-            "static modulo-5 dispatcher plus WSC 1.5 choice states 3 and 4; "
-            "four added linear callbacks and runtime QA remain pending"
+            "static modulo-5 dispatcher, WSC 1.5 choice states 3 and 4, and "
+            "presentation selector resources 11..14; four added linear "
+            "callbacks and runtime QA remain pending"
         ),
         "input_sha256": INPUT_SHA256,
         "wsc15_sha256": WSC15_SHA256,
@@ -627,6 +699,14 @@ def main() -> int:
             "preserved_retail_states": [0, 1, 2],
             "state_3": {"selectors": [13, 14], "callback": CHOICE_CALLBACK_STATE3},
             "state_4": {"selectors": [12, 11], "callback": CHOICE_CALLBACK_STATE4},
+        },
+        "presentation_resources": {
+            "table": PRESENTATION_RESOURCE_TABLE,
+            "records": PRESENTATION_RECORD_COUNT,
+            "sha256": sha256(presentation_table),
+            "selectors": presentation_records,
+            "p0_asset_target": opening_p0_target,
+            "p0_asset_sha256": sha256(opening_p0),
         },
         "conversion_rules": {
             "frame_durations": "floor(WSC * 4 / 5)",
