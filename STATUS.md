@@ -205,9 +205,21 @@ commercial WSC 1.0/GBA generator pair. Six final-placement ARM7TDMI functions,
 events, fields, and both sound arguments are independently checked; report
 SHA-256 is
 `3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13`.
-External controller `9908/9A1B` still does not assign parent `9083`, so runtime
-reachability and audible playback are not claimed. Rules, reward, win/loss,
-and exit remain
+The corrected upper-state analysis proves that `9908` is not an external
+entry. The menu transition calls the Ver. 1.5-only initializer `4090:7168` at
+raw `0x773143`; that initializer assigns active callbacks `7792` and `88F6`.
+The later stage-11 battle-transition branch assigns `7AB1`/`7D8D`. Walking
+both populations reaches 26 callbacks, 2,320 code bytes and 24 callback edges
+without an unresolved indirect transfer. Only callbacks `7EBB` and `809C`
+call helper `9908`, at `8057` and `80AF`. The deterministic report SHA-256 is
+`55B6AD9E1FA162C67AE6B14A125F6D02E257506F80FB16786D54B678B49C75A0`.
+It also binds WSC import `4FFF:1CB5` to the platform-native GBA random routine
+`0x08012600` by its argument/return use and a guarded commercial call-site
+oracle; identical PRNG sequences are not claimed. Therefore a standalone
+`9908/9A1B` hook would remain unreachable and is not an acceptable port.
+The `7168` initializer, its resources/menu route, the upper states, and
+`9908/9A1B` must be integrated as one reachable layer. Runtime reachability
+and audible playback are not claimed. Rules, reward, win/loss, and exit remain
 release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.

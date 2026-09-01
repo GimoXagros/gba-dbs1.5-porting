@@ -330,7 +330,7 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v41 preserves the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, payload-corrected WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` request, bounded `CE`→GBA `0x5B` sound, and resident `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent chain; external controller `9908/9A1B`, remaining rules, transitions, rewards, win/loss, exit, and audible behavior remain |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback rules graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v41 preserves the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, payload-corrected WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` request, bounded `CE`→GBA `0x5B` sound, and resident `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent chain. A corrected upper-state graph proves the real route is menu call→`7168` initializer→`7792/88F6` and `7AB1/7D8D` state populations→`8057/80AF` calls to helper `9908`; its 26 callbacks/2,320 bytes are bounded, but none of this upper route is installed. A standalone `9908/9A1B` hook is explicitly insufficient. Remaining initializer resources, menu reachability, rules, transitions, rewards, win/loss, exit, and audible behavior remain |
 | Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v41 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
@@ -436,13 +436,16 @@ complete for exact v32. The clean v41 build preserves the complete static
 child generator/callback family over the v36 resource layer plus the bounded
 native `CE` sound asset and its internally connected parent chain.
 The next active implementation milestone returns to the largest known content
-gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must translate controller
-`9908/9A1B` and connect its parent-`9083` assignment, then replace the bounded
-spawn/transition fallbacks and connect the remaining
-object/rule callbacks, transition state, and reward/menu
-outcomes, and remain reproducible through the same main build. Runtime
-verification remains deferred and non-displaying until all declared content
-is integrated.
+gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. Corrected entry analysis proves
+`9908` is a helper, not the external entry. The next integration must connect
+the menu transition to Ver. 1.5 initializer `4090:7168`, convert its dependent
+resources, install the `7792/88F6` and `7AB1/7D8D` upper state populations,
+and only then connect `9908/9A1B` to parent `9083`. The bounded stage-7 fighter
+spawn copy is not a real stage-11 record: Ver. 1.5 bypasses that retail path
+through its dedicated initializer. Remaining object/rule callbacks,
+transition state, reward/menu outcomes, and exit must stay in the same
+reproducible main build. Runtime verification remains deferred and
+non-displaying until all declared content is integrated.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current

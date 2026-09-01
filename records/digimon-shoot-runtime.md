@@ -265,12 +265,34 @@ outside the inserted parent window reaches `9083`; controller `9908/9A1B`
 remains unimplemented. Audible playback and timbre parity remain unverified;
 the timing correspondence is static only.
 
-No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
-claimed yet. The transition-state fallback above is also an explicit release
-gate.
+The entry boundary is now corrected by
+`tools/analyze_shoot_upper_state_graph.py`. Raw `0x773143` calls the dedicated
+initializer `4090:7168`. That 1,034-byte source range assigns callback `7792`
+to the active player and `88F6` to the rules object. The later stage-11 branch
+at raw `0x760197` assigns `7AB1` and `7D8D` to the linked players. Walking all
+four seeds finds 745 instruction starts, 2,320 code bytes in four ranges, 26
+callback entries, 24 callback edges, six imports, and no unresolved indirect
+transfer. Controller `9908` is reached only by direct calls at `8057` and
+`80AF`; it is not an external callback entry. Two independent report builds
+reproduce SHA-256
+`55B6AD9E1FA162C67AE6B14A125F6D02E257506F80FB16786D54B678B49C75A0`.
 
-The next implementation unit is translating controller `4090:9908`, including
-the `9A1B` Shoot-flag branch that assigns parent `9083`, then continuing through
-the remaining controller families and reward/exit paths.
+The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
+the platform random-number ABI. The guarded commercial GBA oracle calls it
+four times without arguments and masks the fourth result by seven, matching
+the WSC call/return role. This proves a usable native role, not identical
+cross-platform random sequences.
+
+No menu, dedicated `7168` initializer, its dependent resources, upper states,
+broader presentation branch, rules, reward, win/loss, or exit hook is claimed
+yet. The transition-state and fighter-spawn fallbacks are explicit release
+gates. Ver. 1.5 has no ordinary 16-byte fighter-spawn record for stage 11; the
+current copied stage-7 record only bounds an otherwise invalid table access
+until the dedicated initializer bypass is ported.
+
+The next implementation unit must translate and connect the menu route,
+`4090:7168` initializer/resources, and the upper state populations before
+installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
+`9908` alone would remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

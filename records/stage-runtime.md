@@ -71,6 +71,13 @@ eight function pointers preserve the original WSC population, and the spawn
 table appends the same three records in that order.  This supersedes the
 earlier provisional 9/10 assignment.
 
+The three appended 16-byte fighter-spawn records stop at stage 10. Ver. 1.5
+does not provide an ordinary stage-11 fighter-spawn record: its menu route
+calls dedicated initializer `4090:7168`, which builds and links the Shoot
+objects and assigns callback `7792`. The current GBA table's stage-7 copy at
+slot 11 is therefore only a bounds-safe fallback, not converted Shoot data.
+It must be bypassed when the dedicated initializer is connected.
+
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard
 state machine are translated statically from the confirmed WSC routines. Its
