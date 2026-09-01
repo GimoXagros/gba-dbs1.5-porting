@@ -22,7 +22,10 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > opening graph and WSC 1.5 expands it to 19 + 5. The six additions are bounded
 > and the modulo-5 state cycle with selector pairs `[13,14]` and `[12,11]` is
 > mapped. The two added choices are now integrated statically; the four added
-> linear callbacks remain untranslated. No emulator or supplied save was used
+> linear callbacks remain untranslated. Static dependency recovery additionally
+> proves that the complex first/fourth additions require replacement resource
+> records 50/49 and that the unchanged GBA presentation view still needs
+> rebuilt selector records 11..14. No emulator or supplied save was used
 > for v33.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -170,9 +173,11 @@ object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
 `[13,14]` and `[12,11]`. Internal v33 translates those two cases/callbacks and
 the dispatcher extension into GBA ARM code while preserving retail states
-0..2. The four added linear callbacks and the aligned selector-3→13 change
-remain unfinished. No v33 runtime evidence exists, so the static integration
-does not increase playable/release progress.
+0..2. Its commercial presentation resource view is not yet rebuilt for the
+new selectors. The four added linear callbacks, replacement resource records
+49/50, presentation records 11..14, and aligned selector-3→13 change remain
+unfinished. No v33 runtime evidence exists, so the static integration does not
+increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in
