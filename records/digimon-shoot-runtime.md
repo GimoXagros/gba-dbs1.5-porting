@@ -172,7 +172,7 @@ Two clean original-source builds reproduce internal v36 SHA-256
 `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 This is storage and container evidence only, not runtime reachability.
 
-## Installed resident child family and sound assets (v39/v40)
+## Installed resident child/parent families and sound assets (v39/v40/v41)
 
 `tools/build_shoot_child_integration.py` installs translations of generator
 `9229` and callbacks `94C1`, `9570`, and `9617` at `0x5B9400`, `0x5B9800`,
@@ -236,17 +236,41 @@ Two clean original-source builds contain 73 files each with no path/hash
 differences and reproduce v40 SHA-256
 `9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B`.
 
+v41 installs the six-function parent sequence
+`9083 -> 90F3 -> 912A -> 91AB -> 91EF -> 88F7` at `0x5BA800`, `0x5BAC00`,
+`0x5BB800`, and `0x5BBC00`. The commercial WSC 1.0 generator `5A93` and GBA
+counterpart `0x0837273C` directly prove that WSC linked-object field `+0x1C`
+maps to GBA `+0x28`; the earlier provisional `+0x24` inference was corrected
+before main-build integration.
+
+The parent initializer clears four motion fields, copies the target position
+with the source `-0x300` Y offset, emits presentation event 0, owns the linked
+object's bit 0, requests native `0x5B`, and advances to the wait callback. The
+remaining callbacks preserve events 1/2/3, phase-byte Y oscillation, timers
+60 and 38, Shoot flag `0x40`, the call to resident generator `9229`, the later
+native `0x4A` request, and final object/link cleanup.
+
+`tools/verify_shoot_parent_integration.py` independently confines v41 to 695
+changed bytes, disassembles all six final-placement ARM7TDMI functions,
+checks their native call graphs and five internal callback literals, and
+asserts the translated fields, timers, events, flags, generator edge, and
+audio request words. Its report SHA-256 is
+`3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13`.
+Two clean original-source builds contain 76 files each with no path/hash
+differences and reproduce v41 SHA-256
+`B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`.
+
 This is resident internal-chain evidence, not runtime reachability. No pointer
-outside the inserted window reaches generator `9229`. Parent `9083`/`912A`
-and its request for new GBA ID `0x5B` remain unconnected. Audible playback and
-timbre parity remain unverified; the timing correspondence is static only.
+outside the inserted parent window reaches `9083`; controller `9908/9A1B`
+remains unimplemented. Audible playback and timbre parity remain unverified;
+the timing correspondence is static only.
 
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is translating the `9083`/`912A` spawn parent,
-connecting its `0x5B` request and the resident generator through
-controller `4090:9908` and onward to the remaining reward/exit paths.
+The next implementation unit is translating controller `4090:9908`, including
+the `9A1B` Shoot-flag branch that assigns parent `9083`, then continuing through
+the remaining controller families and reward/exit paths.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

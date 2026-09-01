@@ -11,7 +11,7 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v40 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v41 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -20,9 +20,11 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > including the payload-proved WSC 1.5 `A7` -> WSC 1.0 `A5` -> GBA `0x4A`
 > sound request. The Ver. 1.5-only parent-start `CE` payload is now represented
 > by a bounded native GBA ID `0x5B` M4A reconstruction that preserves its
-> packed pitch, 20-tick lead, and four 10-tick volume-decay steps,
-> and reproducible at SHA-256
-> `9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B`.
+> packed pitch, 20-tick lead, and four 10-tick volume-decay steps.
+> The `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent callback chain now
+> reaches that sound and the resident child generator internally. The composite
+> is reproducible at SHA-256
+> `B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -39,10 +41,9 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v40. The installed child family is internally connected to
-> its resources, but no external parent/controller reaches generator `9229`.
-> The parent `9083`/`912A` code has not yet been translated or connected, so it
-> does not request the new `0x5B` sound yet. Audible/timbre parity and playback
+> save was used for v41. The parent and child families are internally connected,
+> but external controller `9908/9A1B` does not yet assign parent `9083`, so the
+> chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -69,15 +70,17 @@ memory dump, screenshot, or emulator state.
   Its source `A7` payload is byte-identical to WSC 1.0 sound `A5` and maps
   through the exact native GBA queue writer as ID `0x4A`. The unique `CE`
   command is statically reconstructed as native GBA sound ID `0x5B`, with the
-  commercial 91-entry song table preserved and extended to 92 entries;
-  external parent/controller entry and its `0x5B` request remain pending.
+  commercial 91-entry song table preserved and extended to 92 entries. The
+  resident `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent chain issues `0x5B`,
+  later issues `0x4A`, and calls child generator `9229`; only its external
+  `9908/9A1B` controller assignment remains pending.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v40, identified only by SHA-256
-`9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B`.
+The current static internal composite is v41, identified only by SHA-256
+`B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -98,11 +101,11 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling nine guarded
-layers. Two builds in separate empty output directories both produced v40
+binary assets from the three original ROMs before assembling ten guarded
+layers. Two builds in separate empty output directories both produced v41
 SHA-256
-`9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B`;
-all 73 files in each output tree matched by relative path and SHA-256.
+`B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`;
+all 76 files in each output tree matched by relative path and SHA-256.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -195,8 +198,16 @@ changed bytes, proves all five table references, checks the exact WSC pitch and
 `98EB32D4CA01A8AF1F824D1FAB6E88E2F735CB620DE012D819182498D72EC748`.
 This is a bounded semantic reconstruction; audible/timbre parity is not yet
 claimed. No external callback points to the generator yet; the `9083`/
-`912A` parent connection remains unimplemented, so runtime reachability and
-audible playback are not claimed. Rules, reward, win/loss, and exit remain
+`912A` parent chain is implemented in v41 and internally reaches generator
+`9229`, with source `+0x1C` linked-object access mapped to GBA `+0x28` by the
+commercial WSC 1.0/GBA generator pair. Six final-placement ARM7TDMI functions,
+695 changed bytes, all internal callback edges, native call targets, timers,
+events, fields, and both sound arguments are independently checked; report
+SHA-256 is
+`3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13`.
+External controller `9908/9A1B` still does not assign parent `9083`, so runtime
+reachability and audible playback are not claimed. Rules, reward, win/loss,
+and exit remain
 release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
@@ -229,7 +240,7 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v35, retained as v40's opening-linear
+`[13,14]` and `[12,11]`. Internal v35, retained as v41's opening-linear
 intermediate, translates those two cases/callbacks and the dispatcher
 extension into GBA ARM code while preserving retail states
 0..2. Its dedicated 15-record presentation view preserves commercial
@@ -253,7 +264,7 @@ reuse of unused GBA opening slot 3 for records 50 and 49 without overwriting
 retained commercial auxiliary objects. An independent verifier confines all
 2,199 changed bytes to the three hooks and declared expansion ranges,
 disassembles the four callback call graphs, and checks the exact converted
-seven-entry event table. No v40 runtime evidence exists, so the static integration
+seven-entry event table. No v41 runtime evidence exists, so the static integration
 does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
