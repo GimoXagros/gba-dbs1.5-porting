@@ -44,7 +44,15 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > save was used for v41. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
-> remain unverified until final non-displaying runtime QA.
+> remain unverified until final non-displaying runtime QA. A new deterministic
+> initializer-resource report resolves all nine direct P0/P1/P2 references used
+> by `4090:7168`: five P0 containers and four P2 blocks are structurally bounded,
+> one P2 block reuses the installed Shoot palette source, and another is already
+> byte-identical to commercial GBA data at `0x080D3078`. The two P1 containers
+> are a distinct self-delimiting format and are not yet converted. The report
+> also isolates Ver. 1.5-only sound `D2` and auxiliary object `ES:071E` as
+> unresolved native dependencies. No candidate ROM bytes or runtime percentage
+> changed.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -105,7 +113,7 @@ binary assets from the three original ROMs before assembling ten guarded
 layers. Two builds in separate empty output directories both produced v41
 SHA-256
 `B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`;
-all 76 files in each output tree matched by relative path and SHA-256.
+all 77 files in each output tree matched by relative path and SHA-256.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -217,6 +225,15 @@ It also binds WSC import `4FFF:1CB5` to the platform-native GBA random routine
 `0x08012600` by its argument/return use and a guarded commercial call-site
 oracle; identical PRNG sequences are not claimed. Therefore a standalone
 `9908/9A1B` hook would remain unreachable and is not an acceptable port.
+`tools/analyze_shoot_initializer_resources.py` now resolves the complete
+initializer resource call population and reproduces report SHA-256
+`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+It proves deterministic conversion boundaries for five P0 and four P2
+resources, but rejects both initializer P1 resources from the existing generic
+and spawn-specific converters. The expanded audio-lineage report additionally
+proves that three upper-state requests for WSC sound `D2` use a 32-byte
+Ver. 1.5-only payload with no WSC 1.0 match; its new report SHA-256 is
+`0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
 The `7168` initializer, its resources/menu route, the upper states, and
 `9908/9A1B` must be integrated as one reachable layer. Runtime reachability
 and audible playback are not claimed. Rules, reward, win/loss, and exit remain

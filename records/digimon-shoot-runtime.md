@@ -208,9 +208,12 @@ request type 1; v39 installs the generator-side call with
 Parent initializer `9083` separately requests sound `CE`, request type 1.
 Its 30-byte command payload is unique to Ver. 1.5 and has no exact match in
 the 185 independently bounded WSC 1.0 payloads `00..B8`; therefore no retail
-GBA sound ID is claimed for it. The deterministic
-lineage report SHA-256 is
-`FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419`.
+GBA sound ID is claimed for it. The upper state graph also issues sound `D2`,
+request type 2, at offsets `7976`, `79F9`, and `7CC6`. Its 32-byte command
+payload is likewise unique to Ver. 1.5 and has no exact WSC 1.0 match, but it
+has not yet been decoded into a bounded GBA-native track. The deterministic
+expanded lineage report SHA-256 is
+`0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
 Two clean original-source builds reproduce internal v39 SHA-256
 `35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492`.
 
@@ -256,7 +259,7 @@ checks their native call graphs and five internal callback literals, and
 asserts the translated fields, timers, events, flags, generator edge, and
 audio request words. Its report SHA-256 is
 `3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13`.
-Two clean original-source builds contain 76 files each with no path/hash
+Two clean original-source builds contain 77 files each with no path/hash
 differences and reproduce v41 SHA-256
 `B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`.
 
@@ -277,13 +280,48 @@ transfer. Controller `9908` is reached only by direct calls at `8057` and
 reproduce SHA-256
 `55B6AD9E1FA162C67AE6B14A125F6D02E257506F80FB16786D54B678B49C75A0`.
 
+`tools/analyze_shoot_initializer_resources.py` now resolves every direct
+resource argument used by `4090:7168`. The two presentation-constructor calls
+resolve to P2/P0/P1 physical triples
+`3D4B20/3D5F80/3CF410` and `3D7640/3914E0/3BD730`. Seven additional direct
+loads resolve to P2 `3D4B20`, `3D7640`, `3D7A90`, `3D6B16` and P0 `3D44E0`,
+`3D0CA0`, `3D7D30`. The report guards all nine call signatures as well as the
+complete initializer/local-table hash.
+
+All five P0 containers have deterministic relocatable GBA builds: the largest
+contains 50 layouts, 61 descriptors, and 35,616 tile bytes; the other four are
+small layout-only containers. All four P2 sources convert to fixed 40-byte
+blocks. `3D4B20` is byte-identical to the source already used for the installed
+Shoot spawn P2, while converted `3D6B16` already exists in the commercial GBA
+at `0x080D3078`.
+
+The P1 boundary remains intentionally open. `3CF410` contains six logical
+commands/34 payload items, four referenced A records, and one non-null 10-byte
+B record. `3BD730` contains thirteen commands/109 payload items and fifty
+referenced A records. The existing generic parser rejects the first on a
+terminal zero-count table interpretation and the second on a leading B-record
+underflow; the Shoot spawn converter is also incompatible because it copies
+only one A record per relative and forces every B pointer to zero. A direct-
+format commercial oracle is required before conversion and installation.
+
+The same report statically binds `ES:065C/065E` to GBA player pointer slots
+`0x0300489C/0x030048A0`. The rules presentation uses Ver. 1.5-only auxiliary
+object slot `ES:071E`, allocated by `4090:172A` with callback `5134` and ID
+`0x343`; WSC 1.0 has no corresponding storage reference. Native GBA allocator
+`0x08352374` is therefore only a candidate until its argument ABI and object
+lifetime are proved. Two independent report runs reproduce SHA-256
+`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+The analyzer reads only the three hash-identified original ROM inputs; it
+modifies no candidate and uses neither an emulator nor the supplied save.
+
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
 the platform random-number ABI. The guarded commercial GBA oracle calls it
 four times without arguments and masks the fourth result by seven, matching
 the WSC call/return role. This proves a usable native role, not identical
 cross-platform random sequences.
 
-No menu, dedicated `7168` initializer, its dependent resources, upper states,
+No GBA menu hook, dedicated `7168` translation, its P1/aux-object consumers,
+upper states,
 broader presentation branch, rules, reward, win/loss, or exit hook is claimed
 yet. The transition-state and fighter-spawn fallbacks are explicit release
 gates. Ver. 1.5 has no ordinary 16-byte fighter-spawn record for stage 11; the
@@ -291,7 +329,9 @@ current copied stage-7 record only bounds an otherwise invalid table access
 until the dedicated initializer bypass is ported.
 
 The next implementation unit must translate and connect the menu route,
-`4090:7168` initializer/resources, and the upper state populations before
+`4090:7168` initializer/resources after proving direct-format P1 conversion,
+bind the `071E` object lifetime, reconstruct `D2`, and install the upper state
+populations before
 installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
 `9908` alone would remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is

@@ -77,6 +77,12 @@ calls dedicated initializer `4090:7168`, which builds and links the Shoot
 objects and assigns callback `7792`. The current GBA table's stage-7 copy at
 slot 11 is therefore only a bounds-safe fallback, not converted Shoot data.
 It must be bypassed when the dedicated initializer is connected.
+Static initializer-resource analysis now resolves its complete direct call
+population to five P0, two P1, and four P2 sources. P0/P2 conversion is
+bounded, but the two direct-format P1 containers, Ver. 1.5-only sound `D2`,
+and auxiliary object `ES:071E` remain integration gates. Report SHA-256 is
+`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`;
+the report installs no GBA code or data.
 
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard

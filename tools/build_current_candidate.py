@@ -26,7 +26,10 @@ SHOOT_RESOURCE_VERIFICATION_SHA256 = (
     "1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F"
 )
 SHOOT_AUDIO_LINEAGE_SHA256 = (
-    "FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419"
+    "0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E"
+)
+SHOOT_INITIALIZER_RESOURCE_SHA256 = (
+    "F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2"
 )
 SHOOT_CHILD_VERIFICATION_SHA256 = (
     "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
@@ -160,6 +163,20 @@ def main() -> int:
         shoot_audio_lineage,
         SHOOT_AUDIO_LINEAGE_SHA256,
         "Shoot audio request lineage",
+    )
+    shoot_initializer_resources = intermediate / "shoot-initializer-resources.json"
+    run(
+        "analyze_shoot_initializer_resources.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_initializer_resources,
+    )
+    require_hash(
+        shoot_initializer_resources,
+        SHOOT_INITIALIZER_RESOURCE_SHA256,
+        "Shoot initializer resource boundary",
     )
 
     animation_specs = (

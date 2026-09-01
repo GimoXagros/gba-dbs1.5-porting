@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prove the commercial sound-request mapping needed by Shoot helper 9229."""
+"""Prove the bounded audio lineage used by the Digimon Shoot callback graph."""
 
 from __future__ import annotations
 
@@ -38,9 +38,19 @@ COMMERCIAL_ROWS = (
 )
 
 WSC15_TARGETS = {
+    "upper_7792_a7": (0x77E4, 0xA7, 1),
+    "upper_7803_ce": (0x786F, 0xCE, 1),
+    "upper_7836_ce": (0x78CC, 0xCE, 1),
+    "upper_7893_ce": (0x7929, 0xCE, 1),
+    "upper_78f0_d2": (0x7976, 0xD2, 2),
+    "upper_794d_d2": (0x79F9, 0xD2, 2),
+    "upper_7c64_d2": (0x7CC6, 0xD2, 2),
+    "rules_8ab8_ce": (0x8B08, 0xCE, 1),
+    "rules_8cdd_ce": (0x8D2D, 0xCE, 1),
     "parent_9083_initial": (0x90D3, 0xCE, 1),
     "parent_912A_post_generator": (0x918B, 0xA7, 1),
     "generator_9229_post_event": (0x9313, 0xA7, 1),
+    "rules_9798_a7": (0x96A3, 0xA7, 1),
 }
 
 # Both sound banks begin with six-byte entries.  The final word is the offset
@@ -55,6 +65,9 @@ WSC10_A7_PAYLOAD_SHA256 = (
 )
 WSC15_CE_PAYLOAD_SHA256 = (
     "79BB15C2643DA24DAC1A16D7B760977257A7ABCA0B3DAE82383F85EFEF7C80B6"
+)
+WSC15_D2_PAYLOAD_SHA256 = (
+    "740A62271CDCF1636D420486F526461D81DD4271EF705D3DAEC09D2871928641"
 )
 
 NATIVE_REQUEST_SHA256 = (
@@ -174,10 +187,12 @@ def main() -> int:
     old_a7 = sound_payload(wsc10, WSC10_SOUND_BANK, 0xA7)
     new_a7 = sound_payload(wsc15, WSC15_SOUND_BANK, 0xA7)
     new_ce = sound_payload(wsc15, WSC15_SOUND_BANK, 0xCE)
+    new_d2 = sound_payload(wsc15, WSC15_SOUND_BANK, 0xD2)
     require_hash(old_a5, WSC10_A5_PAYLOAD_SHA256, "WSC 1.0 sound A5 payload")
     require_hash(old_a7, WSC10_A7_PAYLOAD_SHA256, "WSC 1.0 sound A7 payload")
     require_hash(new_a7, WSC10_A5_PAYLOAD_SHA256, "WSC 1.5 sound A7 payload")
     require_hash(new_ce, WSC15_CE_PAYLOAD_SHA256, "WSC 1.5 sound CE payload")
+    require_hash(new_d2, WSC15_D2_PAYLOAD_SHA256, "WSC 1.5 sound D2 payload")
     if new_a7 == old_a7:
         raise SystemExit("WSC 1.5 A7 unexpectedly still matches WSC 1.0 A7")
 
@@ -197,6 +212,13 @@ def main() -> int:
     ]
     if ce_old_matches:
         raise SystemExit(f"WSC 1.5 CE unexpectedly matches old sounds: {ce_old_matches}")
+    d2_old_matches = [
+        sound_id
+        for sound_id in range(0xB9)
+        if sound_payload(wsc10, WSC10_SOUND_BANK, sound_id) == new_d2
+    ]
+    if d2_old_matches:
+        raise SystemExit(f"WSC 1.5 D2 unexpectedly matches old sounds: {d2_old_matches}")
 
     old_a5_rows = [row for row in rows if row["wsc10"]["sound_id"] == 0xA5]
     if len(old_a5_rows) != 2 or any(row["gba"]["sound_id"] != 0x4A for row in old_a5_rows):
@@ -273,6 +295,13 @@ def main() -> int:
                 "exact_matches_in_bounded_wsc_10_ids_00_b8": ce_old_matches,
                 "commercial_gba_sound_id": None,
             },
+            "wsc_15_d2": {
+                "entry": sound_entry(wsc15, WSC15_SOUND_BANK, 0xD2),
+                "payload_bytes": len(new_d2),
+                "payload_sha256": sha256(new_d2),
+                "exact_matches_in_bounded_wsc_10_ids_00_b8": d2_old_matches,
+                "commercial_gba_sound_id": None,
+            },
         },
         "wsc_15_targets": targets,
         "proved_mapping": {
@@ -283,15 +312,28 @@ def main() -> int:
             "third_argument": 0,
             "target": GBA_SOUND_REQUEST,
         },
-        "unresolved_mapping": {
+        "native_reconstruction_boundary": {
             "wsc_15_sound_id": 0xCE,
+            "assigned_gba_sound_id": 0x5B,
+            "status": (
+                "separately reconstructed and independently verified by the v40 layer; "
+                "not a commercial lineage mapping"
+            ),
+        },
+        "unresolved_mapping": {
+            "wsc_15_sound_id": 0xD2,
             "reason": "Ver. 1.5-only command payload with no exact WSC 1.0 payload",
-            "required_action": "reconstruct a GBA-native sound asset before parent 9083 is connected",
+            "required_action": (
+                "decode its command schedule and reconstruct a GBA-native sound asset "
+                "before the 7792/7AB1 upper-state population is connected"
+            ),
         },
         "claim_scope": (
             "static commercial WSC 1.0/GBA request lineage plus exact WSC payload "
             "identity proving Ver. 1.5 A7 maps through WSC 1.0 A5 to GBA 0x4A; "
-            "Ver. 1.5-only CE reconstruction, audible playback, and timing unverified"
+            "CE/D2 have no commercial payload match; CE reconstruction is recorded as "
+            "a separate build boundary, while D2 reconstruction, audible playback, and "
+            "runtime timing remain unverified"
         ),
     }
     rendered = json.dumps(result, indent=2) + "\n"

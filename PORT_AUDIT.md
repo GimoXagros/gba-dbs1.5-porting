@@ -148,7 +148,7 @@ byte-identical to the prior RAM-derived blob.
 
 Two new runs in separate empty output directories each regenerated exact v41
 SHA `B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06`.
-All 76 files in each output tree match by relative path and SHA-256.
+All 77 files in each output tree match by relative path and SHA-256.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
@@ -187,10 +187,13 @@ commercial object cluster with the eleven GBA calls in source order, then
 independently compares the underlying WSC command payloads. This corrects the
 provisional equal-ID assumption: WSC 1.5 `A7` exactly matches WSC 1.0 `A5`,
 which maps consistently to GBA `0x4A`; WSC 1.0 `A7` instead maps to GBA
-`0x4C`. The analyzer also proves that parent-start sound `CE` has a unique
-30-byte Ver. 1.5 payload with no exact match among bounded WSC 1.0 sounds
-`00..B8`. Its report SHA-256 is
-`FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419`.
+`0x4C`. The analyzer also proves that parent/upper-state sound `CE` has a
+unique 30-byte Ver. 1.5 payload with no exact match among bounded WSC 1.0
+sounds `00..B8`. Its expanded target population additionally checks three
+upper-state `D2` requests, request type 2. `D2` has a distinct 32-byte
+Ver. 1.5 payload with no WSC 1.0 match and therefore remains a native-
+reconstruction boundary. The updated report SHA-256 is
+`0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
 v39 installs the corrected `0x4A` request in generator `9229`; the independent
 integration report SHA-256 is
 `ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05`.
@@ -230,6 +233,30 @@ timer, event, flag, generator, and audio argument words. Its report SHA-256 is
 `3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13`.
 No v41 pointer outside the inserted parent window reaches `9083`; controller
 `9908/9A1B`, runtime reachability, and audible playback remain excluded.
+
+`tools/analyze_shoot_initializer_resources.py` now guards the full 1,034-byte
+`4090:7168` initializer/local-table range and all nine direct resource call
+signatures. It resolves two constructor triples and seven direct loads to five
+unique P0, two unique P1, and four unique P2 sources. All five P0 containers
+convert deterministically; the four P2 blocks convert to fixed 40-byte GBA
+forms. P2 source `0x3D4B20` is byte-identical to the already generated Shoot
+spawn-palette source `0x3D7AF0`, while `0x3D6B16` converts byte-for-byte to
+commercial GBA data at `0x080D3078`.
+
+The two P1 sources are explicitly not fed through an incompatible converter.
+They contain 6/13 logical commands and 34/109 payload items, require 4/50
+A-table records, and the first also requires a relocated non-null 10-byte B
+record. The existing generic parser rejects them for distinct structural
+reasons, while the spawn-specific converter assumes one A record per relative
+and all-zero B pointers. A commercial direct-format oracle must prove the new
+converter before installation. The same report maps WSC player slots
+`ES:065C/065E` to GBA pointer slots `0x0300489C/0x030048A0` and isolates the
+Ver. 1.5-only auxiliary object `ES:071E`; no matching WSC 1.0 storage reference
+exists, so its native allocator/lifetime remains unresolved rather than being
+assigned a guessed GBA RAM address. Two report runs reproduce SHA-256
+`F8729DDCFD4FE354036C4FA899DADF6BB2A2225FCEDA499811A6FCB6A9D2BAE2`.
+This analysis writes no ROM bytes and changes neither v41 nor the runtime
+progress percentage.
 
 The commercial-lineage analyzer's earlier function-address mapping was
 correct, but its report accidentally hashed `0x371xx` slices while labeling
@@ -330,7 +357,7 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback rules graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v41 preserves the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, payload-corrected WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` request, bounded `CE`→GBA `0x5B` sound, and resident `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent chain. A corrected upper-state graph proves the real route is menu call→`7168` initializer→`7792/88F6` and `7AB1/7D8D` state populations→`8057/80AF` calls to helper `9908`; its 26 callbacks/2,320 bytes are bounded, but none of this upper route is installed. A standalone `9908/9A1B` hook is explicitly insufficient. Remaining initializer resources, menu reachability, rules, transitions, rewards, win/loss, exit, and audible behavior remain |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback rules graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v41 preserves the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, payload-corrected WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` request, bounded `CE`→GBA `0x5B` sound, and resident `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent chain. A corrected upper-state graph proves the real route is menu call→`7168` initializer→`7792/88F6` and `7AB1/7D8D` state populations→`8057/80AF` calls to helper `9908`; its 26 callbacks/2,320 bytes are bounded, but none of this upper route is installed. The initializer's nine direct resource references are resolved: five P0/four P2 conversions are bounded, while two distinct P1 containers, Ver. 1.5-only `D2`, and auxiliary object `ES:071E` remain explicit native gates. A standalone `9908/9A1B` hook is insufficient. Menu reachability, upper/controller implementation, remaining rules, rewards, win/loss, exit, and audible behavior remain |
 | Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v41 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
@@ -439,7 +466,9 @@ The next active implementation milestone returns to the largest known content
 gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. Corrected entry analysis proves
 `9908` is a helper, not the external entry. The next integration must connect
 the menu transition to Ver. 1.5 initializer `4090:7168`, convert its dependent
-resources, install the `7792/88F6` and `7AB1/7D8D` upper state populations,
+resources after proving the direct-format P1 rule, bind `ES:071E` object
+allocation/lifetime, reconstruct `D2`, install the `7792/88F6` and
+`7AB1/7D8D` upper state populations,
 and only then connect `9908/9A1B` to parent `9083`. The bounded stage-7 fighter
 spawn copy is not a real stage-11 record: Ver. 1.5 bypasses that retail path
 through its dedicated initializer. Remaining object/rule callbacks,

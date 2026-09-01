@@ -36,6 +36,16 @@ against the fixed GBA candidate. The WSC save must not be loaded directly as a
 GBA save; platform-specific state must be reproduced or converted only after
 its format has been independently mapped and validated.
 
+## Display requirement
+
+All emulator-based final validation must run on a non-interactive/private
+desktop or through a genuinely headless harness. No emulator, debugger, test
+frame, or validation window may be shown on the user's monitor. Evidence may
+be captured to ignored files for later hash/trace comparison, but it must not
+be opened visibly during the run. Static build and binary-integrity checks may
+continue in the background before this gate; they do not authorize opening or
+parsing the supplied save.
+
 ## Evidence boundary
 
 Registration and hashing are not runtime tests and do not support a port or
