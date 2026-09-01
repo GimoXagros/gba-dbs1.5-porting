@@ -172,13 +172,14 @@ Two clean original-source builds reproduce internal v36 SHA-256
 `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 This is storage and container evidence only, not runtime reachability.
 
-## Installed resident child family (v37)
+## Installed resident child family and sound request (v38)
 
 `tools/build_shoot_child_integration.py` installs translations of generator
 `9229` and callbacks `94C1`, `9570`, and `9617` at `0x5B9400`, `0x5B9800`,
 `0x5B9C00`, and `0x5BA000`. The generator constructs child ID `0x410B`,
 connects the v36 P1/P0/P2 resources, sets the initial callback, and emits event
-0. The initial and homing callbacks use the proved native angle, X/Y trig,
+0. It then issues the proved native GBA sound request. The initial and homing
+callbacks use the proved native angle, X/Y trig,
 event, and presentation-update calls; they advance internally to `9570` and
 then `9617`. The completion callback releases the child and clears Shoot flag
 `0x40`.
@@ -191,22 +192,30 @@ checks the exact changed-byte set and fixed function hashes, disassembles the
 final-placement ARM7TDMI code, rejects unsupported instructions, verifies all
 native branch targets, and proves the three resource pointers and internal
 callback chain. Its report SHA-256 is
-`7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2`.
-Two clean original-source builds reproduce internal v37 SHA-256
-`537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+`07BF0872AA3BD1B76CEFD204A6F591C9F00914642CBC16F250BD11EC1055B255`.
+
+`tools/analyze_shoot_audio_lineage.py` checks the complete local population of
+eleven WSC 1.0 sound-queue writes against the eleven same-order commercial GBA
+calls. Repeated source IDs map consistently, request type is preserved in all
+eleven rows, and the unique `A7` row maps to GBA ID `0x4C`. It also hashes and
+checks native writer `0x080D15C0`, whose field writes are the exact GBA form of
+the WSC `0C00:390E` queue update. Both WSC 1.5 request sites in parent `912A`
+and generator `9229` use `A7`, request type 1; v38 installs the generator-side
+call with `(r8,r9,r10)=(0x4C,1,0)`. The deterministic lineage report SHA-256 is
+`7B43135F70B676404036A244A67CA954A71FF4EE5BB507A6E2A3CEA4AB658025`.
+Two clean original-source builds reproduce internal v38 SHA-256
+`564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
 
 This is resident internal-chain evidence, not runtime reachability. No pointer
 outside the inserted window reaches generator `9229`. Parent `912A` remains
-unconnected because the WSC generator path also makes an audio-state request
-whose native GBA mapping is not yet proved. That request is deliberately
-excluded rather than guessed.
+unconnected, and audible playback/timing remains unverified.
 
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is mapping the audio-state request, translating
-the `9083`/`912A` spawn parent, and connecting the resident generator through
+The next implementation unit is translating the `9083`/`912A` spawn parent
+and connecting the resident generator through
 controller `4090:9908` and onward to the remaining reward/exit paths.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

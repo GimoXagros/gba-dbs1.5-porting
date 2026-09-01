@@ -18,29 +18,31 @@ from capstone import CS_ARCH_ARM, CS_MODE_ARM, CS_MODE_LITTLE_ENDIAN, Cs  # type
 
 
 INPUT_SHA256 = "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C"
-OUTPUT_SHA256 = "537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E"
+OUTPUT_SHA256 = "564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A"
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC15_SHA256 = "C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7"
 GBA_BASE = 0x08000000
 
 PLACEMENTS = {
-    "generator_9229": (0x5B9400, 404, "8FC2BB120E05958A889F1E68842ACE0C3B8CF95E7A3780C6AE7E6E7EC39D5ED8"),
+    "generator_9229": (0x5B9400, 420, "6B1359D945918B80269978D0C82EBCC89D39EFD8F8775A7F3433FF8AE33BA4C0"),
     "callback_94C1": (0x5B9800, 324, "2F1CAA67C063C861ACBCFA63929819DF7A8CC9F273AF05B0924E6F0E5CE4211D"),
     "callback_9570": (0x5B9C00, 300, "98A88B39878D9D2FBB34624A68F5E691C499E7B11AC6A67B084071446383B924"),
     "callback_9617": (0x5BA000, 100, "57AB76D9D28313DF1F0CA183350679BEA57107A79BD45E1B5BFB9528D36E769C"),
 }
 CODE_BYTES = {
-    "generator_9229": 0x170,
+    "generator_9229": 0x180,
     "callback_94C1": 0x140,
     "callback_9570": 0x128,
     "callback_9617": 0x60,
 }
 EXPECTED_CALLS = {
-    "generator_9229": [0x08352374, 0x080127E4, 0x08012874],
+    "generator_9229": [0x08352374, 0x080127E4, 0x08012874, 0x080D15C0],
     "callback_94C1": [0x08012560, 0x0801233C, 0x08012348, 0x08012874, 0x08012A84],
     "callback_9570": [0x08012560, 0x0801233C, 0x08012348, 0x08012A84, 0x08012874],
     "callback_9617": [0x08012A84, 0x083524C4],
 }
+AUDIO_REQUEST_OFFSET = 0x5B9560
+AUDIO_REQUEST_WORDS = (0xE3A0804C, 0xE3A09001, 0xE3A0A000)
 WSC_RANGES = {
     "generator_9229": (0x749B29, 0x749C3B, "51F802FADB6AFD59D77DE51189CBA0124D814BA531A1E93C7EFEAD8B59622E69"),
     "callback_94C1": (0x749DC1, 0x749E70, "CDB4D863FB669D8BB11564531CF3592F4F31688D63DF0CB1DC451CA7119F5572"),
@@ -52,6 +54,7 @@ GBA_ORACLE_RANGES = {
     "commercial_callback_initial": (0x372110, 0x3721FC, "F72DFA2038E330EB0A8640F130B126C2CDB495399CDFAAE9530DE3BEE61BD460"),
     "commercial_callback_homing": (0x3721FC, 0x372320, "12C951CD935FDC2DFAC99F3A67E52B0010A45644E8B21A3433F61BC43A39938A"),
     "commercial_callback_complete": (0x372320, 0x3723D8, "B5E810B434A99459C8B0BDB5E64F69282B577755CBBF00A1EDE3BF85A82B6398"),
+    "native_sound_request": (0x0D15C0, 0x0D15F0, "00927E579F643E6FA62BB58C826DCB7ED6FEA4E9367EC84295C9EF48257B6685"),
 }
 
 
@@ -164,12 +167,12 @@ def main() -> int:
     code_refs_before = aligned_refs(before, 0x5B9400, 0x5BA400)
     code_refs_after = aligned_refs(after, 0x5B9400, 0x5BA400)
     expected_resource_refs = [
-        (0x5B9584, 0x085B9000),
-        (0x5B9588, 0x085B9200),
-        (0x5B958C, 0x085B9300),
+        (0x5B9594, 0x085B9000),
+        (0x5B9598, 0x085B9200),
+        (0x5B959C, 0x085B9300),
     ]
     expected_code_refs = [
-        (0x5B9590, 0x085B9800),
+        (0x5B95A0, 0x085B9800),
         (0x5B9940, 0x085B9C00),
         (0x5B9D28, 0x085BA000),
     ]
@@ -179,14 +182,20 @@ def main() -> int:
         raise SystemExit("v36 already references the Shoot child code window")
     if code_refs_after != expected_code_refs:
         raise SystemExit(f"Shoot callback pointer chain changed: {code_refs_after}")
+    if struct.unpack_from("<III", after, AUDIO_REQUEST_OFFSET) != AUDIO_REQUEST_WORDS:
+        raise SystemExit("Shoot generator sound-request arguments changed")
+    audio_call_word = struct.unpack_from("<I", after, AUDIO_REQUEST_OFFSET + 12)[0]
+    if arm_branch_target(GBA_BASE + AUDIO_REQUEST_OFFSET + 12, audio_call_word) != 0x080D15C0:
+        raise SystemExit("Shoot generator sound-request target changed")
 
     result = {
         "schema": 1,
         "kind": "independent-shoot-child-integration-verification",
         "claim_scope": (
             "exact diff containment, ARM7TDMI final-placement disassembly, native "
-            "call graph, resource consumers, and internal callback chain; external "
-            "entry, audio-state parity, and runtime reachability excluded"
+            "call graph including the proved A7-to-0x4C sound request, resource "
+            "consumers, and internal callback chain; external entry, audible "
+            "playback, and runtime reachability excluded"
         ),
         "before_sha256": INPUT_SHA256,
         "after_sha256": OUTPUT_SHA256,
@@ -200,7 +209,16 @@ def main() -> int:
             {"offset": offset, "value": value} for offset, value in code_refs_after
         ],
         "external_entry_connected": False,
-        "known_exclusion": "WSC 0C00:390E audio-state request after generator event 0",
+        "audio_request": {
+            "offset": AUDIO_REQUEST_OFFSET,
+            "target": 0x080D15C0,
+            "wsc_sound_id": 0xA7,
+            "gba_sound_id": 0x4C,
+            "request_type": 1,
+            "third_argument": 0,
+            "runtime_audibility_verified": False,
+        },
+        "known_exclusion": "external 9083/912A parent/controller connection",
     }
     rendered = json.dumps(result, indent=2) + "\n"
     if args.output:

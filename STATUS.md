@@ -11,14 +11,15 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v37 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v38 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
 > The Shoot child P1/P0/P2 resources and resident
-> `9229 -> 94C1 -> 9570 -> 9617` generator/callback family are also integrated
+> `9229 -> 94C1 -> 9570 -> 9617` generator/callback family are also integrated,
+> including the commercially proved WSC `A7` to GBA `0x4C` sound request,
 > and reproducible at SHA-256
-> `537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+> `564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -35,9 +36,9 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v37. The installed child family is internally connected to
+> save was used for v38. The installed child family is internally connected to
 > its resources, but no external parent/controller reaches generator `9229`.
-> The unproven WSC audio-state request is deliberately excluded.
+> Audible playback remains unverified until final non-displaying runtime QA.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -60,14 +61,15 @@ memory dump, screenshot, or emulator state.
 - Source-bound Digimon Shoot child P1/P0/P2 resources installed under an
   Expected Writes contract, with the resident
   `9229 -> 94C1 -> 9570 -> 9617` generator/callback family connected internally.
-  External parent/controller entry and the WSC audio-state request remain pending.
+  Its source `A7` sound request maps through the exact native GBA queue writer as
+  ID `0x4C`; external parent/controller entry remains pending.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v37, identified only by SHA-256
-`537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+The current static internal composite is v38, identified only by SHA-256
+`564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -89,9 +91,9 @@ results, and added-content behavior remain unverified.
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
 binary assets from the three original ROMs before assembling eight guarded
-layers. Two builds in separate empty output directories both produced v37
+layers. Two builds in separate empty output directories both produced v38
 SHA-256
-`537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+`564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -169,9 +171,11 @@ proves that the only pointers into the new window are the containers' own
 internal pointers. v37 adds an independently verified ARM7TDMI translation of
 generator `9229` and the `94C1 -> 9570 -> 9617` child callback chain. Its
 internal literals reach the three v36 resources and its completion callback
-clears Shoot flag `0x40`. No external callback points to the generator yet;
-the `912A` parent connection and WSC audio-state request remain unimplemented,
-so runtime reachability is not claimed. Rules, reward, win/loss, and exit
+clears Shoot flag `0x40`. v38 proves the complete commercial 11-request audio
+lineage, maps WSC sound `A7` to GBA `0x4C`, and calls the exact native request
+writer at `0x080D15C0` from generator `9229`. No external callback points to
+the generator yet; the `912A` parent connection remains unimplemented, so
+runtime reachability and audible playback are not claimed. Rules, reward, win/loss, and exit
 remain release gates, and the runtime-evidenced percentage is unchanged.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
@@ -204,7 +208,7 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v35, retained as v37's opening-linear
+`[13,14]` and `[12,11]`. Internal v35, retained as v38's opening-linear
 intermediate, translates those two cases/callbacks and the dispatcher
 extension into GBA ARM code while preserving retail states
 0..2. Its dedicated 15-record presentation view preserves commercial
@@ -228,7 +232,7 @@ reuse of unused GBA opening slot 3 for records 50 and 49 without overwriting
 retained commercial auxiliary objects. An independent verifier confines all
 2,199 changed bytes to the three hooks and declared expansion ranges,
 disassembles the four callback call graphs, and checks the exact converted
-seven-entry event table. No v37 runtime evidence exists, so the static integration
+seven-entry event table. No v38 runtime evidence exists, so the static integration
 does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in

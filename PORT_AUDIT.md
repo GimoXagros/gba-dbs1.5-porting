@@ -53,7 +53,8 @@ native source port nor an emulator-assisted port.
   callback, normal display callback, and scanline-threshold callback.
 - Digimon Shoot child P1/P0/P2 resources plus the resident
   `9229 -> 94C1 -> 9570 -> 9617` generator/callback family at guarded expansion
-  offsets. The family is internally connected but has no external parent entry.
+  offsets. The family includes the proved native `A7`→`0x4C` sound request and
+  is internally connected, but has no external parent entry.
 - Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
   callbacks, converted motion/event tables, four added linear callbacks,
   selector-3→13 predecessor hook, and sequential auxiliary slot-3 reuse.
@@ -115,7 +116,7 @@ ignored clean output directories:
 | Opening choice/resources / static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
 | Four linear callbacks / static intermediate v35 | `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F` |
 | Disconnected Shoot child resources / static intermediate v36 | `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C` |
-| Resident Shoot child generator/callback family / current static composite v37 | `537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E` |
+| Proved Shoot child sound request / current static composite v38 | `564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -138,13 +139,13 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v37
-SHA `537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E`.
+Two new runs in separate empty output directories each regenerated exact v38
+SHA `564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v37 build checks.
+the v38 build checks.
 
 `tools/analyze_opening_linear_integration.py` independently compares v34 with
 v35. It confines all 2,199 changed bytes to three predecessor hooks and eleven
@@ -173,10 +174,16 @@ zero pre-existing aligned pointers into that window, and four Expected Writes.
 An independent verifier re-derives the exact diff, disassembles the final ROM
 placement, rejects instructions outside the target ISA, checks native call
 graphs, and proves the three resource literals and complete internal callback
-chain. Its deterministic report SHA-256 is
-`7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2`.
-No external pointer reaches generator `9229`; parent `912A`, the WSC audio-state
-request, and runtime reachability are explicitly outside this layer.
+chain. The audio-lineage analyzer pairs all eleven WSC 1.0 requests in this
+commercial object cluster with the eleven GBA calls in source order, proving
+`A7`→`0x4C`, request-type preservation, and native queue writer `0x080D15C0`.
+Its report SHA-256 is
+`7B43135F70B676404036A244A67CA954A71FF4EE5BB507A6E2A3CEA4AB658025`.
+v38 adds that request to generator `9229`; the independent integration report
+SHA-256 is
+`07BF0872AA3BD1B76CEFD204A6F591C9F00914642CBC16F250BD11EC1055B255`.
+No external pointer reaches generator `9229`; parent `912A`, runtime
+reachability, and audible playback are explicitly outside this layer.
 
 The commercial-lineage analyzer's earlier function-address mapping was
 correct, but its report accidentally hashed `0x371xx` slices while labeling
@@ -277,8 +284,8 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v37 installs the child resources and internally connected `9229 -> 94C1 -> 9570 -> 9617` family; external parent/controller entry, audio-state handling, remaining rules, transitions, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v37 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v38 installs the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, and proved `A7`→`0x4C` sound request; external parent/controller entry, remaining rules, transitions, rewards, win/loss, exit, and audible behavior remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v38 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -332,9 +339,9 @@ timers, fades, motion, and event IDs. Callback 10 uses the exact seven-event
 source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
-boundary, and event table in the v37 opening-linear intermediate. These are static
+boundary, and event table in the v38 opening-linear intermediate. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v37 runtime evidence was collected. See
+proof. No v38 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -347,7 +354,8 @@ runtime attempt was made in this milestone.
 - Train vents/bounce behavior, Iraira suction, and remaining vertical-stage
   engine branches.
 - Digimon Shoot external parent/controller connection, remaining rules/object
-  callbacks, private transition and audio state, reward, win/loss, menu, and exit.
+  callbacks, private transition state, reward, win/loss, menu, exit, and audible
+  playback parity.
 - Tag/reward/rating persistence and associated UI.
 - Extended opening visual/audio/timing/transition/skip behavior on the final
   integrated candidate; runtime validation remains deliberately deferred.
@@ -376,13 +384,13 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v37 build preserves the complete static
+complete for exact v32. The clean v38 build preserves the complete static
 19-linear + 5-choice opening graph and installs the internally connected Shoot
 child generator/callback family over the v36 resource layer.
 The next active implementation milestone returns to the largest known content
 gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must replace the bounded
 spawn/transition fallbacks, connect the external parent/controller, remaining
-object/rule callbacks, audio state, and reward/menu
+object/rule callbacks, transition state, and reward/menu
 outcomes, and remain reproducible through the same main build. Runtime
 verification remains deferred and non-displaying until all declared content
 is integrated.

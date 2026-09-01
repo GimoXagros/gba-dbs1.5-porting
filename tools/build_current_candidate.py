@@ -25,8 +25,11 @@ OPENING_LINEAR_VERIFICATION_SHA256 = (
 SHOOT_RESOURCE_VERIFICATION_SHA256 = (
     "1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F"
 )
+SHOOT_AUDIO_LINEAGE_SHA256 = (
+    "7B43135F70B676404036A244A67CA954A71FF4EE5BB507A6E2A3CEA4AB658025"
+)
 SHOOT_CHILD_VERIFICATION_SHA256 = (
-    "7EF2DD699BAFC0BF37CC338337AA8EA3B802B29573DBC1F8EBD323D9DEE913C2"
+    "07BF0872AA3BD1B76CEFD204A6F591C9F00914642CBC16F250BD11EC1055B255"
 )
 
 EXPECTED_ASSETS = {
@@ -77,7 +80,7 @@ EXPECTED_LAYERS = {
     "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
     "opening-linear.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
     "shoot-resources.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
-    "current-candidate.gba": "537E72462812DE2AE9628584AC988AADA2C3EFFD4B754992C725392E20BCB29E",
+    "current-candidate.gba": "564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A",
 }
 
 
@@ -135,6 +138,20 @@ def main() -> int:
         opening_p1_corpus,
         OPENING_P1_CORPUS_SHA256,
         "opening P1 conversion corpus",
+    )
+    shoot_audio_lineage = intermediate / "shoot-audio-lineage.json"
+    run(
+        "analyze_shoot_audio_lineage.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_audio_lineage,
+    )
+    require_hash(
+        shoot_audio_lineage,
+        SHOOT_AUDIO_LINEAGE_SHA256,
+        "Shoot audio request lineage",
     )
 
     animation_specs = (
@@ -295,8 +312,9 @@ def main() -> int:
             "exact current integration candidate including the five-state "
             "opening choice path, selector records 11..14, the four added "
             "linear opening callbacks, the Shoot child resource layer, and the "
-            "resident 9229->94C1->9570->9617 child generator/callback family; "
-            "external parent entry, the WSC audio-state request, runtime validation, "
+            "resident 9229->94C1->9570->9617 child generator/callback family with "
+            "the proved A7-to-0x4C sound request; external parent entry, audible "
+            "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
         "sources": {
@@ -309,6 +327,7 @@ def main() -> int:
             "opening_p1_conversion_corpus_sha256": OPENING_P1_CORPUS_SHA256,
             "opening_linear_verification_sha256": OPENING_LINEAR_VERIFICATION_SHA256,
             "shoot_resource_verification_sha256": SHOOT_RESOURCE_VERIFICATION_SHA256,
+            "shoot_audio_lineage_sha256": SHOOT_AUDIO_LINEAGE_SHA256,
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,

@@ -40,6 +40,7 @@ ANGLE = 0x08012560
 TRIG_X = 0x0801233C
 TRIG_Y = 0x08012348
 OBJECT_RELEASE = 0x083524C4
+SOUND_REQUEST = 0x080D15C0
 
 OBJECT_HANDLE = 0x03004D54
 SPAWN_PARENT = 0x03004D58
@@ -59,6 +60,7 @@ GBA_ORACLE_RANGES = {
     "commercial_callback_initial": (0x372110, 0x3721FC, "F72DFA2038E330EB0A8640F130B126C2CDB495399CDFAAE9530DE3BEE61BD460"),
     "commercial_callback_homing": (0x3721FC, 0x372320, "12C951CD935FDC2DFAC99F3A67E52B0010A45644E8B21A3433F61BC43A39938A"),
     "commercial_callback_complete": (0x372320, 0x3723D8, "B5E810B434A99459C8B0BDB5E64F69282B577755CBBF00A1EDE3BF85A82B6398"),
+    "native_sound_request": (0x0D15C0, 0x0D15F0, "00927E579F643E6FA62BB58C826DCB7ED6FEA4E9367EC84295C9EF48257B6685"),
 }
 
 
@@ -182,6 +184,10 @@ def build_generator() -> bytes:
         push {{r8}}
         bl 0x{PRESENTATION_EVENT:08X}
         add sp, sp, #12
+        mov r8, #0x4C
+        mov r9, #1
+        mov r10, #0
+        bl 0x{SOUND_REQUEST:08X}
         ldr r8, callback_initial
         str r8, [r4]
         pop {{r0-r7, lr}}
@@ -481,8 +487,9 @@ def main() -> int:
         "kind": "internal-shoot-child-code-integration-build",
         "claim_scope": (
             "resident generator 9229 and internally connected 94C1/9570/9617 "
-            "child callbacks using the commercial GBA object ABI; parent 912A "
-            "connection, WSC audio-state write, and runtime reachability excluded"
+            "child callbacks using the commercial GBA object ABI, including the "
+            "proved WSC A7 to GBA 0x4C sound request; parent 912A connection and "
+            "runtime reachability excluded"
         ),
         "input_sha256": INPUT_SHA256,
         "output_sha256": sha256(output),
@@ -496,7 +503,15 @@ def main() -> int:
         },
         "expected_writes": manifest_placements,
         "external_entry_connected": False,
-        "known_exclusion": "WSC 0C00:390E audio-state request after generator event 0",
+        "audio_request": {
+            "target": SOUND_REQUEST,
+            "wsc_sound_id": 0xA7,
+            "gba_sound_id": 0x4C,
+            "request_type": 1,
+            "third_argument": 0,
+            "runtime_audibility_verified": False,
+        },
+        "known_exclusion": "external 9083/912A parent/controller connection",
     }
     if args.manifest:
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
