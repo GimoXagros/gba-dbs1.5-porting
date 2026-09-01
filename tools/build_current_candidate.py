@@ -26,10 +26,10 @@ SHOOT_RESOURCE_VERIFICATION_SHA256 = (
     "1047C6163FCC7C40D0F4CED65305108BFE16CD5ED2C9E3DF84ADA757AC504E3F"
 )
 SHOOT_AUDIO_LINEAGE_SHA256 = (
-    "7B43135F70B676404036A244A67CA954A71FF4EE5BB507A6E2A3CEA4AB658025"
+    "FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419"
 )
 SHOOT_CHILD_VERIFICATION_SHA256 = (
-    "07BF0872AA3BD1B76CEFD204A6F591C9F00914642CBC16F250BD11EC1055B255"
+    "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
 )
 
 EXPECTED_ASSETS = {
@@ -80,7 +80,7 @@ EXPECTED_LAYERS = {
     "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
     "opening-linear.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
     "shoot-resources.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
-    "current-candidate.gba": "564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A",
+    "current-candidate.gba": "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492",
 }
 
 
@@ -313,7 +313,8 @@ def main() -> int:
             "opening choice path, selector records 11..14, the four added "
             "linear opening callbacks, the Shoot child resource layer, and the "
             "resident 9229->94C1->9570->9617 child generator/callback family with "
-            "the proved A7-to-0x4C sound request; external parent entry, audible "
+            "the exact-payload-derived A7-to-0x4A sound request; external parent "
+            "entry, Ver. 1.5-only CE sound reconstruction, audible "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),

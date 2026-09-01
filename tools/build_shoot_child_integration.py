@@ -184,7 +184,7 @@ def build_generator() -> bytes:
         push {{r8}}
         bl 0x{PRESENTATION_EVENT:08X}
         add sp, sp, #12
-        mov r8, #0x4C
+        mov r8, #0x4A
         mov r9, #1
         mov r10, #0
         bl 0x{SOUND_REQUEST:08X}
@@ -488,7 +488,8 @@ def main() -> int:
         "claim_scope": (
             "resident generator 9229 and internally connected 94C1/9570/9617 "
             "child callbacks using the commercial GBA object ABI, including the "
-            "proved WSC A7 to GBA 0x4C sound request; parent 912A connection and "
+            "payload-proved WSC 1.5 A7 via WSC 1.0 A5 to GBA 0x4A sound request; "
+            "parent 912A connection and "
             "runtime reachability excluded"
         ),
         "input_sha256": INPUT_SHA256,
@@ -506,7 +507,8 @@ def main() -> int:
         "audio_request": {
             "target": SOUND_REQUEST,
             "wsc_sound_id": 0xA7,
-            "gba_sound_id": 0x4C,
+            "exact_wsc_10_payload_id": 0xA5,
+            "gba_sound_id": 0x4A,
             "request_type": 1,
             "third_argument": 0,
             "runtime_audibility_verified": False,

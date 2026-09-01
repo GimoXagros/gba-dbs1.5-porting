@@ -53,8 +53,10 @@ native source port nor an emulator-assisted port.
   callback, normal display callback, and scanline-threshold callback.
 - Digimon Shoot child P1/P0/P2 resources plus the resident
   `9229 -> 94C1 -> 9570 -> 9617` generator/callback family at guarded expansion
-  offsets. The family includes the proved native `A7`→`0x4C` sound request and
-  is internally connected, but has no external parent entry.
+  offsets. The family includes the payload-proved WSC 1.5 `A7` -> WSC 1.0
+  `A5` -> native GBA `0x4A` sound request and is internally connected, but has
+  no external parent entry. The parent-start `CE` sound remains a required
+  Ver. 1.5-only GBA asset.
 - Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
   callbacks, converted motion/event tables, four added linear callbacks,
   selector-3→13 predecessor hook, and sequential auxiliary slot-3 reuse.
@@ -116,7 +118,7 @@ ignored clean output directories:
 | Opening choice/resources / static composite v34 | `33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1` |
 | Four linear callbacks / static intermediate v35 | `9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F` |
 | Disconnected Shoot child resources / static intermediate v36 | `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C` |
-| Proved Shoot child sound request / current static composite v38 | `564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A` |
+| Payload-corrected Shoot child sound request / current static composite v39 | `35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -139,13 +141,13 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v38
-SHA `564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A`.
+Two new runs in separate empty output directories each regenerated exact v39
+SHA `35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v38 build checks.
+the v39 build checks.
 
 `tools/analyze_opening_linear_integration.py` independently compares v34 with
 v35. It confines all 2,199 changed bytes to three predecessor hooks and eleven
@@ -175,15 +177,20 @@ An independent verifier re-derives the exact diff, disassembles the final ROM
 placement, rejects instructions outside the target ISA, checks native call
 graphs, and proves the three resource literals and complete internal callback
 chain. The audio-lineage analyzer pairs all eleven WSC 1.0 requests in this
-commercial object cluster with the eleven GBA calls in source order, proving
-`A7`→`0x4C`, request-type preservation, and native queue writer `0x080D15C0`.
-Its report SHA-256 is
-`7B43135F70B676404036A244A67CA954A71FF4EE5BB507A6E2A3CEA4AB658025`.
-v38 adds that request to generator `9229`; the independent integration report
-SHA-256 is
-`07BF0872AA3BD1B76CEFD204A6F591C9F00914642CBC16F250BD11EC1055B255`.
-No external pointer reaches generator `9229`; parent `912A`, runtime
-reachability, and audible playback are explicitly outside this layer.
+commercial object cluster with the eleven GBA calls in source order, then
+independently compares the underlying WSC command payloads. This corrects the
+provisional equal-ID assumption: WSC 1.5 `A7` exactly matches WSC 1.0 `A5`,
+which maps consistently to GBA `0x4A`; WSC 1.0 `A7` instead maps to GBA
+`0x4C`. The analyzer also proves that parent-start sound `CE` has a unique
+30-byte Ver. 1.5 payload with no exact match among bounded WSC 1.0 sounds
+`00..B8`. Its report SHA-256 is
+`FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419`.
+v39 installs the corrected `0x4A` request in generator `9229`; the independent
+integration report SHA-256 is
+`ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05`.
+No external pointer reaches generator `9229`; `CE` reconstruction, parent
+`9083`/`912A`, runtime reachability, and audible playback are explicitly
+outside this layer.
 
 The commercial-lineage analyzer's earlier function-address mapping was
 correct, but its report accidentally hashed `0x371xx` slices while labeling
@@ -284,8 +291,8 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v38 installs the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, and proved `A7`→`0x4C` sound request; external parent/controller entry, remaining rules, transitions, rewards, win/loss, exit, and audible behavior remain |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v38 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | The 6,096-byte/43-callback source graph and three indirect tables are bounded statically, with three commercial GBA callback counterparts proved. v39 installs the child resources, internally connected `9229 -> 94C1 -> 9570 -> 9617` family, and payload-corrected WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` sound request; Ver. 1.5-only `CE` reconstruction, external parent/controller entry, remaining rules, transitions, rewards, win/loss, exit, and audible behavior remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v39 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -339,9 +346,9 @@ timers, fades, motion, and event IDs. Callback 10 uses the exact seven-event
 source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
-boundary, and event table in the v38 opening-linear intermediate. These are static
+boundary, and event table in the v39 opening-linear intermediate. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v38 runtime evidence was collected. See
+proof. No v39 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -384,11 +391,12 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v38 build preserves the complete static
+complete for exact v32. The clean v39 build preserves the complete static
 19-linear + 5-choice opening graph and installs the internally connected Shoot
 child generator/callback family over the v36 resource layer.
 The next active implementation milestone returns to the largest known content
-gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must replace the bounded
+gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. It must first reconstruct the
+Ver. 1.5-only `CE` request as a GBA-native sound, then replace the bounded
 spawn/transition fallbacks, connect the external parent/controller, remaining
 object/rule callbacks, transition state, and reward/menu
 outcomes, and remain reproducible through the same main build. Runtime

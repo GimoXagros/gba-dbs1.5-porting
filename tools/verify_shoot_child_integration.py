@@ -18,13 +18,13 @@ from capstone import CS_ARCH_ARM, CS_MODE_ARM, CS_MODE_LITTLE_ENDIAN, Cs  # type
 
 
 INPUT_SHA256 = "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C"
-OUTPUT_SHA256 = "564839AA5EC03843C61675D04A12B57C8ABF803181CE0C3C74DC8577B4A6721A"
+OUTPUT_SHA256 = "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492"
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC15_SHA256 = "C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7"
 GBA_BASE = 0x08000000
 
 PLACEMENTS = {
-    "generator_9229": (0x5B9400, 420, "6B1359D945918B80269978D0C82EBCC89D39EFD8F8775A7F3433FF8AE33BA4C0"),
+    "generator_9229": (0x5B9400, 420, "A3A8103CF0E20334F0B3B5189C5BA082F4596D306A07D2ADE492C1CA665FEA60"),
     "callback_94C1": (0x5B9800, 324, "2F1CAA67C063C861ACBCFA63929819DF7A8CC9F273AF05B0924E6F0E5CE4211D"),
     "callback_9570": (0x5B9C00, 300, "98A88B39878D9D2FBB34624A68F5E691C499E7B11AC6A67B084071446383B924"),
     "callback_9617": (0x5BA000, 100, "57AB76D9D28313DF1F0CA183350679BEA57107A79BD45E1B5BFB9528D36E769C"),
@@ -42,7 +42,7 @@ EXPECTED_CALLS = {
     "callback_9617": [0x08012A84, 0x083524C4],
 }
 AUDIO_REQUEST_OFFSET = 0x5B9560
-AUDIO_REQUEST_WORDS = (0xE3A0804C, 0xE3A09001, 0xE3A0A000)
+AUDIO_REQUEST_WORDS = (0xE3A0804A, 0xE3A09001, 0xE3A0A000)
 WSC_RANGES = {
     "generator_9229": (0x749B29, 0x749C3B, "51F802FADB6AFD59D77DE51189CBA0124D814BA531A1E93C7EFEAD8B59622E69"),
     "callback_94C1": (0x749DC1, 0x749E70, "CDB4D863FB669D8BB11564531CF3592F4F31688D63DF0CB1DC451CA7119F5572"),
@@ -193,7 +193,7 @@ def main() -> int:
         "kind": "independent-shoot-child-integration-verification",
         "claim_scope": (
             "exact diff containment, ARM7TDMI final-placement disassembly, native "
-            "call graph including the proved A7-to-0x4C sound request, resource "
+            "call graph including the payload-proved A7-to-0x4A sound request, resource "
             "consumers, and internal callback chain; external entry, audible "
             "playback, and runtime reachability excluded"
         ),
@@ -213,7 +213,8 @@ def main() -> int:
             "offset": AUDIO_REQUEST_OFFSET,
             "target": 0x080D15C0,
             "wsc_sound_id": 0xA7,
-            "gba_sound_id": 0x4C,
+            "exact_wsc_10_payload_id": 0xA5,
+            "gba_sound_id": 0x4A,
             "request_type": 1,
             "third_argument": 0,
             "runtime_audibility_verified": False,
