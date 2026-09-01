@@ -73,6 +73,28 @@ must therefore extend the existing state byte in place, preserve states 0..2,
 and translate both new case setup blocks and both selected callbacks. A forced
 single-case diagnostic route would not reproduce the retail policy.
 
+## Static GBA integration
+
+`tools/build_opening_integration.py` now performs that bounded choice-path
+translation. It replaces the commercial split hook at ROM offset `0x086E48`
+with a dispatcher at `0x085B4000`, keeps retail states 0..2 on their original
+case entries, and adds:
+
+| State | Case setup | Callback | Converted tables |
+|---:|---:|---:|---:|
+| 3 (`[13,14]`) | `0x085B4100` | `0x085B4600` | `0x085B5200`, `0x085B5280` |
+| 4 (`[12,11]`) | `0x085B4300` | `0x085B4C00` | `0x085B5300`, `0x085B5320` |
+
+The builder requires the exact v32 input and exact WSC 1.5 source, verifies
+hashes for every translated WSC source range and reused commercial GBA range,
+requires all expansion targets to be blank, and records every placement hash.
+Frame durations use the retail-derived rule `floor(WSC * 4 / 5)` and signed
+motion terms use truncation toward zero of `WSC * 5 / 4`; coordinates and
+event IDs are unchanged. Two independent clean builds from the three original
+ROMs produced byte-identical internal v33 SHA-256
+`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+This is static integration evidence only.
+
 ## Reproduction
 
 The evidence is regenerated from the three hash-identified originals with:
@@ -91,8 +113,8 @@ Current generated-manifest SHA-256 values are:
 
 ## Runtime evidence boundary
 
-The graph and reachability results above are static evidence. No emulator was
-run for this milestone. A prior WSC 1.0 hidden/chromeless BizHawk attempt parsed
+The graph, reachability, and v33 integration results above are static evidence.
+No emulator was run for this milestone. A prior WSC 1.0 hidden/chromeless BizHawk attempt parsed
 its command line but did not start the Lua capture and produced no PNG, RAM
 dump, completion log, or runtime evidence. It remains `INCONCLUSIVE` and is not
 cited as validation. The exact diagnostic script is retained at
@@ -100,8 +122,9 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Translate the four added linear callbacks, two added choices, and expanded
-   selector behavior into the commercial GBA opening state machine.
-2. Integrate the translation through the single reproducible candidate build.
+1. Translate the four added linear callbacks and aligned selector-3→13 change
+   into the commercial GBA opening state machine.
+2. Preserve the complete 19-linear + 5-choice graph through the single
+   reproducible candidate build.
 3. Only after all declared port content is integrated, run a non-displaying
    cold boot through the full extended sequence and verify skip-to-title.

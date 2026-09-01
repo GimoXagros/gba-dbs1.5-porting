@@ -32,14 +32,16 @@ Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The corrected internal composite is built from the three hash-identified
-originals, then assembled in four checked layers: base roster, stage
-integration, progression/unlocks, and the Zeed boss layer (composite
-v32, SHA-256
-`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`).
+The current static internal composite is built from the three hash-identified
+originals, then assembled in five checked layers: base roster, stage
+integration, progression/unlocks, the Zeed boss layer, and the opening-choice
+layer (composite v33, SHA-256
+`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`).
 Each builder refuses an unexpected input SHA-256, so a layer change must
 deliberately advance the downstream hashes before a new composite can be
-produced. v32 passes the non-displaying
+produced. Exact v32, SHA-256
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
+remains the last runtime-evidenced candidate and passes the non-displaying
 `BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` runtime milestones; roster
 correctness remains unverified. Retail character ID 0 also reaches the first
 baseline battle and consumes one Right input through the retail player path,
@@ -53,8 +55,8 @@ python tools\build_current_candidate.py `
 ```
 
 It regenerates the commercial WSC-to-GBA comparison corpus, every currently
-consumed character/evolution/VS/stage/boss asset, and all four ROM layers. It
+consumed character/evolution/VS/stage/boss asset, and all five ROM layers. It
 fails on any unexpected source, intermediate, asset, or layer SHA-256. Two
-independent empty-directory runs reproduced exact v32 byte-for-byte. This is a
+independent empty-directory runs reproduced exact v33 byte-for-byte. This is a
 reproducibility result for the current incomplete candidate, not a complete
 Ver. 1.5 port or a distributable ROM.

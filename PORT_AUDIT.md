@@ -1,6 +1,6 @@
 # Port recovery audit
 
-Audit date: 2026-08-31 (Asia/Seoul)
+Audit date: 2026-08-31; last updated 2026-09-01 (Asia/Seoul)
 
 This document is the authoritative recovery baseline for the current port.
 It separates committed implementation from behavior actually observed in a
@@ -51,6 +51,8 @@ native source port nor an emulator-assisted port.
   progression/unlock changes, and alternate final-boss data/code.
 - Digimon Shoot stage routing, graphics/palette data, core-loop route, timer
   callback, normal display callback, and scanline-threshold callback.
+- Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
+  callbacks, and converted motion/event tables.
 
 These are real GBA-side code/data changes. Their presence and static structure
 do not by themselves prove that the corresponding gameplay paths work.
@@ -60,7 +62,7 @@ do not by themselves prove that the corresponding gameplay paths work.
 - WSC-to-GBA graphics, palette, map, descriptor, object-record, and table
   conversion helpers.
 - ROM survey, disassembly, probe, smoke-build, and manifest generation tools.
-- Four guarded builders used for the current composite candidate.
+- Five guarded builders used for the current composite candidate.
 
 ### C. Emulation or compatibility layer
 
@@ -97,15 +99,16 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The corrected candidate was rebuilt in four guarded layers into the ignored
-`build/audit-fix-v32/` directory:
+The current static candidate was rebuilt in five guarded layers into two
+ignored clean output directories:
 
 | Layer | SHA-256 |
 |---|---|
 | Corrected base roster | `5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA` |
 | Stage integration | `FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED` |
 | Progression integration | `6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623` |
-| Full composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
+| Zeed boss / runtime-evidenced composite v32 | `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291` |
+| Opening-choice / current static composite v33 | `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -115,7 +118,7 @@ The clean-build gap is now closed for the current candidate.
 `tools/build_current_candidate.py` takes the hash-identified USA GBA, retail
 WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 conversion corpus,
 all fourteen consumed character/evolution/VS/boss blobs, all twelve consumed
-stage blobs, and all four ROM layers. Every source, intermediate, asset, and
+stage blobs, and all five ROM layers. Every source, intermediate, asset, and
 layer is checked against its expected SHA-256.
 
 The former VS presentation generator required two ignored 64 KiB emulator RAM
@@ -126,11 +129,13 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two runs in separate empty output directories each regenerated exact v32 SHA
-`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
-and both were byte-identical to the previously verified v32 image. This proves
-current-candidate reproducibility only; it does not close any missing-content
-or final-QA gate.
+Two new runs in separate empty output directories each regenerated exact v33
+SHA `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+The preceding four layers still reproduce exact v32 SHA
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
+This proves current-candidate reproducibility only; it does not close any
+missing-content or final-QA gate. No emulator or supplied save was used for
+the v33 build checks.
 
 ## Boot regression and correction
 
@@ -226,7 +231,7 @@ manifests record `monitor_visible: false`.
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
 | Digimon Shoot complete rules and transitions | NOT IMPLEMENTED | Rules, transition state, rewards, win/loss, and exit remain |
-| Tag/rating/opening additions | NOT IMPLEMENTED | Opening graph is bounded statically; GBA translation plus tag/rating producers and persistence/UI remain |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | Opening choice states 3/4 and modulo-5 dispatch are integrated in untested v33; four linear additions plus tag/rating producers and persistence/UI remain |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -248,9 +253,15 @@ callbacks at `7077`, `7407`, `7698`, and `7992`, plus choice callbacks at
 `9C17` and `9E40`. Object-selector extraction also confirms the expanded
 roster/evolution inputs. The split state is a high-nibble cycle: GBA/WSC 1.0
 advance modulo 3, while WSC 1.5 advances modulo 5. New state 3 selects callback
-`9E40` with pair `[13,14]`; state 4 selects `9C17` with `[12,11]`. None of the
-six callbacks or the five-state dispatcher has been translated into the GBA
-candidate. See
+`9E40` with pair `[13,14]`; state 4 selects `9C17` with `[12,11]`.
+
+Internal v33 now translates those two added case setup blocks, both callbacks,
+their motion/event tables, and the five-state dispatcher into GBA ARM code.
+States 0..2 branch to the unchanged commercial GBA cases. The builder hashes
+the exact WSC source ranges and reused GBA ranges, refuses nonblank expansion
+targets, and is part of the clean main build. The four added linear callbacks
+at `7077`, `7407`, `7698`, and `7992`, plus the aligned selector-3→13 change,
+remain unimplemented. No v33 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -265,7 +276,8 @@ runtime attempt was made in this milestone.
 - Digimon Shoot rules/object callbacks, private transition state, reward,
   win/loss, menu, and exit behavior.
 - Tag/reward/rating persistence and associated UI.
-- Extended opening/presentation sequence.
+- Four added linear opening callbacks, aligned selector-3→13 behavior, and
+  complete extended opening/presentation sequence.
 - End-to-end added-fighter evolution paths and alternate-boss outcomes.
 - Audio parity, save/load parity, reset behavior, and stability regression.
 - Final BPS generation/round-trip validation after all content and QA gates.
@@ -290,13 +302,13 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer, the
-clean current-candidate build, and the static opening callback graphs are
-complete for exact v32. The next active milestone is **EXTENDED
-OPENING/PRESENTATION IMPLEMENTATION**: translate the four added linear
-callbacks, two choices, and confirmed modulo-5 dispatcher, then integrate them
-through the same main build path. Broader runtime verification remains deferred
-and non-displaying.
+The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
+complete for exact v32. The clean v33 build, static opening callback graphs,
+two added choice callbacks, and modulo-5 dispatcher are also complete. The next
+active milestone remains **EXTENDED OPENING/PRESENTATION IMPLEMENTATION**:
+translate the four added linear callbacks and aligned selector-3→13 behavior,
+then preserve the full graph through the same main build path. Broader runtime
+verification remains deferred and non-displaying.
 
 All further runtime checks must remain non-displaying unless the user changes
 that requirement. `tools/mgba_headless_gdb_capture.py` provides the current

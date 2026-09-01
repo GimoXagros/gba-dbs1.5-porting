@@ -51,7 +51,8 @@ EXPECTED_LAYERS = {
     "base.gba": "5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA",
     "stage.gba": "FA0A48EC933AB9A2BD8960A61D0BE6F07CD15E2FC0B2037917595BDE154DACED",
     "progression.gba": "6D18B67E80C85429B20468449EB4024D4A29C50FC73A133163D028B02408D623",
-    "current-candidate.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
+    "boss.gba": "1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291",
+    "current-candidate.gba": "05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D",
 }
 
 
@@ -143,6 +144,7 @@ def main() -> int:
     base = output / "base.gba"
     stage = output / "stage.gba"
     progression = output / "progression.gba"
+    boss = output / "boss.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -150,7 +152,9 @@ def main() -> int:
         "--manifest", output / "stage.json")
     run("build_progression_integration.py", stage, progression,
         "--manifest", output / "progression.json")
-    run("build_boss_integration.py", progression, assets, candidate,
+    run("build_boss_integration.py", progression, assets, boss,
+        "--manifest", output / "boss.json")
+    run("build_opening_integration.py", boss, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -158,7 +162,11 @@ def main() -> int:
     manifest = {
         "schema": 1,
         "kind": "reproducible-current-candidate-build",
-        "claim_scope": "exact current integration candidate; final Ver. 1.5 content completion and final QA excluded",
+        "claim_scope": (
+            "exact current integration candidate including the five-state "
+            "opening choice path; four added linear opening callbacks, final "
+            "Ver. 1.5 content completion, and final QA excluded"
+        ),
         "sources": {
             "gba_usa_sha256": GBA_SHA256,
             "wsc_10_sha256": WSC10_SHA256,

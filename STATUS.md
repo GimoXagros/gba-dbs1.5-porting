@@ -12,12 +12,18 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: two independent builds
 > from the hash-identified USA GBA, WSC 1.0, and WSC 1.5 originals reproduce
-> exact v32 byte-for-byte. This closes a build-reproducibility gap only; the
+> exact v32 byte-for-byte. The main build now advances to internal v33, whose
+> modulo-5 dispatcher and added choice states 3 and 4 are statically translated
+> and reproducible at SHA-256 `05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+> This closes part of the opening implementation gap only; exact v32 remains
+> the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
 > callback recovery now proves that GBA/WSC 1.0 use a 15-linear + 3-choice
 > opening graph and WSC 1.5 expands it to 19 + 5. The six additions are bounded
 > and the modulo-5 state cycle with selector pairs `[13,14]` and `[12,11]` is
-> mapped, but none has yet been translated into the GBA candidate.
+> mapped. The two added choices are now integrated statically; the four added
+> linear callbacks remain untranslated. No emulator or supplied save was used
+> for v33.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -37,13 +43,15 @@ memory dump, screenshot, or emulator state.
 - Static ZeedMillenniummon alternate final-boss integration.
 - Digimon Shoot palette, tiles, maps, descriptors, initializer slot, native
   presentation objects, and the stage-11 dedicated core-loop route.
+- Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
+  presentation cases/callbacks.
 
-The corrected internal composite candidate is `full-fixed.gba`, identified
-only by SHA-256
-`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
-That file is intentionally excluded from Git. Its corrected base, stage, and
-progression layer hashes are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
-Exact v32 reaches title, responds to Start with a main-menu frame byte-identical
+The current static internal composite is v33, identified only by SHA-256
+`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
+That file is intentionally excluded from Git. Exact v32, SHA-256
+`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
+remains the last runtime-evidenced candidate. It reaches title, responds to
+Start with a main-menu frame byte-identical
 to the USA control, and responds to A by entering the same character-select
 display/background/game state while mGBA runs on a private, non-interactive
 desktop. Character roster correctness remains unverified.
@@ -60,9 +68,10 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling the four guarded
-layers. Two builds in separate empty output directories both produced
-`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
+binary assets from the three original ROMs before assembling five guarded
+layers. Two builds in separate empty
+output directories both produced v33 SHA-256
+`05324D1AD61D8AF7F399E14BD35260710F62628333C48859ECDDE199ADFC762D`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -159,9 +168,11 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`; all six GBA translations and the dispatcher extension
-remain unfinished, so this evidence is not counted as integrated opening logic
-or runtime progress.
+`[13,14]` and `[12,11]`. Internal v33 translates those two cases/callbacks and
+the dispatcher extension into GBA ARM code while preserving retail states
+0..2. The four added linear callbacks and the aligned selector-3→13 change
+remain unfinished. No v33 runtime evidence exists, so the static integration
+does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in
