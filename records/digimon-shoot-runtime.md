@@ -172,7 +172,7 @@ Two clean original-source builds reproduce internal v36 SHA-256
 `4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C`.
 This is storage and container evidence only, not runtime reachability.
 
-## Installed resident child family and sound request (v39)
+## Installed resident child family and sound assets (v39/v40)
 
 `tools/build_shoot_child_integration.py` installs translations of generator
 `9229` and callbacks `94C1`, `9570`, and `9617` at `0x5B9400`, `0x5B9800`,
@@ -208,24 +208,45 @@ request type 1; v39 installs the generator-side call with
 Parent initializer `9083` separately requests sound `CE`, request type 1.
 Its 30-byte command payload is unique to Ver. 1.5 and has no exact match in
 the 185 independently bounded WSC 1.0 payloads `00..B8`; therefore no retail
-GBA sound ID is claimed for it. A GBA-native reconstruction of `CE` is a
-required dependency before the parent is connected. The deterministic
+GBA sound ID is claimed for it. The deterministic
 lineage report SHA-256 is
 `FFEE8B1CCCB67E193D4D4AF583E2F4BD8BE71B5198CF89D0222732A991915419`.
 Two clean original-source builds reproduce internal v39 SHA-256
 `35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492`.
 
+v40 supplies that missing asset as a bounded GBA-native reconstruction rather
+than claiming a false retail correspondence. It copies commercial song IDs
+`00..5A` byte-for-byte into a relocated 92-entry table, appends ID `0x5B`,
+and retargets the five native song-table lookup literals. The new one-track
+M4A asset uses commercial square voice `0x14`; WSC packed note `0x10` becomes
+MIDI note 48, the initial `0x14`-tick segment becomes W20, and the WSC volume
+steps `9,6,3,1` separated by four `0x0A` waits become GBA volumes
+`76,51,25,8` separated by four W10 events. Both schedules total 60 ticks; the
+note is held across that schedule by M4A N72 opcode `0xF7`.
+
+`tools/verify_shoot_ce_sound_integration.py` independently confines the v40
+layer to 790 changed bytes, checks that all old table references are removed
+and exactly five new references remain, verifies the preserved 91-entry
+prefix and new ID `0x5B`, then parses the WSC and M4A command streams. Its
+independent duration table also proves that opcode `0xF7` is N72 rather than
+the shorter N30 opcode `0xE9`. Its
+report SHA-256 is
+`98EB32D4CA01A8AF1F824D1FAB6E88E2F735CB620DE012D819182498D72EC748`.
+Two clean original-source builds contain 73 files each with no path/hash
+differences and reproduce v40 SHA-256
+`9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B`.
+
 This is resident internal-chain evidence, not runtime reachability. No pointer
 outside the inserted window reaches generator `9229`. Parent `9083`/`912A`
-and its `CE` asset remain unconnected, and audible playback/timing remains
-unverified.
+and its request for new GBA ID `0x5B` remain unconnected. Audible playback and
+timbre parity remain unverified; the timing correspondence is static only.
 
 No menu, broader presentation branch, rules, reward, win/loss, or exit hook is
 claimed yet. The transition-state fallback above is also an explicit release
 gate.
 
-The next implementation unit is reconstructing `CE`, translating the
-`9083`/`912A` spawn parent, and connecting the resident generator through
+The next implementation unit is translating the `9083`/`912A` spawn parent,
+connecting its `0x5B` request and the resident generator through
 controller `4090:9908` and onward to the remaining reward/exit paths.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

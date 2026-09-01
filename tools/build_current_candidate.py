@@ -31,6 +31,9 @@ SHOOT_AUDIO_LINEAGE_SHA256 = (
 SHOOT_CHILD_VERIFICATION_SHA256 = (
     "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
 )
+SHOOT_CE_SOUND_VERIFICATION_SHA256 = (
+    "98EB32D4CA01A8AF1F824D1FAB6E88E2F735CB620DE012D819182498D72EC748"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -80,7 +83,8 @@ EXPECTED_LAYERS = {
     "opening-choice.gba": "33CDF2FDB1E374A424E21D4C80CB9ED98CB7B1BBE4F0409BE8C8943C679650E1",
     "opening-linear.gba": "9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F",
     "shoot-resources.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
-    "current-candidate.gba": "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492",
+    "shoot-child.gba": "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492",
+    "current-candidate.gba": "9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B",
 }
 
 
@@ -222,6 +226,7 @@ def main() -> int:
     opening_choice = output / "opening-choice.gba"
     opening_linear = output / "opening-linear.gba"
     shoot_resources = output / "shoot-resources.gba"
+    shoot_child = output / "shoot-child.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -253,6 +258,15 @@ def main() -> int:
     run(
         "build_shoot_child_integration.py",
         shoot_resources,
+        args.gba,
+        args.wsc15,
+        shoot_child,
+        "--manifest",
+        output / "shoot-child.json",
+    )
+    run(
+        "build_shoot_ce_sound_integration.py",
+        shoot_child,
         args.gba,
         args.wsc15,
         candidate,
@@ -293,7 +307,7 @@ def main() -> int:
     run(
         "verify_shoot_child_integration.py",
         shoot_resources,
-        candidate,
+        shoot_child,
         args.gba,
         args.wsc15,
         "--output",
@@ -304,6 +318,21 @@ def main() -> int:
         SHOOT_CHILD_VERIFICATION_SHA256,
         "Shoot child integration verification",
     )
+    shoot_ce_sound_verification = intermediate / "shoot-ce-sound-verification.json"
+    run(
+        "verify_shoot_ce_sound_integration.py",
+        shoot_child,
+        candidate,
+        args.gba,
+        args.wsc15,
+        "--output",
+        shoot_ce_sound_verification,
+    )
+    require_hash(
+        shoot_ce_sound_verification,
+        SHOOT_CE_SOUND_VERIFICATION_SHA256,
+        "Shoot CE sound integration verification",
+    )
 
     manifest = {
         "schema": 1,
@@ -313,8 +342,9 @@ def main() -> int:
             "opening choice path, selector records 11..14, the four added "
             "linear opening callbacks, the Shoot child resource layer, and the "
             "resident 9229->94C1->9570->9617 child generator/callback family with "
-            "the exact-payload-derived A7-to-0x4A sound request; external parent "
-            "entry, Ver. 1.5-only CE sound reconstruction, audible "
+            "the exact-payload-derived A7-to-0x4A sound request, plus the bounded "
+            "Ver. 1.5-only CE-to-GBA-0x5B pitch/timing/volume-decay reconstruction; "
+            "external parent entry and CE request connection, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
@@ -330,6 +360,7 @@ def main() -> int:
             "shoot_resource_verification_sha256": SHOOT_RESOURCE_VERIFICATION_SHA256,
             "shoot_audio_lineage_sha256": SHOOT_AUDIO_LINEAGE_SHA256,
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
+            "shoot_ce_sound_verification_sha256": SHOOT_CE_SOUND_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,
