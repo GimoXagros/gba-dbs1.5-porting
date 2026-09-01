@@ -56,10 +56,9 @@ P1_EXPECTED = {
     0x3CF410: {
         "counts": [7, 8, 2, 7, 2, 8],
         "a_relative": 0x1D6,
-        "max_referenced_word1_index_plus_one": 4,
-        "a_guarded_prefix_sha256": "288E4E622381DA37DE78603185535B635CB0532FC289C15EDB9A0A84B201D4DE",
-        "a_target_format": "prefixed-ffff-variant",
-        "a_target_signature": "0A0A011400000000FFFF",
+        "a_record_sha256": "212E0D55CA9799E133C539A4A676386C38C06DF718617777F0BBF45D40946F8E",
+        "paired_p0_source": 0x3D5F80,
+        "paired_p0_layout_entries": 4,
         "b_relatives": [0, 0x1CC],
         "b_1cc_sha256": "FCFBC8BCD43B13D0EC8F598145BDEBD2090350FD054156C7F7B1EE64259356C1",
         "generic_rejection": "WSC P1 command 6 has no payload items",
@@ -67,19 +66,9 @@ P1_EXPECTED = {
     0x3BD730: {
         "counts": [12, 4, 2, 12, 12, 4, 6, 2, 12, 5, 4, 16, 18],
         "a_relative": 0x588,
-        "max_referenced_word1_index_plus_one": 50,
-        "a_guarded_prefix_sha256": "A213B4389946673C53C416F17A139BAD66354ABEE5C15437C638DBC829B6C30B",
-        "a_target_format": "prefixed-animation-container",
-        "a_target_signature": "0A0A0114000000001000",
-        "nested_topology": {
-            "relative": 8,
-            "bytes": 1560,
-            "layout_entries": 58,
-            "layout_record_bytes": 1072,
-            "descriptor_entries": 0,
-            "tile_payload_bytes": 0,
-            "analysis_sha256": "BD5EB8E451B6FD1DC7E3C735DDA7A45F9DC709012336B8B70F30330DB8E5F97E",
-        },
+        "a_record_sha256": "212E0D55CA9799E133C539A4A676386C38C06DF718617777F0BBF45D40946F8E",
+        "paired_p0_source": 0x3914E0,
+        "paired_p0_layout_entries": 50,
         "b_relatives": [0],
         "generic_rejection": "leading-command B record underflows source container",
     },
@@ -282,48 +271,12 @@ def analyze_p1(wsc15: bytes) -> list[dict[str, object]]:
             for payload in parsed["payloads"]
             for item in payload
         ]
-        referenced_index_span = max(word1_indices) + 1
-        if referenced_index_span != expected["max_referenced_word1_index_plus_one"]:
-            raise SystemExit(f"P1 maximum referenced word-1 index changed at 0x{source:X}")
+        required_p0_layouts = max(word1_indices) + 1
+        if required_p0_layouts != expected["paired_p0_layout_entries"]:
+            raise SystemExit(f"P1/P0 layout coverage changed at 0x{source:X}")
         a_start = source + expected["a_relative"]
-        # Eight bytes per referenced index are guarded only as a stable source
-        # prefix.  These A targets are platform-specific containers, not flat
-        # arrays whose complete size can be inferred from the payload maximum.
-        a_guarded_prefix = wsc15[a_start:a_start + referenced_index_span * 8]
-        require_hash(
-            a_guarded_prefix,
-            expected["a_guarded_prefix_sha256"],
-            f"P1 A target guarded prefix 0x{source:X}",
-        )
-        signature = wsc15[a_start:a_start + 10].hex().upper()
-        if signature != expected["a_target_signature"]:
-            raise SystemExit(f"P1 A target format signature changed at 0x{source:X}")
-        nested_topology = None
-        if "nested_topology" in expected:
-            nested = expected["nested_topology"]
-            nested_blob, nested_details = build_asset(
-                wsc15,
-                wsc_header=a_start + nested["relative"],
-                target_header=ANALYSIS_P0_TARGET + nested["relative"],
-                expected_layout_entries=None,
-                expected_layout_record_bytes=None,
-                expected_descriptor_entries=None,
-                expected_tile_bytes=None,
-            )
-            actual_nested = {
-                "relative": nested["relative"],
-                "bytes": len(nested_blob),
-                "layout_entries": nested_details["layout_entries"],
-                "layout_record_bytes": nested_details["layout_record_bytes"],
-                "descriptor_entries": nested_details["descriptor_entries"],
-                "tile_payload_bytes": nested_details["tile_payload_bytes"],
-                "analysis_sha256": sha256(nested_blob),
-                "conversion_proved": False,
-            }
-            for key, value in nested.items():
-                if actual_nested[key] != value:
-                    raise SystemExit(f"P1 nested A-target topology changed at 0x{source:X}: {key}")
-            nested_topology = actual_nested
+        a_record = wsc15[a_start:a_start + 8]
+        require_hash(a_record, expected["a_record_sha256"], f"P1 A record 0x{source:X}")
         b_relatives = sorted(set(parsed["b_relatives"]))
         if b_relatives != expected["b_relatives"]:
             raise SystemExit(f"P1 B record population changed at 0x{source:X}: {b_relatives}")
@@ -356,17 +309,18 @@ def analyze_p1(wsc15: bytes) -> list[dict[str, object]]:
             "payload_bytes": len(payload_blob),
             "payload_sha256": sha256(payload_blob),
             "max_word1_index": max(word1_indices),
-            "max_referenced_word1_index_plus_one": referenced_index_span,
-            "a_target": {
+            "p0_layout_requirement": {
+                "paired_p0_source": expected["paired_p0_source"],
+                "required_layout_entries": required_p0_layouts,
+                "available_layout_entries": expected["paired_p0_layout_entries"],
+                "all_payload_indices_in_range": True,
+            },
+            "a_record": {
                 "relative": expected["a_relative"],
                 "physical": a_start,
-                "format": expected["a_target_format"],
-                "guarded_reference_prefix": {
-                    "bytes": len(a_guarded_prefix),
-                    "sha256": expected["a_guarded_prefix_sha256"],
-                },
-                "nested_topology": nested_topology,
-                "complete_container_size_inferred": False,
+                "bytes": len(a_record),
+                "sha256": expected["a_record_sha256"],
+                "adjacent_bytes_inferred_as_record_data": False,
             },
             "null_b_pointer_commands": list(parsed["b_relatives"]).count(0),
             "non_null_b_records": b_records,
@@ -374,9 +328,9 @@ def analyze_p1(wsc15: bytes) -> list[dict[str, object]]:
             "existing_spawn_converter_compatible": False,
             "required_before_conversion": [
                 "preserve null B pointers and relocate any non-null 10-byte B record",
-                "separate the proved 12-byte to 16-byte payload rule from platform-specific A-target conversion",
-                "parse and convert the complete prefixed A target without inferring its size from the largest payload word-1 index",
-                "prove each A-target format against a commercial direct-format oracle",
+                "expand each 12-byte payload item to the proved native 16-byte form",
+                "relocate each unique eight-byte A record without including adjacent data",
+                "independently verify final-placement P1 pointers and payload bytes",
             ],
         })
     return rows

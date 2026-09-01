@@ -79,9 +79,11 @@ slot 11 is therefore only a bounds-safe fallback, not converted Shoot data.
 It must be bypassed when the dedicated initializer is connected.
 Static initializer-resource analysis now resolves its complete direct call
 population to five P0, two P1, and four P2 sources. P0/P2 conversion is
-bounded, but the two direct-format P1 containers, Ver. 1.5-only sound `D2`,
-and auxiliary object `ES:071E` remain integration gates. Report SHA-256 is
-`0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915`;
+bounded, and v42 installs the two verified P1 containers together with all
+non-reused initializer P0/P2 assets. Ver. 1.5-only sound `D2` and
+auxiliary object `ES:071E` remain native integration gates. Resource-boundary
+report SHA-256 is
+`4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`;
 the report installs no GBA code or data.
 
 The train display/scroll/palette path, the shared waterfall/Iraira display

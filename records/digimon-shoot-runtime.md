@@ -295,19 +295,17 @@ blocks. `3D4B20` is byte-identical to the source already used for the installed
 Shoot spawn P2, while converted `3D6B16` already exists in the commercial GBA
 at `0x080D3078`.
 
-The P1 boundary remains intentionally open. `3CF410` contains six logical
+The P1 source boundary is now resolved. `3CF410` contains six logical
 commands/34 payload items, has maximum payload word-1 index 3, and includes one
 non-null 10-byte B record. `3BD730` contains thirteen commands/109 payload
-items and has maximum word-1 index 49. These index maxima do not establish
-four or fifty A records: they only bound guarded source prefixes. The first A
-target is a prefixed `FFFF` variant, while the second is a prefixed animation
-container with a structurally parsed 58 layouts and 1,072 layout-record bytes.
-The existing generic parser rejects the first on a terminal zero-count table
+items and has maximum word-1 index 49. These indices address the paired P0
+containers, which expose exactly 4/50 layouts; they do not size A data. Each
+P1 source references one eight-byte A record, and the two records are
+byte-identical. Adjacent bytes are excluded from the record boundary. The
+existing generic parser rejects the first on a terminal zero-count table
 interpretation and the second on a leading B-record underflow; the Shoot spawn
-converter is also incompatible because it copies only one A record per
-relative and forces every B pointer to zero. The direct-format commercial
-oracle below proves payload and B behavior independently; each A-target
-conversion remains unproved before installation.
+converter is also incompatible because it forces every B pointer to zero. The
+direct-format commercial oracle below proves payload, A-record, and B behavior.
 
 The same report statically binds `ES:065C/065E` to GBA player pointer slots
 `0x0300489C/0x030048A0`. The rules presentation uses Ver. 1.5-only auxiliary
@@ -315,24 +313,46 @@ object slot `ES:071E`, allocated by `4090:172A` with callback `5134` and ID
 `0x343`; WSC 1.0 has no corresponding storage reference. Native GBA allocator
 `0x08352374` is therefore only a candidate until its argument ABI and object
 lifetime are proved. Two independent report runs reproduce SHA-256
-`0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915`.
+`4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`.
 The analyzer reads only the three hash-identified original ROM inputs; it
 modifies no candidate and uses neither an emulator nor the supplied save.
 
-`tools/analyze_direct_p1_commercial_oracle.py` separates command-payload and B
-behavior from the unresolved A-target formats. Twelve guarded commercial
+`tools/analyze_direct_p1_commercial_oracle.py` separates command-payload, A
+record, and B behavior from unrelated adjacent data. Twelve guarded commercial
 WSC 1.0→USA GBA pairs contain 92 commands and 283 payload items. All 283 match
 the full Shoot-lineage expansion, including 17 spawn items that require the
 word-5 tail relocation; the other 266 match the zero-tail rule directly. The
 pair at WSC `2B09C0`→GBA `34DFE0` also proves six non-null 10-byte B records
-byte-for-byte, while all 86 null B commands remain null.
+byte-for-byte, while all 86 null B commands remain null. Every one of the 92
+A references, covering 14 unique source/target mappings, preserves its exact
+eight-byte record.
 
 Both Ver. 1.5 initializer P1 sources have zero non-null word-5 items, so their
-34/109 payload items and null/non-null B behavior are now commercially bounded.
-This does not convert either A target. The report explicitly marks each A
-mapping unresolved and reproduces SHA-256
-`755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3`.
+34/109 payload items, one A record each, and null/non-null B behavior are now
+commercially bounded. The report does not interpret adjacent bytes and
+reproduces SHA-256
+`21B9DF5B7248E069FF4AC750C34305D42B6974FE5141C667B31A231B2E19D82B`.
 It performs no ROM writes, runtime validation, or save access.
+
+The dedicated builder emits both native P1 containers at
+`0x085D0000..0x085D0A4C`. The 2,636-byte blob contains 19 commands, 143
+converted payload items, two unique A records, and one non-null B record; its
+SHA-256 is
+`778C91C2B64072BE07AF9B66B9EE194AE09DE7EEBD73C67FABDFA4B5D443EAC2`.
+An independent verifier re-parses the WSC source and checks every final pointer
+and payload/A/B byte; report SHA-256 is
+`A435A75BA9D68D4D937125F3B0523BE54980A21D58EBE86E137A665B1DA3CBAD`.
+
+v42 installs that P1 blob with all five P0 containers and both non-reused P2
+blocks at `0x5D0000..0x5DB768`. The ownership window was all `FF` in exact v41
+and had zero aligned pre-existing pointers. The Expected Writes layer changes
+44,696 bytes inside eight declared placements. Independent verification proves
+198 internal pointers, zero external pointers into the new window, exact asset
+hashes, and unchanged gaps; report SHA-256 is
+`7114A9C7B8CA51F8C52254EB03C3771F90B0CBB63B2D19D3D9B50ABA34A3576B`.
+Current v42 SHA-256 is
+`AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E`.
+No initializer or menu code points into this resource window yet.
 
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
 the platform random-number ABI. The guarded commercial GBA oracle calls it
@@ -349,9 +369,9 @@ current copied stage-7 record only bounds an otherwise invalid table access
 until the dedicated initializer bypass is ported.
 
 The next implementation unit must translate and connect the menu route,
-`4090:7168` initializer/resources after proving direct-format P1 conversion,
-bind the `071E` object lifetime, reconstruct `D2`, and install the upper state
-populations before
+`4090:7168` initializer/resources using the verified P1 blob and bounded P0/P2
+assets, bind the `071E` object lifetime, reconstruct `D2`, and install the
+upper state populations before
 installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
 `9908` alone would remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is

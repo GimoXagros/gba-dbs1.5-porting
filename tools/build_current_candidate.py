@@ -29,10 +29,16 @@ SHOOT_AUDIO_LINEAGE_SHA256 = (
     "0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E"
 )
 SHOOT_INITIALIZER_RESOURCE_SHA256 = (
-    "0FBE630572FF81A449BDB7EF9F23E3E737212E6A77B3D1F2BD1D002279C6C915"
+    "4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5"
 )
 DIRECT_P1_COMMERCIAL_ORACLE_SHA256 = (
-    "755299FA921C46E22B99AE7E73A645AD430984184626DC7E043C9443F8D45BF3"
+    "21B9DF5B7248E069FF4AC750C34305D42B6974FE5141C667B31A231B2E19D82B"
+)
+SHOOT_INITIALIZER_P1_VERIFICATION_SHA256 = (
+    "A435A75BA9D68D4D937125F3B0523BE54980A21D58EBE86E137A665B1DA3CBAD"
+)
+SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256 = (
+    "7114A9C7B8CA51F8C52254EB03C3771F90B0CBB63B2D19D3D9B50ABA34A3576B"
 )
 SHOOT_CHILD_VERIFICATION_SHA256 = (
     "ACA1CE4BABEC56324AA5F06D216F462DB50FD7F3128FF7BD9C233321D8058F05"
@@ -83,6 +89,16 @@ EXPECTED_SHOOT_ASSETS = {
     "shoot-spawn-p0.bin": "023A9E47227DC88431A6EE129F40D79944A3173E365DF0B10F615C6D7738D6B8",
     "shoot-spawn-p2.bin": "33172ACF7FAB5731C38D6328D0E7A677EEEF32198103C2114E9EA2BB6249885C",
     "shoot-rule-resources.json": "8843C960221876323FF16E72587AC49B37B69FEF22A2128E81AA5035357E8246",
+    "shoot-initializer-p1.bin": "778C91C2B64072BE07AF9B66B9EE194AE09DE7EEBD73C67FABDFA4B5D443EAC2",
+    "shoot-initializer-p1.json": "D5577CA88BA017249E41CBEF8E8D2CE89FAEFAE29F6594C2F11B1A8514515503",
+    "shoot-init-active-p0.bin": "04F248F48F22DC66BEB965ADBCB72DDA271534A5BE9A8EB0B5F04CB373BD97BB",
+    "shoot-init-rules-p0.bin": "C739645446A1802F937551F845327D2F87B861B6ABE8DDA02EA7D91B8A24CB91",
+    "shoot-init-extra-6d-p0.bin": "D17DAC9D4464BF0E8D1577F4C98463B15CAC5F53D043F40DE61BC70851BC159B",
+    "shoot-init-extra-137-p0.bin": "716C3A7042A4DD9A7D6B9C12F172D08693DB264AE99D7AEBDFD886BC92CE0B62",
+    "shoot-init-extra-91-p0.bin": "7EFAC4D8ADF7A00450DBE2603187C4A3EF556FBC252BAE210D911934AC979214",
+    "shoot-init-rules-p2.bin": "8A03ACD97845436324EEC8F16669BE4153C30440845E2C7385A8B6E45CA4DCCD",
+    "shoot-init-extra-slot5-p2.bin": "B5652748382A44ADDEB2BB191FFA880D46D6721CEA54CACF15D7B0C51729A4A1",
+    "shoot-initializer-resources.json": "F2051289A9F0A1A3043C495EFF15DBC896F73286BC01E5C4850808FE03197CD0",
 }
 EXPECTED_LAYERS = {
     "base.gba": "5FE62385736851014C62E8F68B5D8F1583230DE2A30648CE893E3A45440B4ECA",
@@ -94,7 +110,8 @@ EXPECTED_LAYERS = {
     "shoot-resources.gba": "4028AB75706FDE162E7F247B2AD52CAB20E9B30E487C306B70EE1E1F38E2F45C",
     "shoot-child.gba": "35B2F717A96573B0823E43433A547B5398CC13129DAEECED6646153FC69F5492",
     "shoot-ce.gba": "9219F992A90CDBF29006663BFB3752FE615000DE14C6594A86D9976695CFC66B",
-    "current-candidate.gba": "B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06",
+    "shoot-parent.gba": "B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06",
+    "current-candidate.gba": "AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E",
 }
 
 
@@ -245,6 +262,19 @@ def main() -> int:
         args.wsc15,
         shoot_assets,
     )
+    run(
+        "build_shoot_initializer_p1_assets.py",
+        args.wsc15,
+        shoot_assets / "shoot-initializer-p1.bin",
+        "--manifest",
+        shoot_assets / "shoot-initializer-p1.json",
+    )
+    run(
+        "build_shoot_initializer_resource_assets.py",
+        args.gba,
+        args.wsc15,
+        shoot_assets,
+    )
 
     for name, expected in EXPECTED_ASSETS.items():
         require_hash(assets / name, expected, name)
@@ -266,6 +296,7 @@ def main() -> int:
     shoot_resources = output / "shoot-resources.gba"
     shoot_child = output / "shoot-child.gba"
     shoot_ce = output / "shoot-ce.gba"
+    shoot_parent = output / "shoot-parent.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -317,6 +348,14 @@ def main() -> int:
         shoot_ce,
         args.gba,
         args.wsc15,
+        shoot_parent,
+        "--manifest",
+        output / "shoot-parent.json",
+    )
+    run(
+        "build_shoot_initializer_resource_integration.py",
+        shoot_parent,
+        shoot_assets,
         candidate,
         "--manifest",
         output / "current-candidate.json",
@@ -385,7 +424,7 @@ def main() -> int:
     run(
         "verify_shoot_parent_integration.py",
         shoot_ce,
-        candidate,
+        shoot_parent,
         args.gba,
         args.wsc15,
         "--output",
@@ -395,6 +434,35 @@ def main() -> int:
         shoot_parent_verification,
         SHOOT_PARENT_VERIFICATION_SHA256,
         "Shoot parent integration verification",
+    )
+    shoot_initializer_resource_integration_verification = (
+        intermediate / "shoot-initializer-resource-integration-verification.json"
+    )
+    run(
+        "verify_shoot_initializer_resource_integration.py",
+        shoot_parent,
+        candidate,
+        shoot_assets,
+        "--output",
+        shoot_initializer_resource_integration_verification,
+    )
+    require_hash(
+        shoot_initializer_resource_integration_verification,
+        SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256,
+        "Shoot initializer resource integration independent verification",
+    )
+    shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
+    run(
+        "verify_shoot_initializer_p1_assets.py",
+        args.wsc15,
+        shoot_assets / "shoot-initializer-p1.bin",
+        "--output",
+        shoot_initializer_p1_verification,
+    )
+    require_hash(
+        shoot_initializer_p1_verification,
+        SHOOT_INITIALIZER_P1_VERIFICATION_SHA256,
+        "Shoot initializer P1 independent verification",
     )
 
     manifest = {
@@ -407,7 +475,9 @@ def main() -> int:
             "resident 9229->94C1->9570->9617 child generator/callback family with "
             "the exact-payload-derived A7-to-0x4A sound request, plus the bounded "
             "Ver. 1.5-only CE-to-GBA-0x5B pitch/timing/volume-decay reconstruction "
-            "and internally connected 9083->90F3->912A->91AB->91EF parent chain; "
+            "and internally connected 9083->90F3->912A->91AB->91EF parent chain, "
+            "plus the independently verified resource-only placement of all converted "
+            "7168 initializer P1/P0/P2 assets; "
             "external controller 9908/9A1B entry, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -425,6 +495,10 @@ def main() -> int:
             "shoot_audio_lineage_sha256": SHOOT_AUDIO_LINEAGE_SHA256,
             "shoot_initializer_resource_sha256": SHOOT_INITIALIZER_RESOURCE_SHA256,
             "direct_p1_commercial_oracle_sha256": DIRECT_P1_COMMERCIAL_ORACLE_SHA256,
+            "shoot_initializer_p1_verification_sha256": SHOOT_INITIALIZER_P1_VERIFICATION_SHA256,
+            "shoot_initializer_resource_integration_verification_sha256": (
+                SHOOT_INITIALIZER_RESOURCE_INTEGRATION_VERIFICATION_SHA256
+            ),
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
             "shoot_ce_sound_verification_sha256": SHOOT_CE_SOUND_VERIFICATION_SHA256,
             "shoot_parent_verification_sha256": SHOOT_PARENT_VERIFICATION_SHA256,

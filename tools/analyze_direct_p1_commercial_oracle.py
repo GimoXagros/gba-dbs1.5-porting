@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Prove direct P1 payload/B rules without claiming an A-target converter.
+"""Prove direct P1 payload, eight-byte A-record, and B-pointer rules.
 
 The WSC 1.0 and USA GBA releases contain source-lineage P1 container pairs.
 This analyzer guards twelve exact pairs, proves their 12-byte to 16-byte
-payload expansion and null/non-null B-pointer behavior, then checks whether
-the two Ver. 1.5 Shoot-initializer payload populations stay inside that proved
-rule.  A targets are recorded only as platform-specific mapping boundaries.
-No ROM is written and no runtime or save is used.
+payload expansion, eight-byte A-record identity, and null/non-null B-pointer
+behavior, then checks whether the two Ver. 1.5 Shoot-initializer populations
+stay inside those proved rules.  Bytes adjacent to an A record are deliberately
+not inferred to be part of that record.  No ROM is written and no runtime or
+save is used.
 """
 
 from __future__ import annotations
@@ -100,6 +101,7 @@ def analyze_pair(gba: bytes, wsc10: bytes, spec: tuple[object, ...]) -> dict[str
     generic_exact = 0
     shoot_exact = 0
     nonzero_word5 = 0
+    a_record_commands_exact = 0
     null_b = 0
     non_null_b = 0
     a_mappings: set[tuple[int, int]] = set()
@@ -118,7 +120,12 @@ def analyze_pair(gba: bytes, wsc10: bytes, spec: tuple[object, ...]) -> dict[str
         nonzero_word5 += sum(struct.unpack_from("<H", item, 10)[0] != 0 for item in items)
 
         a_relative = int(parsed["a_relatives"][index])
-        a_mappings.add((int(wsc_source) + a_relative, a_pointer - GBA_BASE))
+        wsc_a = int(wsc_source) + a_relative
+        gba_a = a_pointer - GBA_BASE
+        if wsc10[wsc_a:wsc_a + 8] != gba[gba_a:gba_a + 8]:
+            raise SystemExit(f"commercial 8-byte A record differs for {label} command {index}")
+        a_record_commands_exact += 1
+        a_mappings.add((wsc_a, gba_a))
         b_relative = int(parsed["b_relatives"][index])
         if b_relative == 0:
             if b_pointer != 0:
@@ -153,9 +160,11 @@ def analyze_pair(gba: bytes, wsc10: bytes, spec: tuple[object, ...]) -> dict[str
         a_rows.append({
             "wsc_physical": wsc_a,
             "gba_physical": gba_a,
-            "common_prefix_8_exact": wsc10[wsc_a:wsc_a + 8] == gba[gba_a:gba_a + 8],
-            "following_8_exact": wsc10[wsc_a + 8:wsc_a + 16] == gba[gba_a + 8:gba_a + 16],
-            "conversion_proved": False,
+            "bytes": 8,
+            "sha256": sha256(wsc10[wsc_a:wsc_a + 8]),
+            "identity_proved": True,
+            "adjacent_following_8_exact": wsc10[wsc_a + 8:wsc_a + 16] == gba[gba_a + 8:gba_a + 16],
+            "adjacent_bytes_inferred_as_record_data": False,
         })
 
     return {
@@ -169,10 +178,11 @@ def analyze_pair(gba: bytes, wsc10: bytes, spec: tuple[object, ...]) -> dict[str
         "expected_payload_rule": expected_rule,
         "generic_payload_items_exact": generic_exact,
         "shoot_lineage_payload_items_exact": shoot_exact,
+        "a_record_commands_exact": a_record_commands_exact,
         "null_b_commands_exact": null_b,
         "non_null_b_commands_exact": non_null_b,
         "non_null_b_mappings": b_mappings,
-        "a_target_mappings": a_rows,
+        "a_record_mappings": a_rows,
     }
 
 
@@ -191,7 +201,16 @@ def analyze_initializer_payloads(wsc15: bytes) -> list[dict[str, object]]:
             "payload_items": len(items),
             "nonzero_word5_items": nonzero_word5,
             "payload_rule_supported_by_commercial_oracle": True,
-            "a_target_conversion_proved": False,
+            "a_record_count": len(parsed["a_records"]),
+            "a_records": [
+                {
+                    "relative": relative,
+                    "bytes": 8,
+                    "sha256": sha256(record),
+                }
+                for relative, record in sorted(parsed["a_records"].items())
+            ],
+            "a_record_identity_rule_supported_by_commercial_oracle": True,
             "installed": False,
         })
     return rows
@@ -217,7 +236,12 @@ def main() -> int:
     generic_exact = sum(int(row["generic_payload_items_exact"]) for row in pairs)
     shoot_exact = sum(int(row["shoot_lineage_payload_items_exact"]) for row in pairs)
     non_null_b = sum(int(row["non_null_b_commands_exact"]) for row in pairs)
-    if (len(pairs), payload_items, generic_exact, shoot_exact, non_null_b) != (12, 283, 266, 283, 6):
+    a_record_commands = sum(int(row["a_record_commands_exact"]) for row in pairs)
+    a_record_mappings = sum(len(row["a_record_mappings"]) for row in pairs)
+    if (
+        len(pairs), payload_items, generic_exact, shoot_exact, non_null_b,
+        a_record_commands, a_record_mappings,
+    ) != (12, 283, 266, 283, 6, 92, 14):
         raise SystemExit("commercial P1 aggregate oracle changed")
 
     result = {
@@ -234,15 +258,18 @@ def main() -> int:
             "payload_items": payload_items,
             "generic_zero_tail_items_exact": generic_exact,
             "shoot_lineage_items_exact": shoot_exact,
+            "a_record_commands_exact": a_record_commands,
+            "unique_a_record_mappings_exact": a_record_mappings,
             "non_null_b_records_exact": non_null_b,
-            "a_target_conversion_proved": False,
+            "adjacent_a_record_data_interpreted": False,
         },
         "pairs": pairs,
         "initializer_payload_applicability": analyze_initializer_payloads(wsc15),
         "claim_scope": (
             "commercial source-lineage proof for P1 command counts, 12-to-16-byte payload expansion, "
-            "Shoot word-5 tail relocation, and null/non-null 10-byte B behavior; A-target conversion, "
-            "initializer installation, runtime, visual output, audio, and supplied-save QA are excluded"
+            "Shoot word-5 tail relocation, eight-byte A-record identity, and null/non-null 10-byte B "
+            "behavior; adjacent-data/container inference, initializer installation, runtime, visual "
+            "output, audio, and supplied-save QA are excluded"
         ),
     }
     rendered = json.dumps(result, indent=2) + "\n"
