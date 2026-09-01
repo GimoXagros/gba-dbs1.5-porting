@@ -187,9 +187,12 @@ native GBA record views at `0x080D4498` and `0x080D44D8`: their P0/P1/P2
 inputs are already resident, and the exact commercial consumer at
 `0x08088250` supports the required 0x20-byte record and 0x50-byte object-slot
 strides. This removes the need to translate the otherwise unmapped WSC primary
-loader. The four added linear callbacks, second-slot lifetime/cleanup, and
-aligned selector-3→13 change remain unfinished. No v34 runtime evidence exists,
-so the static integration does not increase playable/release progress.
+loader. Their source state machines are also fixed now: callbacks 7/8/9 map to
+commercial GBA template lineages, while callback 10 is a bespoke event-table
+and auxiliary-object translation. The four ARM callbacks, per-constant timing
+conversion, second-slot lifetime/cleanup, and aligned selector-3→13 change
+remain unfinished. No v34 runtime evidence exists, so the static integration
+does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

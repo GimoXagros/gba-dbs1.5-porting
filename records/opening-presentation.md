@@ -128,6 +128,27 @@ the commercial successor:
 | `7698..7992` | 762 | 9 | none beyond the presentation record |
 | `7992..7D28` | 918 | 3 | replacement resource record 49 |
 
+`tools/analyze_opening_linear_callback_semantics.py` now fixes the
+implementation-facing state machines as well as their raw bounds. Callbacks
+7, 8, and 9 have closest commercial WSC 1.0 templates 7, 8, and 9, which map
+to GBA functions `0x08085454`, `0x080857E4`, and `0x08085D44`. Callback 10 is
+only 0.512998 similar to old callback 9 and is classified as a bespoke
+translation because it owns a seven-entry event table and activates a second
+object on event `0x25`.
+
+| Added callback | Initial timer | Main position/event | Timed events | Auxiliary behavior |
+|---:|---:|---|---|---|
+| 7 | `0x6E` | `(0x40,0x68)`, event 0 | `0x5A→0x21`, `0x34→0x22`, `0x2A→0x23` | record 50; object `0x0952`; event-0x23 motion `(-2,+1)` |
+| 8 | `0xAA` | `(0x9E,0x68)`, event 0 | `0x43→0x1A` | none |
+| 9 | `0xB4` | `(0x40,0x68)`, event 0 | `0x96→0x1D` | shared event-table driver |
+| 10 | `0x64` | `(0x96,0x68)`, event 2 | shared event-table driver | record 49; event `0x25` creates object `0x0994` at `(0x54,0x58)` |
+
+The shared table at `0x7976` is exactly
+`[(0x0B,6),(0x0C,9),(0x0D,30),(0x0E,24),(0x23,24),(0x24,8),(0x25,500)]`.
+Skip populations are one object for callbacks 8/9 and two objects for 7/10.
+These are source semantics, not an ARM implementation claim. Per-constant GBA
+timing/motion translation and both normal/skip slot lifetimes remain gates.
+
 Records 49 and 50 at WSC 1.5 raw offsets `0x740620` and `0x740640` are not
 relocations of their WSC 1.0 counterparts: all five pointer targets are
 replaced. The two complex callbacks directly consume pointer fields 0 and 2
@@ -180,6 +201,7 @@ python tools/analyze_opening_initializer_population.py <USA-GBA> <WSC-1.0> <WSC-
 python tools/analyze_gba_opening_dispatch.py <USA-GBA> --output evidence/gba-opening-callback-graph.json
 python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output evidence/wsc-opening-callback-graph.json
 python tools/analyze_opening_linear_additions.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-additions.json
+python tools/analyze_opening_linear_callback_semantics.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-linear-semantics.json
 python tools/analyze_opening_aux_resource_reuse.py <USA-GBA> <WSC-1.0> <WSC-1.5> --output evidence/opening-aux-resource-reuse.json
 python tools/analyze_p1_conversion.py <USA-GBA> <WSC-1.0> --wsc-table 0x390300 --gba-table 0x0D42A0 --records 11 --output evidence/opening-p1-conversion-corpus.json
 python tools/build_opening_presentation_assets.py <USA-GBA> <WSC-1.0> <WSC-1.5> evidence/opening-p1-conversion-corpus.json <opening-assets-directory>
@@ -191,6 +213,7 @@ Current generated-manifest SHA-256 values are:
 - GBA callback graph: `77E64A38FEDE93B1712758D0C67F674D3C9A4F723F77689403D060A4A80E981A`
 - WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 - linear-addition dependency ledger: `A846CB79139FB0B74B480EEB7EDA86D458E2AB860F93FD5066492E529DDEBE6C`
+- linear-callback semantic ledger: `41976737DE0BF34E59FD1CE1C8DBA731A1889988A0EE547B5ED97845A2375914`
 - auxiliary resource/native object-path proof: `55F9F0D67EAB44228D52575E91F4668F51ACF5E208C105FC40D6BE39A8AB9E94`
 - opening P1 conversion corpus: `B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887`
 - opening presentation asset manifest: `32F3ED03234C65C88ED33A99562A9C5F0E62246D31A0FBA74BA7E5DFEF167278`
