@@ -41,6 +41,14 @@ PROFILES = {
         "root_registration_call": 0xC7A0,
         "expected_convergence": 0xF82B,
         "expected_terminal": 0xF8A8,
+        "choice_cycle": {
+            "state_update": 0xEDFE,
+            "modulus": 3,
+            "case_starts_by_state": (0xEE2F, 0xEF0F, 0xEFF5),
+            "common_tail": 0xF0C6,
+            "expected_callbacks_by_state": (0xF1A0, 0xF3E0, 0xF612),
+            "expected_selector_pairs": ((5, 7), (1, 8), (0, 9)),
+        },
     },
     "wsc_15": {
         "label": "WSC 1.5",
@@ -59,6 +67,18 @@ PROFILES = {
         "root_registration_call": 0x5D0D,
         "expected_convergence": 0xA180,
         "expected_terminal": 0xA1FD,
+        "choice_cycle": {
+            "state_update": 0x9035,
+            "modulus": 5,
+            "case_starts_by_state": (0x9071, 0x913A, 0x9209, 0x93B5, 0x92C0),
+            "common_tail": 0x94A2,
+            "expected_callbacks_by_state": (
+                0x958C, 0x97CC, 0x99FE, 0x9E40, 0x9C17,
+            ),
+            "expected_selector_pairs": (
+                (5, 7), (1, 8), (0, 9), (13, 14), (12, 11),
+            ),
+        },
     },
 }
 
@@ -236,6 +256,85 @@ def monotonic_shape_alignment(
     return mapping, skipped
 
 
+def analyze_choice_cycle(
+    bank: bytes,
+    profile: dict[str, object],
+    population_starts: list[int],
+) -> dict[str, object]:
+    cycle = profile["choice_cycle"]
+    state_update = int(cycle["state_update"])
+    base_setup = bytes.fromhex("BB 4E 00 B8 00 10 8E C0")
+    if bank[state_update - len(base_setup):state_update] != base_setup:
+        raise ValueError(f"choice-cycle state base changed for {profile['label']}")
+    update_prefix = bytes.fromhex(
+        "33 D2 26 8A 57 20 C0 EA 04 8A F2 FE C6 80 FE"
+    )
+    update_suffix = bytes.fromhex(
+        "72 02 32 F6 C0 E6 04 26 80 67 20 0F 26 08 77 20"
+    )
+    if bank[state_update:state_update + len(update_prefix)] != update_prefix:
+        raise ValueError(f"choice-cycle update prefix changed for {profile['label']}")
+    modulus = bank[state_update + len(update_prefix)]
+    if modulus != int(cycle["modulus"]):
+        raise ValueError(f"choice-cycle modulus changed for {profile['label']}")
+    suffix_start = state_update + len(update_prefix) + 1
+    if bank[suffix_start:suffix_start + len(update_suffix)] != update_suffix:
+        raise ValueError(f"choice-cycle update suffix changed for {profile['label']}")
+
+    segment = int(profile["segment"])
+    object_creator = int(profile["object_creator"])
+    case_starts = [int(value) for value in cycle["case_starts_by_state"]]
+    common_tail = int(cycle["common_tail"])
+    cases = []
+    for state, case_start in enumerate(case_starts):
+        case_end = min(
+            value for value in (*case_starts, common_tail) if value > case_start
+        )
+        stores = callback_stores(bank, case_start, case_end, segment)
+        targets = []
+        for store in stores:
+            body = population_body_for_target(
+                store["target_physical_address"], population_starts
+            )
+            if body is not None:
+                targets.append(body)
+        if len(targets) != 1:
+            raise ValueError(
+                f"choice state {state} has {len(targets)} callback targets "
+                f"for {profile['label']}"
+            )
+        selectors = object_selectors(
+            bank, case_start, case_end, segment, object_creator
+        )
+        cases.append({
+            "state": state,
+            "case_start": case_start,
+            "selected_callback": targets[0],
+            "object_selector_pair": selectors,
+        })
+
+    callbacks = tuple(entry["selected_callback"] for entry in cases)
+    selectors = tuple(tuple(entry["object_selector_pair"]) for entry in cases)
+    if callbacks != tuple(cycle["expected_callbacks_by_state"]):
+        raise ValueError(f"choice callback order changed for {profile['label']}")
+    if selectors != tuple(cycle["expected_selector_pairs"]):
+        raise ValueError(f"choice selector pairs changed for {profile['label']}")
+    return {
+        "state_storage": {
+            "segment": 0x1000,
+            "base_offset": 0x004E,
+            "field_offset": 0x20,
+            "effective_offset": 0x006E,
+            "component": "high_nibble",
+        },
+        "selection_uses": "old_state_before_increment",
+        "update_policy": f"(old_state + 1) modulo {modulus}",
+        "modulus": modulus,
+        "state_update_address": state_update,
+        "cases": cases,
+    }
+
+
 def analyze(path: pathlib.Path, profile: dict[str, object]) -> dict[str, object]:
     data = path.read_bytes()
     actual_hash = sha256(data)
@@ -339,6 +438,7 @@ def analyze(path: pathlib.Path, profile: dict[str, object]) -> dict[str, object]
         for entry in functions
         for selector in entry["object_selector_arguments"]
     ]
+    choice_cycle = analyze_choice_cycle(bank, profile, starts)
 
     return {
         "label": profile["label"],
@@ -362,6 +462,7 @@ def analyze(path: pathlib.Path, profile: dict[str, object]) -> dict[str, object]
         "terminal_function": terminal,
         "reachable_population_count": len(reached),
         "object_selector_population": selector_population,
+        "choice_cycle": choice_cycle,
         "functions": functions,
     }
 
@@ -437,9 +538,9 @@ def main() -> int:
             "Static root task registration and callback reachability are "
             "confirmed for both WSC versions. WSC 1.5 adds four callbacks to "
             "the aligned linear opening chain and two choice callbacks. Object "
-            "selector arguments are recorded. Runtime choice frequency and the "
-            "semantic identity of the two new choice callbacks remain to be "
-            "mapped."
+            "selector arguments and the modulo-3 to modulo-5 choice-cycle "
+            "extension are recorded. Runtime presentation behavior is not "
+            "established by this static graph."
         ),
     }
     if result["delta"] != {

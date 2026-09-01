@@ -246,9 +246,11 @@ registered root.
 Monotonic instruction-shape alignment identifies four WSC 1.5-only linear
 callbacks at `7077`, `7407`, `7698`, and `7992`, plus choice callbacks at
 `9C17` and `9E40`. Object-selector extraction also confirms the expanded
-roster/evolution inputs. The exact selection conditions and presentation
-meaning of the two new choices remain unmapped, and none of the six callbacks
-has been translated into the GBA candidate. See
+roster/evolution inputs. The split state is a high-nibble cycle: GBA/WSC 1.0
+advance modulo 3, while WSC 1.5 advances modulo 5. New state 3 selects callback
+`9E40` with pair `[13,14]`; state 4 selects `9C17` with `[12,11]`. None of the
+six callbacks or the five-state dispatcher has been translated into the GBA
+candidate. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -291,8 +293,8 @@ not yet earned runtime credit under the recovery audit rules.
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer, the
 clean current-candidate build, and the static opening callback graphs are
 complete for exact v32. The next active milestone is **EXTENDED
-OPENING/PRESENTATION IMPLEMENTATION**: identify the two new choice conditions,
-translate the four added linear callbacks and two choices, and integrate them
+OPENING/PRESENTATION IMPLEMENTATION**: translate the four added linear
+callbacks, two choices, and confirmed modulo-5 dispatcher, then integrate them
 through the same main build path. Broader runtime verification remains deferred
 and non-displaying.
 

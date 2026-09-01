@@ -31,6 +31,17 @@ SET_CALLBACK = 0x08012008
 CHARACTER_CONSUMER = 0x08088250
 EXPECTED_SET_CALLBACK_CALLS = 39
 EXPECTED_CHARACTER_CALLS = 18
+CHOICE_STATE_BASE_LITERAL_OFFSET = 0x08700C
+CHOICE_STATE_BASE = 0x03002310
+CHOICE_STATE_FIELD_OFFSET = 0x20
+CHOICE_MODULUS_COMPARE_OFFSET = 0x086E5C
+CHOICE_STATE_COMPARE_OFFSET = 0x086E84
+CHOICE_STATE2_BRANCH_OFFSET = 0x086E88
+CHOICE_STATE1_BRANCH_OFFSET = 0x086E8C
+CHOICE_CASE_OFFSETS = (0x086E90, 0x08703C, 0x0871B4)
+CHOICE_CASE_END = 0x08730C
+EXPECTED_CHOICE_CALLBACKS = (0x080873CC, 0x080876DC, 0x08087A48)
+EXPECTED_CHOICE_SELECTORS = ((5, 7), (1, 8), (0, 9))
 
 
 def sha256(data: bytes) -> str:
@@ -70,6 +81,35 @@ def ror32(value: int, shift: int) -> int:
     if not shift:
         return value & 0xFFFFFFFF
     return ((value >> shift) | (value << (32 - shift))) & 0xFFFFFFFF
+
+
+def data_processing_immediate(word: int, opcode: int, register: int) -> int:
+    if ((word >> 25) & 7) != 1:
+        raise ValueError("expected ARM data-processing immediate")
+    if ((word >> 21) & 0xF) != opcode or ((word >> 16) & 0xF) != register:
+        raise ValueError("unexpected ARM immediate opcode/register")
+    return ror32(word & 0xFF, ((word >> 8) & 0xF) * 2)
+
+
+def r8_immediate_for_first_argument(data: bytes, call_offset: int) -> int:
+    push_r8 = 0xE92D0100
+    pushes = [
+        offset
+        for offset in range(max(0, call_offset - 0x30), call_offset, 4)
+        if struct.unpack_from("<I", data, offset)[0] == push_r8
+    ]
+    if len(pushes) < 3:
+        raise ValueError(f"fewer than three r8 argument pushes at {call_offset:06X}")
+    first_argument_push = pushes[-3]
+    for offset in range(first_argument_push - 4, first_argument_push - 0x24, -4):
+        word = struct.unpack_from("<I", data, offset)[0]
+        if ((word >> 25) & 7) != 1:
+            continue
+        opcode = (word >> 21) & 0xF
+        destination = (word >> 12) & 0xF
+        if opcode == 13 and destination == 8:
+            return ror32(word & 0xFF, ((word >> 8) & 0xF) * 2)
+    raise ValueError(f"unresolved first r8 argument at {call_offset:06X}")
 
 
 def resolve_r8_assignment(data: bytes, call_offset: int) -> dict[str, int | str]:
@@ -126,6 +166,86 @@ def reachable(root: int, adjacency: dict[int, list[int]]) -> list[int]:
         seen.add(node)
         pending.extend(adjacency[node])
     return sorted(seen)
+
+
+def analyze_choice_cycle(data: bytes) -> dict[str, object]:
+    state_base = struct.unpack_from(
+        "<I", data, CHOICE_STATE_BASE_LITERAL_OFFSET
+    )[0]
+    if state_base != CHOICE_STATE_BASE:
+        raise ValueError(f"unexpected GBA opening choice-state base: {state_base:08X}")
+    modulus_word = struct.unpack_from(
+        "<I", data, CHOICE_MODULUS_COMPARE_OFFSET
+    )[0]
+    modulus = data_processing_immediate(modulus_word, opcode=10, register=9)
+    if modulus != 3:
+        raise ValueError(f"unexpected GBA opening choice modulus: {modulus}")
+    state_compare_word = struct.unpack_from(
+        "<I", data, CHOICE_STATE_COMPARE_OFFSET
+    )[0]
+    if data_processing_immediate(state_compare_word, opcode=10, register=3) != 1:
+        raise ValueError("unexpected GBA opening choice-state comparison")
+
+    state2_branch = struct.unpack_from(
+        "<I", data, CHOICE_STATE2_BRANCH_OFFSET
+    )[0]
+    state1_branch = struct.unpack_from(
+        "<I", data, CHOICE_STATE1_BRANCH_OFFSET
+    )[0]
+    if (state2_branch >> 28) != 0xC or branch_target(
+        GBA_BASE + CHOICE_STATE2_BRANCH_OFFSET, state2_branch
+    ) != GBA_BASE + CHOICE_CASE_OFFSETS[2]:
+        raise ValueError("unexpected GBA state-2 choice branch")
+    if (state1_branch >> 28) != 0x0 or branch_target(
+        GBA_BASE + CHOICE_STATE1_BRANCH_OFFSET, state1_branch
+    ) != GBA_BASE + CHOICE_CASE_OFFSETS[1]:
+        raise ValueError("unexpected GBA state-1 choice branch")
+
+    cases = []
+    for state, case_start in enumerate(CHOICE_CASE_OFFSETS):
+        case_end = (
+            CHOICE_CASE_OFFSETS[state + 1]
+            if state + 1 < len(CHOICE_CASE_OFFSETS)
+            else CHOICE_CASE_END
+        )
+        setter_calls = find_calls(data, SET_CALLBACK, case_start, case_end)
+        if len(setter_calls) != 1:
+            raise ValueError(
+                f"GBA choice state {state} has {len(setter_calls)} callback setters"
+            )
+        callback = int(resolve_r8_assignment(data, setter_calls[0])["target_address"])
+        character_calls = find_calls(
+            data, CHARACTER_CONSUMER, case_start, case_end
+        )
+        selectors = tuple(
+            r8_immediate_for_first_argument(data, call)
+            for call in character_calls
+        )
+        cases.append({
+            "state": state,
+            "case_address": GBA_BASE + case_start,
+            "selected_callback": callback,
+            "object_selector_pair": list(selectors),
+        })
+
+    callbacks = tuple(entry["selected_callback"] for entry in cases)
+    selectors = tuple(tuple(entry["object_selector_pair"]) for entry in cases)
+    if callbacks != EXPECTED_CHOICE_CALLBACKS:
+        raise ValueError(f"unexpected GBA opening choice callbacks: {callbacks}")
+    if selectors != EXPECTED_CHOICE_SELECTORS:
+        raise ValueError(f"unexpected GBA opening choice selectors: {selectors}")
+    return {
+        "state_storage": {
+            "base_address": state_base,
+            "field_offset": CHOICE_STATE_FIELD_OFFSET,
+            "effective_address": state_base + CHOICE_STATE_FIELD_OFFSET,
+            "component": "high_nibble",
+        },
+        "selection_uses": "old_state_before_increment",
+        "update_policy": f"(old_state + 1) modulo {modulus}",
+        "modulus": modulus,
+        "cases": cases,
+    }
 
 
 def main() -> int:
@@ -222,6 +342,7 @@ def main() -> int:
     reached = reachable(OPENING_ROOT_CALLBACK, adjacency)
     if reached != sorted(population):
         raise ValueError("unreachable callback in commercial GBA opening population")
+    choice_cycle = analyze_choice_cycle(data)
     result = {
         "schema": 1,
         "kind": "gba-opening-callback-graph",
@@ -250,6 +371,7 @@ def main() -> int:
             "terminal_function": OPENING_TERMINAL,
             "reachable_population_count": len(reached),
         },
+        "choice_cycle": choice_cycle,
         "character_resource_consumer": CHARACTER_CONSUMER,
         "character_call_count": len(character_sites),
         "character_calls_by_function": [

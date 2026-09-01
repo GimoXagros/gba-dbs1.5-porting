@@ -16,7 +16,8 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
 > callback recovery now proves that GBA/WSC 1.0 use a 15-linear + 3-choice
 > opening graph and WSC 1.5 expands it to 19 + 5. The six additions are bounded
-> but have not yet been translated into the GBA candidate.
+> and the modulo-5 state cycle with selector pairs `[13,14]` and `[12,11]` is
+> mapped, but none has yet been translated into the GBA candidate.
 
 This repository tracks an in-progress clean-room port of the complete
 WonderSwan Color Ver. 1.5 content set to the USA GBA release. It is not a
@@ -84,7 +85,7 @@ and corrected progress are recorded in [`PORT_AUDIT.md`](PORT_AUDIT.md).
 | Added stage content and mechanics | 65% | Train vents/bounce, suction, remaining vertical branches |
 | Alternate final boss | 70% | End-to-end runtime route, loss/continue/victory regression |
 | Digimon Shoot | 45% | Rules/objects, transition state, reward, win/loss, exit |
-| Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, two new choice conditions, and GBA opening implementation |
+| Progression, tag/rating, opening | 25% | Remaining producers, persistence/UI, and GBA translation of the confirmed five-state opening graph |
 | Build tooling and static integration | 85% | Full final-candidate audit and release packaging |
 | Final emulator/save QA and BPS release | 0% | Deferred until all content is connected |
 
@@ -157,9 +158,10 @@ The opening/presentation route is now bounded statically from each registered
 cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
-choices. The two new choice conditions and all six GBA translations remain
-unfinished, so this evidence is not counted as integrated opening logic or
-runtime progress.
+choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
+`[13,14]` and `[12,11]`; all six GBA translations and the dispatcher extension
+remain unfinished, so this evidence is not counted as integrated opening logic
+or runtime progress.
 
 Detailed scope and evidence requirements live in
 [`records/port-scope.md`](records/port-scope.md); the deferred save gate is in

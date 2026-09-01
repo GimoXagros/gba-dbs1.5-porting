@@ -36,7 +36,7 @@ A maximum-score monotonic alignment of x86 instruction-mnemonic shapes maps
 all 18 WSC 1.0 callbacks into the WSC 1.5 graph while leaving these six WSC
 1.5 callbacks unmatched:
 
-| WSC 1.5 index | Body | Graph role | Object-selector arguments |
+| WSC 1.5 index | Body | Graph role | Selectors inside callback body |
 |---:|---:|---|---|
 | 7 | `7077` | linear | `14` |
 | 8 | `7407` | linear | `8` |
@@ -51,10 +51,27 @@ sequence from `[5, 7, 1, 8, 0, 9]` to
 `[5, 7, 1, 8, 0, 9, 12, 11, 13, 14]`. These facts establish the expanded
 roster/evolution presentation inputs without guessing from call counts.
 
-The graph identity and positions of the two new choice callbacks are now
-bounded, but their exact runtime selection conditions and presentation meaning
-are not yet named. They must be translated together with the added linear
-callbacks rather than forced through a diagnostic-only route.
+## Confirmed five-state choice cycle
+
+The split callback reads the high nibble of the presentation-state byte, uses
+that old value to choose a case, and then stores `(old + 1) modulo N` back to
+the high nibble. WSC 1.0 uses `N=3` at `1000:006E`; the GBA conversion preserves
+the same three-state policy at `0x03002330`. WSC 1.5 changes only the cycle size
+and dispatch population to `N=5`.
+
+| State | Commercial GBA callback | WSC 1.5 callback | Selector pair |
+|---:|---:|---:|---:|
+| 0 | `0x080873CC` | `958C` | `[5, 7]` |
+| 1 | `0x080876DC` | `97CC` | `[1, 8]` |
+| 2 | `0x08087A48` | `99FE` | `[0, 9]` |
+| 3 | absent | `9E40` | `[13, 14]` |
+| 4 | absent | `9C17` | `[12, 11]` |
+
+This identifies the two added selections: state 3 presents the new base-fighter
+pair, and state 4 presents the two new evolution IDs. The GBA implementation
+must therefore extend the existing state byte in place, preserve states 0..2,
+and translate both new case setup blocks and both selected callbacks. A forced
+single-case diagnostic route would not reproduce the retail policy.
 
 ## Reproduction
 
@@ -69,8 +86,8 @@ python tools/analyze_wsc_opening_dispatch.py <WSC-1.0> <WSC-1.5> --output eviden
 Current generated-manifest SHA-256 values are:
 
 - initializer population: `EB621403F9385C970A1571C0716FE5C1239414362F3DB93DC670A1566B91B253`
-- GBA callback graph: `6E7238805853002CF3BAA1138C186C161377C4661D07AD794D213B6265F4462C`
-- WSC callback comparison: `1A3B5EB958F43813A789D1CC46CB1B835C6669FDEB279062128246BFF952101D`
+- GBA callback graph: `77E64A38FEDE93B1712758D0C67F674D3C9A4F723F77689403D060A4A80E981A`
+- WSC callback comparison: `4EE9A0F13CCAC897600ACA3E52E80EDC125D17808720B4398599B2B2AA9EE098`
 
 ## Runtime evidence boundary
 
@@ -83,10 +100,8 @@ cited as validation. The exact diagnostic script is retained at
 
 ## Remaining proof gates
 
-1. Determine the runtime selection conditions and semantic identity of the two
-   additional WSC 1.5 choice callbacks.
-2. Translate the four added linear callbacks, two added choices, and expanded
+1. Translate the four added linear callbacks, two added choices, and expanded
    selector behavior into the commercial GBA opening state machine.
-3. Integrate the translation through the single reproducible candidate build.
-4. Only after all declared port content is integrated, run a non-displaying
+2. Integrate the translation through the single reproducible candidate build.
+3. Only after all declared port content is integrated, run a non-displaying
    cold boot through the full extended sequence and verify skip-to-title.
