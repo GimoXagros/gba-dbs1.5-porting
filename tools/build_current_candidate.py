@@ -58,6 +58,12 @@ SHOOT_CE_SOUND_VERIFICATION_SHA256 = (
 SHOOT_PARENT_VERIFICATION_SHA256 = (
     "3989E33CD893742F9DD116D7050D9F33071763A04D9A174321EEC0A723755D13"
 )
+SHOOT_AUX_OBJECT_LIFETIME_SHA256 = (
+    "8F7E38A3C835503B5F1598CD9CD2468A7E229A1B483307F8A918D5ED10097F50"
+)
+SHOOT_AUX_OBJECT_VERIFICATION_SHA256 = (
+    "BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -122,7 +128,8 @@ EXPECTED_LAYERS = {
     "shoot-parent.gba": "B192AC03F75FB1B55B3BCB3BA6363836EDDFCBBAC8379DAF6D9DAB08B9AD2E06",
     "shoot-initializer-resources.gba": "AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E",
     "shoot-d2.gba": "7BB890FEC50BBAB796B5F94FE7761EAE9C4A284BB8E3CC9FA75A12FD20FB2264",
-    "current-candidate.gba": "000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB",
+    "shoot-ce-stereo.gba": "000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB",
+    "current-candidate.gba": "C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4",
 }
 
 
@@ -222,6 +229,20 @@ def main() -> int:
         shoot_initializer_resources,
         SHOOT_INITIALIZER_RESOURCE_SHA256,
         "Shoot initializer resource boundary",
+    )
+    shoot_aux_object_lifetime = intermediate / "shoot-aux-object-lifetime.json"
+    run(
+        "analyze_shoot_aux_object_lifetime.py",
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_aux_object_lifetime,
+    )
+    require_hash(
+        shoot_aux_object_lifetime,
+        SHOOT_AUX_OBJECT_LIFETIME_SHA256,
+        "Shoot auxiliary-object lifetime and native lineage",
     )
     direct_p1_oracle = intermediate / "direct-p1-commercial-oracle.json"
     run(
@@ -324,6 +345,7 @@ def main() -> int:
     shoot_parent = output / "shoot-parent.gba"
     shoot_initializer_resources_layer = output / "shoot-initializer-resources.gba"
     shoot_d2 = output / "shoot-d2.gba"
+    shoot_ce_stereo = output / "shoot-ce-stereo.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -400,6 +422,16 @@ def main() -> int:
     run(
         "build_shoot_ce_stereo_correction.py",
         shoot_d2,
+        args.wsc15,
+        shoot_ce_stereo,
+        "--manifest",
+        output / "shoot-ce-stereo.json",
+    )
+    run(
+        "build_shoot_aux_object_integration.py",
+        shoot_ce_stereo,
+        args.gba,
+        args.wsc10,
         args.wsc15,
         candidate,
         "--manifest",
@@ -516,7 +548,7 @@ def main() -> int:
     run(
         "verify_shoot_ce_stereo_correction.py",
         shoot_d2,
-        candidate,
+        shoot_ce_stereo,
         args.wsc15,
         "--output",
         shoot_ce_stereo_verification,
@@ -525,6 +557,22 @@ def main() -> int:
         shoot_ce_stereo_verification,
         SHOOT_CE_STEREO_VERIFICATION_SHA256,
         "Shoot CE stereo correction independent verification",
+    )
+    shoot_aux_object_verification = intermediate / "shoot-aux-object-verification.json"
+    run(
+        "verify_shoot_aux_object_integration.py",
+        shoot_ce_stereo,
+        candidate,
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_aux_object_verification,
+    )
+    require_hash(
+        shoot_aux_object_verification,
+        SHOOT_AUX_OBJECT_VERIFICATION_SHA256,
+        "Shoot auxiliary-object integration independent verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -555,6 +603,9 @@ def main() -> int:
             "7168 initializer P1/P0/P2 assets, and the bounded Ver. 1.5-only "
             "D2-to-GBA-0x5C pitch/timing/stereo/modulation reconstruction; "
             "the final one-byte CE layer also corrects its source-proved right-only pan; "
+            "the resident but intentionally uncalled auxiliary-object constructor binds "
+            "WSC Ver. 1.5 ES:071E through the commercial 1.0 ID-0x343/pool-5 lineage "
+            "to native GBA slot 0x03004D3C and installed Shoot rule resources; "
             "external controller 9908/9A1B entry, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -582,6 +633,8 @@ def main() -> int:
             "shoot_child_verification_sha256": SHOOT_CHILD_VERIFICATION_SHA256,
             "shoot_ce_sound_verification_sha256": SHOOT_CE_SOUND_VERIFICATION_SHA256,
             "shoot_parent_verification_sha256": SHOOT_PARENT_VERIFICATION_SHA256,
+            "shoot_aux_object_lifetime_sha256": SHOOT_AUX_OBJECT_LIFETIME_SHA256,
+            "shoot_aux_object_verification_sha256": SHOOT_AUX_OBJECT_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

@@ -311,9 +311,8 @@ direct-format commercial oracle below proves payload, A-record, and B behavior.
 The same report statically binds `ES:065C/065E` to GBA player pointer slots
 `0x0300489C/0x030048A0`. The rules presentation uses Ver. 1.5-only auxiliary
 object slot `ES:071E`, allocated by `4090:172A` with callback `5134` and ID
-`0x343`; WSC 1.0 has no corresponding storage reference. Native GBA allocator
-`0x08352374` is therefore only a candidate until its argument ABI and object
-lifetime are proved. Two independent report runs reproduce SHA-256
+`0x343`. That initial resource report did not yet resolve its commercial
+counterpart. Two independent report runs reproduce SHA-256
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`.
 The analyzer reads only the three hash-identified original ROM inputs; it
 modifies no candidate and uses neither an emulator nor the supplied save.
@@ -376,8 +375,32 @@ ending the longer gate. CE's header and `A0` steps all have zero left nibbles,
 so v44 changes one pan byte from center to right and preserves D2. Independent
 report SHA-256 is
 `A087DCD31E27A17615AEB897BD037F090F69C699D1EB2C6384674D4B2F0A0ABA`.
-Current static v44 SHA-256 is
+Static v44 intermediate SHA-256 is
 `000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB`.
+No emulator or supplied save was used.
+
+The dedicated lifetime analyzer closes the auxiliary-object mapping without a
+guessed RAM allocation. Its exhaustive reference scan proves Ver. 1.5
+`ES:071E` is the relocated form of WSC 1.0 `ES:06A2`: both use allocation ID
+`0x343`, pool selector 5, the same object role, and equivalent screen-effect
+consumers. The exact commercial GBA counterpart allocates into slot
+`0x03004D3C` through `0x08352374` with callback `0x083703EC` and the same ID
+and pool. The allocator implementation proves the seven-argument ABI, while
+the commercial WSC/GBA constructor pair proves the complete field mapping;
+225/400/420 source ticks map to 180/320/336 native ticks at 75→60 Hz. Two
+report runs reproduce SHA-256
+`8F7E38A3C835503B5F1598CD9CD2468A7E229A1B483307F8A918D5ED10097F50`.
+
+v45 installs a resident 436-byte ARM constructor at `0x085BC200` and a
+four-byte `BX LR` translation of source idle callback `88F6` at `0x085BC600`.
+It uses native slot `0x03004D3C`, allocator ID `0x343`/pool 5, commercial
+callback `0x083703EC`, player slots `0x0300489C/0x030048A0`, and the installed
+initializer rule resources. The layer changes 434 bytes, has no constructor
+caller, and therefore cannot affect retail flow before the upper graph is
+connected. Independent final-placement verification report SHA-256 is
+`BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228`.
+Current static v45 SHA-256 is
+`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
 No emulator or supplied save was used.
 
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
@@ -386,7 +409,8 @@ four times without arguments and masks the fourth result by seven, matching
 the WSC call/return role. This proves a usable native role, not identical
 cross-platform random sequences.
 
-No GBA menu hook, dedicated `7168` translation, its P1/aux-object consumers,
+No GBA menu hook, dedicated `7168` translation or caller for the resident
+auxiliary-object constructor,
 upper states,
 broader presentation branch, rules, reward, win/loss, or exit hook is claimed
 yet. The transition-state and fighter-spawn fallbacks are explicit release
@@ -394,10 +418,10 @@ gates. Ver. 1.5 has no ordinary 16-byte fighter-spawn record for stage 11; the
 current copied stage-7 record only bounds an otherwise invalid table access
 until the dedicated initializer bypass is ported.
 
-The next implementation unit must translate and connect the menu route,
-`4090:7168` initializer/resources using the verified P1 blob and bounded P0/P2
-assets, bind the `071E` object lifetime, connect native `0x5C`, and install the
-upper state populations before
+The next implementation unit must translate and connect the `7792/88F6` and
+`7AB1/7D8D` upper state populations to the resident auxiliary component and
+verified P1/P0/P2 resources, then connect the menu route and `4090:7168`
+initializer together with native `0x5C` before
 installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
 `9908` alone would remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is

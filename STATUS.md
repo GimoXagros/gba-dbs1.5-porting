@@ -11,7 +11,7 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v44 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v45 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -28,9 +28,14 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > packed pitches, 80-tick schedule, right-only direction, commercial
 > `A2=01`→voice-`0x1F` timbre lineage, and a bounded M4A pitch controller.
 > The `9083 -> 90F3 -> 912A -> 91AB -> 91EF` parent callback chain now
-> reaches that sound and the resident child generator internally. The composite
-> is reproducible at SHA-256
-> `000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB`.
+> reaches that sound and the resident child generator internally. A proved
+> commercial lineage now maps Ver. 1.5 auxiliary object `ES:071E` through WSC
+> 1.0 `ES:06A2` to native GBA slot `0x03004D3C`, allocation ID `0x343`, and
+> pool 5. Internal v45 installs a resident constructor and translated idle
+> callback using that slot and the verified rule resources; it is deliberately
+> uncalled until the `7168` initializer and upper states are installed. The
+> composite is reproducible at SHA-256
+> `C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -47,7 +52,7 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v44. The parent and child families are internally connected,
+> save was used for v45. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA. A new deterministic
@@ -60,11 +65,12 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > non-null B records, plus all 92 eight-byte A-record command references; both
 > initializer sources satisfy those rules. Their 2,636-byte native P1 blob,
 > five P0 containers, and two non-reused P2 blocks are now installed as a
-> resource-only v42 layer and independently verified. No code points to the
-> new ownership window yet. The report
-> also isolates the auxiliary object `ES:071E` as an unresolved native
-> dependency. v43 resolves the separate `D2` asset dependency, while its three
+> resource-only v42 layer and independently verified. The separate v45
+> auxiliary-object layer binds `ES:071E` to the exact commercial GBA
+> allocation/lifetime lineage, but no menu or upper-state caller reaches its
+> resident constructor. v43 resolves the separate `D2` asset dependency, while its three
 > upper-state request sites remain unconnected. v44 corrects CE stereo direction;
+> v45 installs the independently verified resident auxiliary component;
 > runtime-evidenced progress remains unchanged.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -101,13 +107,17 @@ memory dump, screenshot, or emulator state.
 - Resource-only v42 placement of all converted `7168` initializer P1/P0/P2
   assets in `0x5D0000..0x5DB768`, with exact diff containment and no external
   pointer into the new window yet.
+- Resident v45 Shoot auxiliary-object constructor at `0x085BC200`, using the
+  commercial ID-`0x343`/pool-5 allocator lineage, native slot `0x03004D3C`,
+  player slots `0x0300489C/0x030048A0`, installed rule resources, and a native
+  translation of idle callback `88F6`. It remains deliberately uncalled.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v44, identified only by SHA-256
-`000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB`.
+The current static internal composite is v45, identified only by SHA-256
+`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -128,11 +138,13 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling thirteen guarded
-layers. Two builds in separate empty output directories both produced v44
+binary assets from the three original ROMs before assembling fourteen guarded
+layers. Two builds in separate empty output directories both produced v45
 SHA-256
-`000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB`;
-all 99 files in each output tree matched by relative path and SHA-256.
+`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`;
+all 103 files in each output tree matched by relative path and SHA-256. The
+build-manifest SHA-256 is
+`0E69C1EE4128C8EAA09DAE853DE09B62953975A96C23AF298582C90854422623`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -307,6 +319,26 @@ proves D2 preservation; report SHA-256 is
 `A087DCD31E27A17615AEB897BD037F090F69C699D1EB2C6384674D4B2F0A0ABA`.
 No emulator, supplied save, or audible claim is involved.
 
+`tools/analyze_shoot_aux_object_lifetime.py` exhaustively proves the missing
+object lineage instead of assigning new RAM speculatively. Ver. 1.5
+`ES:071E` and WSC 1.0 `ES:06A2` are both allocation ID `0x343`, pool 5;
+the commercial GBA counterpart uses native slot `0x03004D3C`, allocator
+`0x08352374`, callback `0x083703EC`, and the same screen-effect consumers.
+The field mapping and 75→60 Hz timer conversions also agree exactly. Two
+analysis runs reproduce report SHA-256
+`8F7E38A3C835503B5F1598CD9CD2468A7E229A1B483307F8A918D5ED10097F50`.
+
+v45 adds a 436-byte resident ARM constructor at `0x085BC200` and a four-byte
+native `BX LR` translation of source idle callback `88F6` at `0x085BC600`.
+It allocates through the commercial ABI, populates native object fields, binds
+the existing player slots and installed rules resources, and writes back the
+active-player link. Exact diff containment covers 434 changed bytes. The
+independent verifier checks final-placement calls, literals, fields, resource
+preservation, commercial signatures, and that the constructor has no caller;
+report SHA-256 is
+`BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228`.
+No emulator, supplied save, or runtime claim is involved.
+
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
 of the WSC raw `0x74382E` branch. The shared stage/character auxiliary
@@ -337,7 +369,7 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v35, retained as v44's opening-linear
+`[13,14]` and `[12,11]`. Internal v35, retained as v45's opening-linear
 intermediate, translates those two cases/callbacks and the dispatcher
 extension into GBA ARM code while preserving retail states
 0..2. Its dedicated 15-record presentation view preserves commercial
@@ -361,7 +393,7 @@ reuse of unused GBA opening slot 3 for records 50 and 49 without overwriting
 retained commercial auxiliary objects. An independent verifier confines all
 2,199 changed bytes to the three hooks and declared expansion ranges,
 disassembles the four callback call graphs, and checks the exact converted
-seven-entry event table. No v44 runtime evidence exists, so the static integration
+seven-entry event table. No v45 runtime evidence exists, so the static integration
 does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in
