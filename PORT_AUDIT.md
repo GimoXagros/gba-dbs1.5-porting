@@ -2,6 +2,11 @@
 
 Audit date: 2026-08-31; last updated 2026-09-02 (Asia/Seoul)
 
+User-requested pause: the palette-transition investigation after v50 is
+recorded, with no new implementation or runtime claim. See
+[`RESUME.md`](RESUME.md) for the checkpoint and exact next work boundary.
+The current candidate and progress baseline below are unchanged.
+
 This document is the authoritative recovery baseline for the current port.
 It separates committed implementation from behavior actually observed in a
 GBA emulator. A runtime item is marked `PASS` only when the exact candidate

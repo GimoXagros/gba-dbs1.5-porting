@@ -2,6 +2,11 @@
 
 Snapshot date: 2026-09-02 (Asia/Seoul)
 
+User-requested pause after the v50 palette-transition investigation:
+[`RESUME.md`](RESUME.md) records the saved checkpoint, unresolved work and
+restart procedure. This handoff changes documentation only; no v51, runtime
+validation, supplied-save use or GitHub upload is claimed.
+
 > **Recovery correction:** [`PORT_AUDIT.md`](PORT_AUDIT.md) is the
 > authoritative current status. The earlier 55-60% / 57% planning estimate is
 > withdrawn because it mixed static integration with unverified runtime

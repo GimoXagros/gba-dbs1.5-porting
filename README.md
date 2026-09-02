@@ -4,7 +4,7 @@ This workspace records a clean-room feasibility survey for extending the USA
 GBA release of *Digimon: Battle Spirit* with content from the WonderSwan Color
 release *Digimon Tamers: Battle Spirit Ver. 1.5*.
 
-Original and patched ROM images are intentionally kept outside this directory.
+Original and patched ROM images are intentionally kept out of version control.
 Tools accept ROM paths at runtime and identify inputs by strong hashes.
 
 The user-supplied WonderSwan save is registered separately in
@@ -28,15 +28,17 @@ in `outputs/`.
 The recovery audit, actual-runtime matrix, and corrected progress baseline are
 tracked in [`PORT_AUDIT.md`](PORT_AUDIT.md). The earlier implementation notes
 and remaining release gates are retained in [`STATUS.md`](STATUS.md).
+Work is paused at the user's request after the v50 palette-transition
+investigation. Start with [`RESUME.md`](RESUME.md) to continue from the saved
+checkpoint; this documentation-only handoff does not create a v51 build.
 Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The current static internal composite is built from the three hash-identified
-originals, then assembled in six checked layers: base roster, stage
-integration, progression/unlocks, the Zeed boss layer, the opening-choice
-layer, and the four-callback opening-linear layer (composite v35, SHA-256
-`9E3D495A3E07F2A9A6ECCF3C07E446036AD027B2A32666DD5A5984879BA6AA5F`).
+The current static internal composite is **v50**, built from the three
+hash-identified originals through nineteen checked ROM layers. Its exact
+image and manifest hashes, historical layers, and remaining gates are recorded
+in [`PORT_AUDIT.md`](PORT_AUDIT.md#reproducibility-audit).
 Each builder refuses an unexpected input SHA-256, so a layer change must
 deliberately advance the downstream hashes before a new composite can be
 produced. Exact v32, SHA-256
@@ -50,14 +52,13 @@ but broader battle behavior remains unverified.
 The single clean-build entry point is:
 
 ```powershell
-python tools\build_current_candidate.py `
-  <USA-GBA-original> <WSC-1.0-original> <WSC-1.5-original> <output-directory>
+py -3 tools/build_current_candidate.py "<USA-GBA-original>" "<WSC-1.0-original>" "<WSC-1.5-original>" "<new-output-directory>"
 ```
 
 It regenerates the commercial WSC-to-GBA comparison corpora, every currently
-consumed character/evolution/VS/stage/boss/opening asset, and all six ROM
+consumed character/evolution/VS/stage/boss/opening asset, and all nineteen ROM
 layers. It fails on any unexpected source, intermediate, asset, or layer
-SHA-256. Three independent empty-directory runs reproduced exact v35
-byte-for-byte. This is a
+SHA-256. Two independent empty-directory runs reproduced exact v50,
+including all 121 output files, byte-for-byte. This is a
 reproducibility result for the current incomplete candidate, not a complete
 Ver. 1.5 port or a distributable ROM.
