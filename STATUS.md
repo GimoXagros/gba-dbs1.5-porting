@@ -11,7 +11,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v47 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v48 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -41,8 +41,12 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > constructors and inverted active/other auxiliary links, then installs the
 > resident `71D1..7394` player/auxiliary binding phase. It reuses the existing
 > auxiliary object without allocating a duplicate and assigns `7792`
-> internally, but its own entry remains uncalled. The composite is reproducible
-> at SHA-256 `ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
+> internally, but its own entry remains uncalled. v48 repairs a separate,
+> source-proved defect: the legacy P0 parser rejected non-`0x2000` source
+> segments and silently omitted tiles from five Shoot resources. All 46 far
+> descriptors and 393 tiles are now installed through five P0 pointer repairs,
+> preserving code and layouts. The composite is reproducible at SHA-256
+> `11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -59,7 +63,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v47. The parent and child families are internally connected,
+> save was used for v48. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA. A new deterministic
@@ -72,7 +76,9 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > non-null B records, plus all 92 eight-byte A-record command references; both
 > initializer sources satisfy those rules. Their 2,636-byte native P1 blob,
 > five P0 containers, and two non-reused P2 blocks are now installed as a
-> resource-only v42 layer and independently verified. The separate v45
+> resource-only v42 layer. Its former zero-descriptor P0 verification was
+> insufficient; v48 supersedes it with source-loader, retail-oracle and
+> complete pixel/animation-pair checks. The separate v45
 > auxiliary-object layer binds `ES:071E` to the exact commercial GBA
 > allocation/lifetime lineage, but no menu or upper-state caller reaches its
 > resident constructor. v43 resolves the separate `D2` asset dependency; v44
@@ -132,13 +138,17 @@ memory dump, screenshot, or emulator state.
 - v47 consumer-driven corrections for the child/auxiliary P1/P2 argument
   order and auxiliary player identity, plus source `71D1..7394` player binding,
   fifteen-entry HP table, and allocation-free auxiliary reconfiguration.
+- v48 repair of the child P0 and four initializer P0 descriptor pointers,
+  restoring 46 descriptors and 12,576 bytes / 393 tiles. Source `DS:SI`/C2
+  semantics, the full commercial 21-descriptor oracle, all pixel data and
+  every P1/layout pair are checked independently; ten damaged variants fail.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v47, identified only by SHA-256
-`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
+The current static internal composite is v48, identified only by SHA-256
+`11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -159,13 +169,13 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling sixteen guarded
-layers. Two builds in separate empty output directories both produced v47
+binary assets from the three original ROMs before assembling seventeen guarded
+layers. Two builds in separate empty output directories both produced v48
 SHA-256
-`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`;
-all 110 files in each output tree matched by relative path and SHA-256. The
+`11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`;
+all 113 files in each output tree matched by relative path and SHA-256. The
 build-manifest SHA-256 is
-`223B3241826CC524218CED5C927379098E278945B8DB354C67F36444935068D2`.
+`E8B13CFDC1D4CCCCDE2A43FB9CAEED0915632AE6FB1252D0E986A793566D11C7`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The

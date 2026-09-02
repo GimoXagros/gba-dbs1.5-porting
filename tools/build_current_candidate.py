@@ -73,6 +73,9 @@ SHOOT_UPPER_STATE_VERIFICATION_SHA256 = (
 SHOOT_PLAYER_BINDING_VERIFICATION_SHA256 = (
     "8427FBAD3FDD00EB15CCDF69D55BD39E0341E21629B86CD2B143AFFCC07F9930"
 )
+SHOOT_FAR_TILE_VERIFICATION_SHA256 = (
+    "25C5C3F6F96B8335ADA627D199630264D361CECD3C70342D0646E384E802105C"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -140,7 +143,8 @@ EXPECTED_LAYERS = {
     "shoot-ce-stereo.gba": "000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB",
     "shoot-aux-object.gba": "C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4",
     "shoot-upper-state.gba": "034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC",
-    "current-candidate.gba": "ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0",
+    "shoot-player-binding.gba": "ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0",
+    "current-candidate.gba": "11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E",
 }
 
 
@@ -372,6 +376,7 @@ def main() -> int:
     shoot_ce_stereo = output / "shoot-ce-stereo.gba"
     shoot_aux_object = output / "shoot-aux-object.gba"
     shoot_upper_state = output / "shoot-upper-state.gba"
+    shoot_player_binding = output / "shoot-player-binding.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -475,6 +480,16 @@ def main() -> int:
     run(
         "build_shoot_player_binding.py",
         shoot_upper_state,
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        shoot_player_binding,
+        "--manifest",
+        output / "shoot-player-binding.json",
+    )
+    run(
+        "build_shoot_far_tile_repair.py",
+        shoot_player_binding,
         args.gba,
         args.wsc10,
         args.wsc15,
@@ -638,7 +653,7 @@ def main() -> int:
     run(
         "verify_shoot_player_binding.py",
         shoot_upper_state,
-        candidate,
+        shoot_player_binding,
         args.gba,
         args.wsc10,
         args.wsc15,
@@ -649,6 +664,22 @@ def main() -> int:
         shoot_player_binding_verification,
         SHOOT_PLAYER_BINDING_VERIFICATION_SHA256,
         "Shoot constructor-consumer and player-binding verification",
+    )
+    shoot_far_tile_verification = intermediate / "shoot-far-tile-verification.json"
+    run(
+        "verify_shoot_far_tile_repair.py",
+        shoot_player_binding,
+        candidate,
+        args.gba,
+        args.wsc10,
+        args.wsc15,
+        "--output",
+        shoot_far_tile_verification,
+    )
+    require_hash(
+        shoot_far_tile_verification,
+        SHOOT_FAR_TILE_VERIFICATION_SHA256,
+        "Shoot source-segment/descriptor/pixel repair verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -690,6 +721,9 @@ def main() -> int:
             "auxiliary player links, then installs source 71D1..7394 player binding with "
             "a fifteen-entry HP table and allocation-free reuse of the existing auxiliary body; "
             "the phase assigns upper entry 7792 internally but has no external caller; "
+            "a subsequent dependent repair corrects five P0 descriptor pointers and installs "
+            "all 46 source far descriptors and 393 missing tiles, preserving code and layouts; "
+            "the legacy zero-descriptor artifacts remain historical intermediates only; "
             "outer initializer preparation/tail/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -722,6 +756,7 @@ def main() -> int:
             "shoot_upper_state_graph_sha256": SHOOT_UPPER_STATE_GRAPH_SHA256,
             "shoot_upper_state_verification_sha256": SHOOT_UPPER_STATE_VERIFICATION_SHA256,
             "shoot_player_binding_verification_sha256": SHOOT_PLAYER_BINDING_VERIFICATION_SHA256,
+            "shoot_far_tile_verification_sha256": SHOOT_FAR_TILE_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

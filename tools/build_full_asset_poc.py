@@ -54,6 +54,13 @@ def convert_tile(tile: bytes) -> bytes:
 
 
 def parse_wsc_descriptor(rom: bytes, offset: int) -> tuple[int, int] | None:
+    """Legacy 0x2000-segment probe recognizer, not a general P0 validator.
+
+    Historical layers depend on this restricted result. In particular, None
+    does NOT prove that an asset has no tiles. The source loaders read the
+    third word into DS, not a destination register. New source-bound repairs
+    use parse_wsc_far_descriptor with an explicit descriptor population.
+    """
     if offset < 0 or offset + 8 > len(rom):
         return None
     length, bank_offset, destination, bank = struct.unpack_from("<4H", rom, offset)
@@ -67,6 +74,67 @@ def parse_wsc_descriptor(rom: bytes, offset: int) -> tuple[int, int] | None:
     if physical + length > len(rom):
         return None
     return length, physical
+
+
+def parse_wsc_far_descriptor(rom: bytes, offset: int) -> tuple[int, int]:
+    """Resolve the length + offset/segment/C2-bank source used by 4FFF:2E6E.
+
+    This supported profile requires the whole copy to stay in the C2-mapped
+    0x20000..0x2FFFF window. Reject crossing/unknown mappings instead of masking
+    them into a plausible ROM address. A terminal FF record is not a payload.
+    """
+    if offset < 0 or offset + 8 > len(rom):
+        raise ValueError("truncated WSC far tile descriptor")
+    length, source_offset, source_segment, bank = struct.unpack_from("<4H", rom, offset)
+    banks = len(rom) >> 16
+    if len(rom) % 0x10000 or not banks or banks & (banks - 1):
+        raise ValueError("WSC image does not have a power-of-two bank population")
+    linear = (source_segment << 4) + source_offset
+    if (length < 32 or length % 32 or not 0x80 <= bank <= 0xFF
+            or not 0x20000 <= linear < linear + length <= 0x30000):
+        raise ValueError("unsupported WSC far tile source or copy extent")
+    return length, (bank & (banks - 1)) * 0x10000 + linear - 0x20000
+
+
+def build_far_descriptor_payload(
+    rom: bytes, *, wsc_header: int, target: int, count: int
+) -> tuple[bytes, dict[str, object]]:
+    """Convert an explicitly bounded far-descriptor table without moving P0.
+
+    Layouts, animation metadata and their existing consumers remain in place;
+    the integrating layer redirects only P0+4 to this table. Count must come
+    from the actual P1/loader population, with the source FF terminator checked.
+    """
+    if count <= 0 or wsc_header < 0 or wsc_header + 16 > len(rom) or target % 4:
+        raise ValueError("invalid bounded descriptor conversion inputs")
+    if struct.unpack_from("<I", rom, wsc_header)[0] != 0x10:
+        raise ValueError("unsupported P0 layout/descriptor header")
+    segment, bank = struct.unpack_from("<2H", rom, wsc_header + 4)
+    linear = segment << 4
+    banks = len(rom) >> 16
+    if (not banks or banks & (banks - 1) or not 0x80 <= bank <= 0xFF
+            or not 0x20000 <= linear < linear + (count + 1) * 8 <= 0x30000):
+        raise ValueError("unsupported P0 descriptor-table mapping")
+    table = (bank & (banks - 1)) * 0x10000 + linear - 0x20000
+    if rom[table + count * 8:table + (count + 1) * 8] != b"\xff" * 8:
+        raise ValueError("bounded P0 descriptor population has no expected terminator")
+    payload_start = align(target + count * 8, 32)
+    output = bytearray(payload_start - target)
+    entries = []
+    for index in range(count):
+        length, physical = parse_wsc_far_descriptor(rom, table + index * 8)
+        converted = b"".join(convert_tile(rom[pos:pos + 32])
+                             for pos in range(physical, physical + length, 32))
+        tile_target = target + len(output)
+        struct.pack_into("<2I", output, index * 8, length, GBA_BASE + tile_target)
+        output.extend(converted)
+        entries.append({"index": index, "source": physical, "bytes": length,
+                        "target": tile_target, "source_sha256": sha256(rom[physical:physical + length]),
+                        "converted_sha256": sha256(converted)})
+    return bytes(output), {"source_header": wsc_header, "source_table": table,
+                           "target": target, "descriptors": count,
+                           "tile_bytes": sum(row["bytes"] for row in entries),
+                           "bytes": len(output), "entries": entries}
 
 
 def build_asset(

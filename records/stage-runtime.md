@@ -95,7 +95,7 @@ report SHA-256 is
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`;
 the report installs no GBA code or data.
 
-The current v47 composite additionally corrects P1/P2 stack argument inversions
+The v47 layer additionally corrects P1/P2 stack argument inversions
 in the resident child and auxiliary constructors and the auxiliary active/other
 player-link inversion. Source `71D1..7394` is installed as a resident
 player/auxiliary reconfiguration phase at `0x085C1000`; it assigns `7792`

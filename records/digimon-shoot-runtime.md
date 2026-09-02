@@ -508,3 +508,76 @@ itself has no external caller. The outer `7168` preparation, tail from `7394`,
 controller `9908/9A1B`, and menu route remain unimplemented. The boundary stub
 is unchanged. This is a static correction, not a runtime or completion claim;
 no emulator, monitor-visible window, or supplied save was used.
+
+## v48: repair of omitted far-addressed P0 tiles
+
+The earlier assertion that five P0 resources legitimately had zero tile
+descriptors was wrong. `build_full_asset_poc.parse_wsc_descriptor` recognized
+only records whose third word was `0x2000`; callers treated rejection as the
+end of the table. This word is a **source segment**, not a destination.
+WSC loader `4FFF:226E` at raw `0x75225E` loads descriptor `+2` into SI, `+4`
+into DS and `+6` into C2. Indexed loader `4FFF:2E6E` at raw `0x752E5E` uses
+the same fields after multiplying the P1 descriptor index by eight.
+The physical source is the selected ROM bank plus `DS*16 + SI - 0x20000`
+within the C2 window. Unknown or crossing mappings are rejected.
+
+The native sprite consumer at `0x08012C80..0x08012CA4` reads the P1 frame's
+word 2, selects P0's descriptor (dynamic flag 2), then loads its tile pointer.
+At `0x08012D50` it reads the layout's low tile byte and copies the corresponding
+32-byte native tile. Flip/palette bits in the other layout byte are preserved.
+The prior tables pointed at zero or FF padding, not valid source payloads.
+
+| Resource | Source P0 | Source table | Descriptors | Tile bytes | New native table |
+|---|---:|---:|---:|---:|---:|
+| Child | `22FF80` | `3D5C20` | 15 | 6,528 | `085F2120` |
+| Active player | `3D5F80` | `31FF10` | 28 | 3,584 | `085F3B20` |
+| Extra `6D` | `3D44E0` | `3D8DC0` | 1 | 768 | `085F4A00` |
+| Extra `137` | `3D0CA0` | `3D8DB0` | 1 | 1,568 | `085F4D20` |
+| Extra `91` | `3D7D30` | `3D8DF0` | 1 | 128 | `085F5360` |
+
+The two dynamic populations are proved by all source P1 descriptor selections
+(`0..14` and `0..27`) and the immediate FF terminators. The three direct-load
+populations each have one descriptor and an FF terminator. Native P1 pairs,
+all source/native layout bytes and each layout tile read fit the selected
+payload. This covers 46 descriptors / 12,576 tile bytes / 393 tiles.
+
+The existing converter now exposes a strictly bounded far-descriptor path;
+it reuses the established planar-to-packed tile conversion. Its historical
+probe recognizer remains unchanged to reproduce prior layers, but is expressly
+not a general zero-tile validator. `build_shoot_far_tile_repair.py` changes
+only the five P0 `+4` pointers and five complete descriptor/tile payloads.
+Code, P1, palettes and P0 layouts are unchanged. The owned expansion interval
+is `0x5F2120..0x5F5420`; payloads end at `0x5F5400`. The input contains no
+aligned pointers or valid ARM7TDMI B/BL encodings into that interval. These
+static placement checks are not runtime proof of asset lifetime.
+
+An independent commercial oracle checks the **complete** WSC 1.0 child
+population at P0 `2AD910`, table `2B3EF0`, against GBA P0 `083505E8`, table
+`083508F8`: 21 descriptors, 6,304 tile bytes, 6,472 total descriptor/payload
+bytes are identical after conversion. SHA-256:
+`3331B32AF828EB6EA0B2E1232B621EFF0E73F040CDF6E9E590199B21B78E280E`.
+This supersedes the earlier layout-prefix-only oracle for zero-tile claims.
+
+`verify_shoot_far_tile_repair.py` imports neither builder nor converter. It
+checks the original DS/SI/C2 and native indexing instructions, inversely
+decodes every packed tile to source bitplanes, checks every P1/layout pair,
+and confines 12,400 changed bytes to the ten declared writes. All five reverted
+pointers and all five last-pixel corruptions fail semantic checks before the
+whole-file hash is tested. Two exact address-boundary cases and eleven malformed
+descriptor/image cases also passed the decoder contract check.
+
+Independent report SHA-256:
+`25C5C3F6F96B8335ADA627D199630264D361CECD3C70342D0646E384E802105C`.
+Layer manifest SHA-256:
+`D23574C6D43D9114E480AA479661AA85D10805BCCF52FBD2D8C702A2CC1F536E`.
+Current internal v48 SHA-256:
+`11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
+Two clean main builds produce 113 identical files each; build manifest:
+`E8B13CFDC1D4CCCCDE2A43FB9CAEED0915632AE6FB1252D0E986A793566D11C7`.
+
+No emulator, monitor-visible window, or supplied save was used. The old v36
+and v42 resource verifiers still describe historical intermediates, not the
+corrected final tables. Initializer tail `7394..7534`, outer preparation,
+existing-object lifetime, menu/controller/rules and final non-displaying QA
+remain gates. In particular, restoring a direct-load resource does not prove
+that the as-yet-untranslated initializer tail consumes it.
