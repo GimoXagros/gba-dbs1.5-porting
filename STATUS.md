@@ -11,7 +11,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v46 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v47 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -37,8 +37,12 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > fourth P2 record, intro palette table, eight movement targets, native RNG
 > calls, and the three native `0x5C` requests. The graph remains deliberately
 > unreachable until the `7168` initializer/menu route and controller rules are
-> installed. The composite is reproducible at SHA-256
-> `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
+> installed. v47 corrects inverted P1/P2 arguments in the child and auxiliary
+> constructors and inverted active/other auxiliary links, then installs the
+> resident `71D1..7394` player/auxiliary binding phase. It reuses the existing
+> auxiliary object without allocating a duplicate and assigns `7792`
+> internally, but its own entry remains uncalled. The composite is reproducible
+> at SHA-256 `ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -55,7 +59,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v46. The parent and child families are internally connected,
+> save was used for v47. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA. A new deterministic
@@ -74,7 +78,9 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > resident constructor. v43 resolves the separate `D2` asset dependency; v44
 > corrects CE stereo direction; v45 installs the independently verified resident
 > auxiliary component; v46 installs and internally connects the upper-state
-> graph and its three `0x5C` calls while leaving its external entries uncalled;
+> graph and its three `0x5C` calls. The v47 corrections and phase are now checked
+> against actual native constructor consumers, with six negative regression
+> checks that reject individually reverted fixes. Normal-play entry is still absent;
 > runtime-evidenced progress remains unchanged.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -121,14 +127,18 @@ memory dump, screenshot, or emulator state.
   palette, eight target rows, native presentation/trigonometry/RNG helpers,
   and the `0x4A`/`0x5B`/`0x5C` request population. The two calls corresponding
   to source helper `9908` stop at an unimplemented `BX LR` boundary; no pointer
-  outside the owned window reaches the graph.
+  from normal play reaches the graph. v47 now assigns `7792` from its resident
+  player-binding phase, which has no external caller.
+- v47 consumer-driven corrections for the child/auxiliary P1/P2 argument
+  order and auxiliary player identity, plus source `71D1..7394` player binding,
+  fifteen-entry HP table, and allocation-free auxiliary reconfiguration.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v46, identified only by SHA-256
-`034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
+The current static internal composite is v47, identified only by SHA-256
+`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -149,13 +159,13 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling fifteen guarded
-layers. Two builds in separate empty output directories both produced v46
+binary assets from the three original ROMs before assembling sixteen guarded
+layers. Two builds in separate empty output directories both produced v47
 SHA-256
-`034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`;
-all 107 files in each output tree matched by relative path and SHA-256. The
+`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`;
+all 110 files in each output tree matched by relative path and SHA-256. The
 build-manifest SHA-256 is
-`F2778E2EF51FEA847AEC05832EBF6C4625C9EE885BA79F156D9EF9DA0BF51DCF`.
+`223B3241826CC524218CED5C927379098E278945B8DB354C67F36444935068D2`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -365,7 +375,7 @@ report SHA-256 is
 No emulator, supplied save, or runtime claim is involved.
 
 v46 adds the resident upper-state population after v45. It preserves the
-verified auxiliary constructor and all earlier resource/sound layers, hashes
+historical auxiliary constructor and all earlier resource/sound layers, hashes
 the three exact WSC code ranges plus idle byte totaling 2,320 reachable bytes, and installs
 25 new ARM callbacks plus the already translated `88F6` member from v45.
 Its two `9908` call sites terminate at a deliberately unreachable boundary
@@ -373,6 +383,21 @@ stub so that a later layer must replace the controller and connect `7168`
 atomically. Two clean builds produced 107 identical files and exact candidate
 SHA-256 `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
 No monitor-visible window, emulator, or supplied save was used.
+
+v47 supersedes the earlier assertion that v45's constructor argument/link
+semantics were verified. Native consumer inspection found P1/P2 reversed in
+two constructors and active/other links reversed in the auxiliary component.
+Six guarded dependent word writes correct those defects. The resident phase
+at `0x085C1000` implements source `71D1..7394`, uses source HP values, connects
+`7792` internally, and reaches the existing auxiliary body through a matched
+stack-frame entry at `0x085C1300` without calling the allocator. Its valid-object
+precondition must be established by the still-missing outer initializer.
+The verifier reproduces all three old defects and rejects all six individually
+reverted fixes without relying on whole-file hash rejection. It confines 459
+changed bytes to nine writes; the builder checks all 98 new ARM instructions
+with separate literal regions. Report SHA-256 is
+`8427FBAD3FDD00EB15CCDF69D55BD39E0341E21629B86CD2B143AFFCC07F9930`.
+Runtime progress remains unchanged; `PORT_AUDIT.md` is authoritative.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart

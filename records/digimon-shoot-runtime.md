@@ -415,7 +415,7 @@ source `9908` call sites reach a resident `BX LR` boundary at `0x085C0A00`;
 no pointer outside the ownership window reaches any external graph entry.
 Independent report SHA-256 is
 `504A375A5A4F98A6F92975D06044FC46791481915E3A7FF528FA21ECF38353EE`.
-Two clean 107-file output trees match completely. Current static v46 SHA-256 is
+Two clean 107-file output trees match completely. Historical static v46 SHA-256 is
 `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
 No emulator, monitor-visible window, or supplied save was used.
 
@@ -425,7 +425,7 @@ four times without arguments and masks the fourth result by seven, matching
 the WSC call/return role. This proves a usable native role, not identical
 cross-platform random sequences.
 
-No GBA menu hook, dedicated `7168` translation, external caller for the
+No GBA menu hook, complete dedicated `7168` translation, normal-play caller for the
 resident auxiliary constructor/upper-state graph, broader presentation branch,
 rules, reward, win/loss, or exit hook is claimed yet. The transition-state and
 fighter-spawn fallbacks are explicit release gates. Ver. 1.5 has no ordinary
@@ -433,11 +433,78 @@ fighter-spawn fallbacks are explicit release gates. Ver. 1.5 has no ordinary
 only bounds an otherwise invalid table access until the dedicated initializer
 bypass is ported.
 
-The next implementation unit must translate the `4090:7168` initializer and
-bind its active/rules/auxiliary allocations to the already resident graph and
+The next implementation unit must finish the `4090:7168` initializer and
+bind its preparation and remaining tail to the resident graph and
 verified P1/P0/P2 resources. The same guarded connection must replace the
 `9908` boundary with the real rules controller and parent-`9083` assignment
 before enabling the menu route. Installing controller `9908` alone would
 remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.
+
+## v47 consumer-driven constructor correction and player binding
+
+The v45/v46 hashes above remain historical, reproducible intermediates; their
+earlier checks did **not** prove constructor argument roles or player identity.
+Inspection of the native consumer `0x080127E4` found two P1/P2 inversions: the
+resident child and auxiliary constructors passed the palette as the animation
+command container. Its 16-byte prologue means entry-SP `+48/+36/+24` are stored
+at presentation `+44/+48/+4C`, respectively P1/P0/P2. The retail child call at
+`0x08372868` independently supplies `0x08350248/0x083505E8/0x08352240` in exactly
+these roles. The existing commercial resource-conversion oracle establishes
+those resource types. Unchanged literal inventories alone missed the error.
+
+The auxiliary links also reversed the source's player identities. Source
+`71D1/71D9` reads `ES:065E` as active and `ES:065C` as other; `730F..731B`
+writes them to source `+1C/+14`, and `7388..7394` establishes the active player's
+back-links. The commercial source setup at raw `0x394897` and GBA setup at
+`0x0836FD0C` prove active slot `0x030048A0`, other slot `0x0300489C`, HP
+`+50 -> +64`, thresholds `+54/+56 -> +68/+6A`, and difficulty byte at
+`0x03002310 + 0xF`.
+
+`tools/build_shoot_player_binding.py` applies six exact dependent word writes
+over v46: four PC-relative resource loads and two player-slot literals. It does
+not swap shared resource literals, so the auxiliary direct P2 loader remains
+correct. The literal `0x4000/0x1800` constructor parameters are retained, as
+the retail child constructor uses exactly those values too.
+
+The same layer installs a 420-byte phase at `0x085C1000` (384 bytes / 96 ARM
+instructions plus 36 literal bytes). It implements source `4090:71D1..7394`:
+active-player flags, fifteen-character HP lookup and difficulty adjustment,
+half/quarter HP thresholds, cleared positions/movement fields, bounds,
+callback `7792`, active P1/P0/P2 construction and palette load, auxiliary
+reconfiguration, and both active-player links. The thirty-byte HP table at
+`0x085C1400` is extracted directly from source `7554..7572`.
+
+The eight-byte entry `0x085C1300` creates the exact old constructor's stack
+frame and branches to its post-allocation body `0x085BC244`. The old return
+restores the matching frame. This reuses the already existing auxiliary object
+instead of allocating a second one. The new phase preserves `r0..r12/LR` and
+requires all three object globals to be valid and the other character ID in
+`0..14`; the future outer initializer must establish this contract. Source
+`4090:36C0` is a bounded stage-manager setup, not the previously hypothesized
+fighter allocator. Its exact range is raw `0x743FC0..0x7440C7`, SHA-256
+`A0074B6C754439F96D0DD04BDFF59D0A8FBA4D23F6FE698B0819934BBA5BD2D6`.
+No claim is made yet about the complete upstream object's lifetime during the
+future menu transition.
+
+`tools/verify_shoot_player_binding.py` reads actual pushed arguments and the
+native consumer's stores independently of the builder. It reproduces all
+three v46 defects without consulting a failed whole-file hash and rejects
+each of the six individually reverted correction words. It also checks the
+HP branches/fields/table, P2 direct loads, callback, stack matching, full code
+boundaries, and all 459 changed bytes within nine declared writes. The builder
+round-trips all 98 generated instructions through Keystone/Capstone after
+placement, keeping literals separate. Independent report SHA-256:
+`8427FBAD3FDD00EB15CCDF69D55BD39E0341E21629B86CD2B143AFFCC07F9930`.
+
+Internal v47 SHA-256:
+`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
+Two clean main builds (`build/repro-v47-a` and `build/repro-v47-b`) produce
+110 files each with identical relative paths and SHA-256 values. The build
+manifest is `223B3241826CC524218CED5C927379098E278945B8DB354C67F36444935068D2`.
+Its player phase now assigns upper entry `7792` internally, but the new phase
+itself has no external caller. The outer `7168` preparation, tail from `7394`,
+controller `9908/9A1B`, and menu route remain unimplemented. The boundary stub
+is unchanged. This is a static correction, not a runtime or completion claim;
+no emulator, monitor-visible window, or supplied save was used.

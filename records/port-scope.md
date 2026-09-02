@@ -8,6 +8,21 @@ runtime evidence prove that the retail GBA consumer reaches it.  The supplied
 WonderSwan SRAM is registered for the final comparison gate and is not an
 implementation input.
 
+Current-candidate correction (v47, 2026-09-02): the historical v39/v45
+constructor checks missed two reversed P1/P2 argument lists and one reversed
+active/other link pair. Those are now corrected by six dependent word writes
+checked against the native consumer. The resident `71D1..7394` player-binding
+phase, source fifteen-entry HP table, and allocation-free auxiliary reuse
+entry are installed. The phase assigns upper entry `7792`, but remains
+unreachable from normal play. Its valid-existing-object contract, the outer
+`7168` preparation/tail, controller, menu and all final-QA gates remain open.
+These facts supersede the older constructor/entry claims in the chronological
+layer descriptions below; no content row earns runtime completion from them.
+Current SHA-256:
+`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
+See `PORT_AUDIT.md` and `records/digimon-shoot-runtime.md` for the consumer
+proof, negative checks and exact remaining milestone.
+
 ## Completion population
 
 | Population | Ver. 1.5 addition | Current state | Required completion evidence |

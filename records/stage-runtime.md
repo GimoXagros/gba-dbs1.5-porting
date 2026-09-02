@@ -95,6 +95,16 @@ report SHA-256 is
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`;
 the report installs no GBA code or data.
 
+The current v47 composite additionally corrects P1/P2 stack argument inversions
+in the resident child and auxiliary constructors and the auxiliary active/other
+player-link inversion. Source `71D1..7394` is installed as a resident
+player/auxiliary reconfiguration phase at `0x085C1000`; it assigns `7792`
+internally but has no external caller. Its auxiliary entry bypasses allocation
+and requires an existing valid object. Finish the outer preparation and tail
+from `7394` together with the controller before replacing the stage-11 spawn
+fallback or enabling menu entry. Consumer-level evidence and the six negative
+regression checks are recorded in `records/digimon-shoot-runtime.md`.
+
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard
 state machine are translated statically from the confirmed WSC routines. Its

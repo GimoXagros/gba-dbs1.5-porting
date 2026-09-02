@@ -78,8 +78,14 @@ native source port nor an emulator-assisted port.
 - Resident v46 upper-state population covering all 26 source callbacks and
   2,320 source code bytes, including v45's idle member. It adds 25 ARM callbacks,
   the fourth P2 record, seven-row intro palette, eight movement targets, native
-  helper calls, and internal transitions. All three external entries remain
-  uncalled; both `9908` calls terminate at an explicit unimplemented boundary.
+  helper calls, and internal transitions. The v47 player phase now assigns
+  `7792` internally; the phase itself remains uncalled from normal play and
+  both `9908` calls terminate at an explicit unimplemented boundary.
+- v47 corrects two P1/P2 constructor argument inversions and the auxiliary
+  active/other player-link inversion. It implements source `71D1..7394` as a
+  resident active-player/auxiliary reconfiguration phase, including the
+  fifteen-character HP table and an allocation-free auxiliary reuse entry.
+  These are consumer-checked static corrections, not gameplay evidence.
 - Opening modulo-5 dispatcher plus the added state-3/state-4 case setup,
   callbacks, converted motion/event tables, four added linear callbacks,
   selector-3→13 predecessor hook, and sequential auxiliary slot-3 reuse.
@@ -132,7 +138,7 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The current static candidate was rebuilt in fifteen guarded layers into two
+The current static candidate was rebuilt in sixteen guarded layers into two
 ignored clean output directories:
 
 | Layer | SHA-256 |
@@ -151,7 +157,8 @@ ignored clean output directories:
 | Ver. 1.5-only D2 native sound reconstruction / static intermediate v43 | `7BB890FEC50BBAB796B5F94FE7761EAE9C4A284BB8E3CC9FA75A12FD20FB2264` |
 | CE source-stereo correction / static intermediate v44 | `000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB` |
 | Resident Shoot auxiliary-object binding / static intermediate v45 | `C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4` |
-| Resident Shoot upper-state graph / current static composite v46 | `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC` |
+| Resident Shoot upper-state graph / static intermediate v46 | `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC` |
+| Shoot constructor correction and player binding / current static composite v47 | `ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -162,7 +169,7 @@ The clean-build gap is now closed for the current candidate.
 WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 and opening-P1
 conversion corpora, all fourteen consumed character/evolution/VS/boss blobs,
 the opening P0 blob, all twelve consumed stage blobs, the three Shoot child
-resources, the initializer P1/P0/P2 resource set, and all fifteen ROM layers.
+resources, the initializer P1/P0/P2 resource set, and all sixteen ROM layers.
 Every source, intermediate, asset, and layer is checked against its expected
 SHA-256.
 
@@ -174,16 +181,17 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories each regenerated exact v46
-SHA `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
-All 107 files in each output tree match by relative path and SHA-256; the
+Two new runs in separate empty output directories `build/repro-v47-a` and
+`build/repro-v47-b` each regenerated exact v47 SHA
+`ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0`.
+All 110 files in each output tree match by relative path and SHA-256; the
 identical build-manifest SHA-256 is
-`F2778E2EF51FEA847AEC05832EBF6C4625C9EE885BA79F156D9EF9DA0BF51DCF`.
+`223B3241826CC524218CED5C927379098E278945B8DB354C67F36444935068D2`.
 The preceding four layers still reproduce exact v32 SHA
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`.
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
-the v46 build checks.
+the v47 build checks.
 
 `tools/analyze_opening_linear_integration.py` independently compares v34 with
 v35. It confines all 2,199 changed bytes to three predecessor hooks and eleven
@@ -391,6 +399,34 @@ Verification report SHA-256 is
 This is resident-code/static evidence only; initializer/menu reachability,
 controller rules, runtime behavior, audible parity, and save QA remain open.
 
+v47 corrects three faults that the earlier constructor verifiers missed:
+P1/P2 arguments were reversed in both the child and auxiliary constructors,
+and the auxiliary primary/secondary player identities were reversed. The
+native constructor consumer at `0x080127E4` proves entry-SP `+48/+36/+24`
+correspond to P1/P0/P2. The source `71D1..7394` and commercial player setup
+prove active slot `0x030048A0` and other slot `0x0300489C`. The six dependent
+word changes preserve all historical build layers and leave shared palette
+literals intact. This supersedes the earlier claim that v45's link/argument
+semantics had been verified; hashes and literal lists did not establish them.
+
+The resident v47 phase at `0x085C1000` supplies active flags, HP/difficulty,
+thresholds, motion reset, bounds, presentation/P2, callback `7792`, auxiliary
+reconfiguration and active links. The eight-byte entry `0x085C1300` bypasses
+the existing constructor's allocator and reuses its body at `0x085BC244`.
+It requires valid existing active/other/auxiliary objects; upstream lifetime
+and the outer initializer remain open. The source `36C0` setup does not itself
+allocate fighters, correcting an earlier working hypothesis.
+
+`tools/verify_shoot_player_binding.py` checks the native consumer and actual
+stack argument order, reproduces the three old defects, rejects all six
+individual reversions, checks the HP/table/field and stack contracts, and
+confines 459 changed bytes to nine writes. All 98 newly generated instructions
+round-trip at their final addresses with literals excluded from code. Report
+SHA-256 is
+`8427FBAD3FDD00EB15CCDF69D55BD39E0341E21629B86CD2B143AFFCC07F9930`.
+No runtime evidence is added. Detailed source boundaries and remaining
+contracts are in `records/digimon-shoot-runtime.md` under the v47 heading.
+
 The commercial-lineage analyzer's earlier function-address mapping was
 correct, but its report accidentally hashed `0x371xx` slices while labeling
 the callbacks at `0x372xxx`. The ranges are corrected without changing the
@@ -490,8 +526,8 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v46 preserves the child/parent chains, converted initializer resources, native `0x4A`/`0x5B`/`0x5C` sounds, and ID-`0x343`/pool-5 auxiliary component. It installs the 26-callback/2,320-source-byte upper-state population, fourth P2 record, intro palette, movement targets, native helpers, and three `0x5C` requests. The graph has no external caller and both `9908` calls stop at an explicit boundary stub. The 6,096-byte/43-callback lower rules graph and three indirect tables are bounded but not fully implemented. The dedicated `7168` initializer/menu route, controller and remaining rules, rewards, win/loss, exit, conditional sweep, and audible behavior remain release gates; a standalone `9908` hook is insufficient |
-| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v46 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v47 retains the child/parent/upper-state graphs, resource layers and sounds. It corrects two P1/P2 constructor inversions and the auxiliary player-link inversion, and adds resident `71D1..7394` player binding with source HP data and allocation-free auxiliary reuse. The phase assigns `7792` internally but has no normal-play caller; both `9908` calls still stop at a boundary stub. The 6,096-byte/43-callback lower rules graph and three indirect tables are bounded but not fully implemented. Outer `7168` preparation/tail and existing-object lifetime, menu/controller, remaining rules, rewards, win/loss, exit, conditional sweep and audible behavior remain release gates |
+| Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v47 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
 | SFX | UNKNOWN | Not verified on exact v32 |
@@ -546,9 +582,9 @@ source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
 boundary, and event table in the v35 opening-linear intermediate retained by
-current v46. These are static
+current v47. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v46 runtime evidence was collected. See
+proof. No v47 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -591,16 +627,19 @@ not yet earned runtime credit under the recovery audit rules.
 ## Single next milestone
 
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v46 build preserves the complete static
+complete for exact v32. The clean v47 build preserves the complete static
 19-linear + 5-choice opening graph and installs the internally connected Shoot
 child generator/callback family over the v36 resource layer plus the bounded
 native `CE`/`D2` sound assets, the internally connected parent chain, and the
-resident native auxiliary component and full resident upper-state graph.
+resident native auxiliary component and full resident upper-state graph. It
+corrects constructor resource roles/player identities and adds the resident
+`71D1..7394` player-binding phase without an external caller.
 The next active implementation milestone returns to the largest known content
 gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. Corrected entry analysis proves
 `9908` is a helper, not the external entry. The next integration must translate
-Ver. 1.5 initializer `4090:7168`, bind the resident upper-state population and
-auxiliary constructor, and replace the `9908` boundary with the real rules
+the remaining Ver. 1.5 initializer `4090:7168` preparation and tail from `7394`,
+establish its existing-object lifetime contract, and replace the `9908`
+boundary with the real rules
 controller and parent-`9083` assignment before enabling the menu transition.
 The three native `0x5C` requests are already connected internally. The bounded stage-7 fighter
 spawn copy is not a real stage-11 record: Ver. 1.5 bypasses that retail path
