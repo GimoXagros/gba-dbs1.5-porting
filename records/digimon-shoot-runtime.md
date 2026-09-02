@@ -211,8 +211,9 @@ the 185 independently bounded WSC 1.0 payloads `00..B8`; therefore no retail
 GBA sound ID is claimed for it. The upper state graph also issues sound `D2`,
 request type 2, at offsets `7976`, `79F9`, and `7CC6`. Its 32-byte command
 payload is likewise unique to Ver. 1.5 and has no exact WSC 1.0 match, but it
-is decoded and installed by the later v43 layer as native ID `0x5C`; the three
-request sites remain unconnected. The deterministic
+is decoded and installed by the later v43 layer as native ID `0x5C`; v46 now
+connects all three request sites inside the resident upper-state graph, although
+that graph remains externally unreachable. The deterministic
 expanded lineage report SHA-256 is
 `0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
 Two clean original-source builds reproduce internal v39 SHA-256
@@ -399,9 +400,24 @@ initializer rule resources. The layer changes 434 bytes, has no constructor
 caller, and therefore cannot affect retail flow before the upper graph is
 connected. Independent final-placement verification report SHA-256 is
 `BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228`.
-Current static v45 SHA-256 is
-`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
-No emulator or supplied save was used.
+v46 installs the remaining 25 members of the source's 26-callback upper-state
+population after v45's `88F6`. Its three source code ranges plus idle byte total 2,320
+reachable bytes and 24 callback edges. The native placements cover
+`0x085BC800..0x085C0D40`, including the independently converted fourth P2
+record, seven-row intro palette, eight-row movement target table, platform
+presentation/trigonometry/RNG/P2-loader bindings, and the `0x4A`/`0x5B`/`0x5C`
+sound-request population. Timing constants use the documented 75→60 Hz 4/5
+policy; source-cadence counters use a resident 1,1,1,2 phase.
+
+The layer changes exactly 4,144 bytes across 29 declared placements. Final
+disassembly verifies every native call and internal callback target. Both
+source `9908` call sites reach a resident `BX LR` boundary at `0x085C0A00`;
+no pointer outside the ownership window reaches any external graph entry.
+Independent report SHA-256 is
+`504A375A5A4F98A6F92975D06044FC46791481915E3A7FF528FA21ECF38353EE`.
+Two clean 107-file output trees match completely. Current static v46 SHA-256 is
+`034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
+No emulator, monitor-visible window, or supplied save was used.
 
 The same report binds WSC `4FFF:1CB5` to native GBA routine `0x08012600` as
 the platform random-number ABI. The guarded commercial GBA oracle calls it
@@ -409,20 +425,19 @@ four times without arguments and masks the fourth result by seven, matching
 the WSC call/return role. This proves a usable native role, not identical
 cross-platform random sequences.
 
-No GBA menu hook, dedicated `7168` translation or caller for the resident
-auxiliary-object constructor,
-upper states,
-broader presentation branch, rules, reward, win/loss, or exit hook is claimed
-yet. The transition-state and fighter-spawn fallbacks are explicit release
-gates. Ver. 1.5 has no ordinary 16-byte fighter-spawn record for stage 11; the
-current copied stage-7 record only bounds an otherwise invalid table access
-until the dedicated initializer bypass is ported.
+No GBA menu hook, dedicated `7168` translation, external caller for the
+resident auxiliary constructor/upper-state graph, broader presentation branch,
+rules, reward, win/loss, or exit hook is claimed yet. The transition-state and
+fighter-spawn fallbacks are explicit release gates. Ver. 1.5 has no ordinary
+16-byte fighter-spawn record for stage 11; the current copied stage-7 record
+only bounds an otherwise invalid table access until the dedicated initializer
+bypass is ported.
 
-The next implementation unit must translate and connect the `7792/88F6` and
-`7AB1/7D8D` upper state populations to the resident auxiliary component and
-verified P1/P0/P2 resources, then connect the menu route and `4090:7168`
-initializer together with native `0x5C` before
-installing `9908/9A1B` and its parent-`9083` assignment. Installing controller
-`9908` alone would remain unreachable.
+The next implementation unit must translate the `4090:7168` initializer and
+bind its active/rules/auxiliary allocations to the already resident graph and
+verified P1/P0/P2 resources. The same guarded connection must replace the
+`9908` boundary with the real rules controller and parent-`9083` assignment
+before enabling the menu route. Installing controller `9908` alone would
+remain unreachable.
 Installing isolated completion-bit writes would bypass the source mode and is
 not an acceptable completion path.

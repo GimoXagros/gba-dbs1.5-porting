@@ -1,6 +1,6 @@
 # Port status
 
-Snapshot date: 2026-09-01 (Asia/Seoul)
+Snapshot date: 2026-09-02 (Asia/Seoul)
 
 > **Recovery correction:** [`PORT_AUDIT.md`](PORT_AUDIT.md) is the
 > authoritative current status. The earlier 55-60% / 57% planning estimate is
@@ -11,7 +11,7 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v45 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v46 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -32,10 +32,13 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > commercial lineage now maps Ver. 1.5 auxiliary object `ES:071E` through WSC
 > 1.0 `ES:06A2` to native GBA slot `0x03004D3C`, allocation ID `0x343`, and
 > pool 5. Internal v45 installs a resident constructor and translated idle
-> callback using that slot and the verified rule resources; it is deliberately
-> uncalled until the `7168` initializer and upper states are installed. The
-> composite is reproducible at SHA-256
-> `C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
+> callback using that slot and the verified rule resources. Internal v46 adds
+> the full resident 26-callback/2,320-source-byte upper-state population, its
+> fourth P2 record, intro palette table, eight movement targets, native RNG
+> calls, and the three native `0x5C` requests. The graph remains deliberately
+> unreachable until the `7168` initializer/menu route and controller rules are
+> installed. The composite is reproducible at SHA-256
+> `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -52,7 +55,7 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v45. The parent and child families are internally connected,
+> save was used for v46. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA. A new deterministic
@@ -68,9 +71,10 @@ Snapshot date: 2026-09-01 (Asia/Seoul)
 > resource-only v42 layer and independently verified. The separate v45
 > auxiliary-object layer binds `ES:071E` to the exact commercial GBA
 > allocation/lifetime lineage, but no menu or upper-state caller reaches its
-> resident constructor. v43 resolves the separate `D2` asset dependency, while its three
-> upper-state request sites remain unconnected. v44 corrects CE stereo direction;
-> v45 installs the independently verified resident auxiliary component;
+> resident constructor. v43 resolves the separate `D2` asset dependency; v44
+> corrects CE stereo direction; v45 installs the independently verified resident
+> auxiliary component; v46 installs and internally connects the upper-state
+> graph and its three `0x5C` calls while leaving its external entries uncalled;
 > runtime-evidenced progress remains unchanged.
 
 This repository tracks an in-progress clean-room port of the complete
@@ -111,13 +115,20 @@ memory dump, screenshot, or emulator state.
   commercial ID-`0x343`/pool-5 allocator lineage, native slot `0x03004D3C`,
   player slots `0x0300489C/0x030048A0`, installed rule resources, and a native
   translation of idle callback `88F6`. It remains deliberately uncalled.
+- Resident v46 Shoot upper-state graph in `0x085BC800..0x085C0D40`. It covers
+  all 26 source callback entries (including v45's `88F6`), 2,320 source code
+  bytes, 24 source callback edges, the fourth P2 record, seven-row intro
+  palette, eight target rows, native presentation/trigonometry/RNG helpers,
+  and the `0x4A`/`0x5B`/`0x5C` request population. The two calls corresponding
+  to source helper `9908` stop at an unimplemented `BX LR` boundary; no pointer
+  outside the owned window reaches the graph.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v45, identified only by SHA-256
-`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`.
+The current static internal composite is v46, identified only by SHA-256
+`034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -138,13 +149,13 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling fourteen guarded
-layers. Two builds in separate empty output directories both produced v45
+binary assets from the three original ROMs before assembling fifteen guarded
+layers. Two builds in separate empty output directories both produced v46
 SHA-256
-`C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4`;
-all 103 files in each output tree matched by relative path and SHA-256. The
+`034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`;
+all 107 files in each output tree matched by relative path and SHA-256. The
 build-manifest SHA-256 is
-`0E69C1EE4128C8EAA09DAE853DE09B62953975A96C23AF298582C90854422623`.
+`F2778E2EF51FEA847AEC05832EBF6C4625C9EE885BA79F156D9EF9DA0BF51DCF`.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
@@ -256,6 +267,18 @@ It also binds WSC import `4FFF:1CB5` to the platform-native GBA random routine
 `0x08012600` by its argument/return use and a guarded commercial call-site
 oracle; identical PRNG sequences are not claimed. Therefore a standalone
 `9908/9A1B` hook would remain unreachable and is not an acceptable port.
+v46 translates that bounded population into resident ARM7TDMI code without
+making it externally reachable. The layer writes 4,144 changed bytes across
+29 declared placements in `0x5BC800..0x5C0D40`; it also independently converts
+the fourth P2 record, all seven 16-color intro palette rows, and the eight
+movement-target rows. Final-placement disassembly verifies every native helper
+and internal callback edge, including three native `0x5C` requests and exactly
+two calls to a resident `BX LR` boundary for the still-unimplemented `9908`
+rules helper. No aligned pointer outside the ownership window reaches the new
+graph. Independent verification report SHA-256 is
+`504A375A5A4F98A6F92975D06044FC46791481915E3A7FF528FA21ECF38353EE`.
+This is static resident-code evidence only; the initializer/menu route,
+controller rules, runtime, audible behavior, and save QA remain excluded.
 `tools/analyze_shoot_initializer_resources.py` now resolves the complete
 initializer resource call population and reproduces report SHA-256
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`.
@@ -265,11 +288,12 @@ than adjacent A data. The expanded audio-lineage report additionally
 proves that three upper-state requests for WSC sound `D2` use a 32-byte
 Ver. 1.5-only payload with no WSC 1.0 match; its new report SHA-256 is
 `0CD28C17EB6DC3F1FE88F0FB755910434EC0B05DD06AD2F164A078BBEE60997E`.
-The separate v43 layer now reconstructs that payload as native ID `0x5C`;
-the `7168` initializer, its resources/menu route, the upper states, and
-`9908/9A1B` must be integrated as one reachable layer. Runtime reachability
-and audible playback are not claimed. Rules, reward, win/loss, and exit remain
-release gates, and the runtime-evidenced percentage is unchanged.
+The separate v43 layer reconstructs that payload as native ID `0x5C`; v46 now
+contains all three request sites inside the resident upper-state graph. The
+`7168` initializer/menu route and `9908/9A1B` rules must still be integrated
+before the graph becomes reachable. Runtime reachability and audible playback
+are not claimed. Rules, reward, win/loss, and exit remain release gates, and
+the runtime-evidenced percentage is unchanged.
 
 The direct-P1 commercial oracle now covers twelve WSC 1.0→USA GBA pairs,
 92 commands, and 283 payload items. It proves every Shoot-lineage payload
@@ -307,8 +331,9 @@ verification checks exact diff containment, every pitch and duration, 80 total
 ticks, right pan, voice `0x1F`, M4A pitch MOD, and the two new pointer sites;
 report SHA-256 is
 `A636C763D0AF93DA8E47D9BC67DDBD8F1895D1A4BF95C1AE0029CF2A3C79B473`.
-The three upper-state requests are not connected yet, and conditional WSC
-channel-3 sweep/audible parity remain final non-displaying QA boundaries.
+The three upper-state requests are now connected inside resident v46, but the
+upper graph itself has no external caller. Conditional WSC channel-3 sweep and
+audible parity remain final non-displaying QA boundaries.
 
 The command-interpreter correction also proves that CE `A1 72` is hardware
 sweep control, not a note length. CE still ends after its source-proved
@@ -338,6 +363,16 @@ preservation, commercial signatures, and that the constructor has no caller;
 report SHA-256 is
 `BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228`.
 No emulator, supplied save, or runtime claim is involved.
+
+v46 adds the resident upper-state population after v45. It preserves the
+verified auxiliary constructor and all earlier resource/sound layers, hashes
+the three exact WSC code ranges plus idle byte totaling 2,320 reachable bytes, and installs
+25 new ARM callbacks plus the already translated `88F6` member from v45.
+Its two `9908` call sites terminate at a deliberately unreachable boundary
+stub so that a later layer must replace the controller and connect `7168`
+atomically. Two clean builds produced 107 identical files and exact candidate
+SHA-256 `034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC`.
+No monitor-visible window, emulator, or supplied save was used.
 
 v26 also completes the four confirmed stage-9/10 renderer-flag consumers.
 The commercial player constructor at GBA `0x08353428` is the exact counterpart
@@ -369,7 +404,7 @@ cold-boot root. The commercial GBA and WSC 1.0 graphs have 15 linear callbacks
 plus three choices; WSC 1.5 has 19 plus five. Instruction-shape alignment and
 object-selector extraction identify four added linear callbacks and two added
 choices. The new conditions are a modulo-5 cycle whose states 3 and 4 select
-`[13,14]` and `[12,11]`. Internal v35, retained as v45's opening-linear
+`[13,14]` and `[12,11]`. Internal v35, retained as v46's opening-linear
 intermediate, translates those two cases/callbacks and the dispatcher
 extension into GBA ARM code while preserving retail states
 0..2. Its dedicated 15-record presentation view preserves commercial
@@ -393,7 +428,7 @@ reuse of unused GBA opening slot 3 for records 50 and 49 without overwriting
 retained commercial auxiliary objects. An independent verifier confines all
 2,199 changed bytes to the three hooks and declared expansion ranges,
 disassembles the four callback call graphs, and checks the exact converted
-seven-entry event table. No v45 runtime evidence exists, so the static integration
+seven-entry event table. No v46 runtime evidence exists, so the static integration
 does not increase playable/release progress.
 
 Detailed scope and evidence requirements live in

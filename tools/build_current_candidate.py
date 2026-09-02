@@ -64,6 +64,12 @@ SHOOT_AUX_OBJECT_LIFETIME_SHA256 = (
 SHOOT_AUX_OBJECT_VERIFICATION_SHA256 = (
     "BC3B8E04C681C6DB7EF3A3A9A1BDF02B320E7478590877E0C5513C3327610228"
 )
+SHOOT_UPPER_STATE_GRAPH_SHA256 = (
+    "55B6AD9E1FA162C67AE6B14A125F6D02E257506F80FB16786D54B678B49C75A0"
+)
+SHOOT_UPPER_STATE_VERIFICATION_SHA256 = (
+    "504A375A5A4F98A6F92975D06044FC46791481915E3A7FF528FA21ECF38353EE"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -129,7 +135,8 @@ EXPECTED_LAYERS = {
     "shoot-initializer-resources.gba": "AC54D27E33F1C7A8072761B6F4CBAD7AAD89C4EC6184568020B0089037D7218E",
     "shoot-d2.gba": "7BB890FEC50BBAB796B5F94FE7761EAE9C4A284BB8E3CC9FA75A12FD20FB2264",
     "shoot-ce-stereo.gba": "000683972B02F1E58369517F6AC32B270854ED2BBA4FC292BCA54E9E9700FBEB",
-    "current-candidate.gba": "C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4",
+    "shoot-aux-object.gba": "C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4",
+    "current-candidate.gba": "034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC",
 }
 
 
@@ -244,6 +251,19 @@ def main() -> int:
         SHOOT_AUX_OBJECT_LIFETIME_SHA256,
         "Shoot auxiliary-object lifetime and native lineage",
     )
+    shoot_upper_state_graph = intermediate / "shoot-upper-state-graph.json"
+    run(
+        "analyze_shoot_upper_state_graph.py",
+        args.wsc15,
+        args.gba,
+        "--output",
+        shoot_upper_state_graph,
+    )
+    require_hash(
+        shoot_upper_state_graph,
+        SHOOT_UPPER_STATE_GRAPH_SHA256,
+        "Shoot upper-state callback graph",
+    )
     direct_p1_oracle = intermediate / "direct-p1-commercial-oracle.json"
     run(
         "analyze_direct_p1_commercial_oracle.py",
@@ -346,6 +366,7 @@ def main() -> int:
     shoot_initializer_resources_layer = output / "shoot-initializer-resources.gba"
     shoot_d2 = output / "shoot-d2.gba"
     shoot_ce_stereo = output / "shoot-ce-stereo.gba"
+    shoot_aux_object = output / "shoot-aux-object.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -432,6 +453,15 @@ def main() -> int:
         shoot_ce_stereo,
         args.gba,
         args.wsc10,
+        args.wsc15,
+        shoot_aux_object,
+        "--manifest",
+        output / "shoot-aux-object.json",
+    )
+    run(
+        "build_shoot_upper_state_integration.py",
+        shoot_aux_object,
+        args.gba,
         args.wsc15,
         candidate,
         "--manifest",
@@ -562,7 +592,7 @@ def main() -> int:
     run(
         "verify_shoot_aux_object_integration.py",
         shoot_ce_stereo,
-        candidate,
+        shoot_aux_object,
         args.gba,
         args.wsc10,
         args.wsc15,
@@ -573,6 +603,21 @@ def main() -> int:
         shoot_aux_object_verification,
         SHOOT_AUX_OBJECT_VERIFICATION_SHA256,
         "Shoot auxiliary-object integration independent verification",
+    )
+    shoot_upper_state_verification = intermediate / "shoot-upper-state-verification.json"
+    run(
+        "verify_shoot_upper_state_integration.py",
+        shoot_aux_object,
+        candidate,
+        args.gba,
+        args.wsc15,
+        "--output",
+        shoot_upper_state_verification,
+    )
+    require_hash(
+        shoot_upper_state_verification,
+        SHOOT_UPPER_STATE_VERIFICATION_SHA256,
+        "Shoot upper-state integration independent verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -605,8 +650,12 @@ def main() -> int:
             "the final one-byte CE layer also corrects its source-proved right-only pan; "
             "the resident but intentionally uncalled auxiliary-object constructor binds "
             "WSC Ver. 1.5 ES:071E through the commercial 1.0 ID-0x343/pool-5 lineage "
-            "to native GBA slot 0x03004D3C and installed Shoot rule resources; "
-            "external controller 9908/9A1B entry, audible timbre parity, "
+            "to native GBA slot 0x03004D3C and installed Shoot rule resources; the "
+            "resident 26-entry upper-state population translates 2320 source code bytes, "
+            "its fourth P2 record, intro palette table, target table, native RNG role, "
+            "and internal state transitions, while deliberately terminating both 9908 "
+            "calls at an unimplemented boundary and remaining externally unreachable; "
+            "initializer/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
@@ -635,6 +684,8 @@ def main() -> int:
             "shoot_parent_verification_sha256": SHOOT_PARENT_VERIFICATION_SHA256,
             "shoot_aux_object_lifetime_sha256": SHOOT_AUX_OBJECT_LIFETIME_SHA256,
             "shoot_aux_object_verification_sha256": SHOOT_AUX_OBJECT_VERIFICATION_SHA256,
+            "shoot_upper_state_graph_sha256": SHOOT_UPPER_STATE_GRAPH_SHA256,
+            "shoot_upper_state_verification_sha256": SHOOT_UPPER_STATE_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

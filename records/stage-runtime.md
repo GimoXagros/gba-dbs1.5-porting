@@ -81,12 +81,16 @@ Static initializer-resource analysis now resolves its complete direct call
 population to five P0, two P1, and four P2 sources. P0/P2 conversion is
 bounded, and v42 installs the two verified P1 containers together with all
 non-reused initializer P0/P2 assets. v43 installs Ver. 1.5-only sound `D2` as
-native ID `0x5C`, but its upper-state request sites are not connected. The
+native ID `0x5C`; v46 connects all three request sites inside the resident
+upper-state graph. The
 auxiliary object `ES:071E` is now proved as the relocated WSC 1.0 `ES:06A2`
 lineage and maps to native GBA slot `0x03004D3C`, allocation ID `0x343`, pool
-5. v45 installs its resident native constructor and idle callback, deliberately
-without a menu/upper-state caller. The remaining gate is connecting that
-component through `7168` and the upper-state populations. Resource-boundary
+5. v45 installs its resident native constructor and idle callback. v46 adds the
+remaining 25 callbacks, independently converted P2/palette/target data, native
+helper calls, and internal transitions, but deliberately leaves all external
+entries uncalled and both `9908` calls at a `BX LR` boundary. The remaining
+gate is replacing that boundary with the controller/rules implementation and
+connecting it together with the component through `7168`. Resource-boundary
 report SHA-256 is
 `4367C6588F904C282DD857E37CC6F67AC9B8E5DAB8FA8D222239655D7522C1C5`;
 the report installs no GBA code or data.
