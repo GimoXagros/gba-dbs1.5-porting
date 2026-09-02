@@ -110,6 +110,11 @@ pointers and paired position resets. It also corrects the three pre-existing
 added-character physics pointers that were one record early. The phase is
 still uncalled; `7394..73F0`, `74A2..7534`, outer preparation, shared palette
 ownership and controller/menu connection remain open. No runtime QA was run.
+v50 subsequently resolves the resource segments `7394..73A9` and
+`74A2..74DA`: OBJ slots 5/6, native HUD tile `3FC` from exact commercial
+pixels, and scroll reset. Both remain resident without callers. The remaining
+tail is `73A9..73F0` plus `74DA..7534`; these portions and the outer entry,
+palette lifecycle, rules and menu must still be integrated together.
 
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard

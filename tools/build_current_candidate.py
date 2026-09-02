@@ -79,6 +79,9 @@ SHOOT_FAR_TILE_VERIFICATION_SHA256 = (
 SHOOT_OTHER_PLAYER_VERIFICATION_SHA256 = (
     "6F0B0191F2CC84961908C512F1CEA016FA72EBD9CE5E6A4876940630915B3F20"
 )
+SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256 = (
+    "56A41B0B88EA9BD49402F986A0CAEA63CF24C1156D019B4B99BCEB739CAFB87C"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -149,7 +152,8 @@ EXPECTED_LAYERS = {
     "shoot-upper-state.gba": "034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC",
     "shoot-player-binding.gba": "ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0",
     "shoot-far-tiles.gba": "11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E",
-    "current-candidate.gba": "93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E",
+    "shoot-other-player.gba": "93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E",
+    "current-candidate.gba": "C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1",
 }
 
 
@@ -386,6 +390,7 @@ def main() -> int:
     shoot_upper_state = output / "shoot-upper-state.gba"
     shoot_player_binding = output / "shoot-player-binding.gba"
     shoot_far_tiles = output / "shoot-far-tiles.gba"
+    shoot_other_player = output / "shoot-other-player.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -509,6 +514,15 @@ def main() -> int:
     run(
         "build_shoot_other_player_binding.py",
         shoot_far_tiles,
+        args.gba,
+        args.wsc15,
+        shoot_other_player,
+        "--manifest",
+        output / "shoot-other-player.json",
+    )
+    run(
+        "build_shoot_tail_resources.py",
+        shoot_other_player,
         args.gba,
         args.wsc15,
         candidate,
@@ -706,7 +720,7 @@ def main() -> int:
     run(
         "verify_shoot_other_player_binding.py",
         shoot_far_tiles,
-        candidate,
+        shoot_other_player,
         args.gba,
         args.wsc15,
         "--output",
@@ -716,6 +730,21 @@ def main() -> int:
         shoot_other_player_verification,
         SHOOT_OTHER_PLAYER_VERIFICATION_SHA256,
         "Shoot other-player/native-physics consumer verification",
+    )
+    shoot_tail_resource_verification = intermediate / "shoot-tail-resource-verification.json"
+    run(
+        "verify_shoot_tail_resources.py",
+        shoot_other_player,
+        candidate,
+        args.gba,
+        args.wsc15,
+        "--output",
+        shoot_tail_resource_verification,
+    )
+    require_hash(
+        shoot_tail_resource_verification,
+        SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256,
+        "Shoot tail resource/actual HUD and OBJ palette consumer verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -764,6 +793,9 @@ def main() -> int:
             "and installs resident source 73F0..74A2 other-player restoration using native "
             "character resources, the existing OBJ palette mirror and 32-bit physics pointers; "
             "this second player phase also remains uncalled until complete initialization; "
+            "two further resident resource segments implement source 7394..73A9 OBJ slot-5 "
+            "palette loading and 74A2..74DA native HUD tile-3FC/palette-6 loading plus scroll reset; "
+            "they reuse exact commercial HUD pixels and have no external caller; "
             "outer initializer preparation/tail/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -798,6 +830,7 @@ def main() -> int:
             "shoot_player_binding_verification_sha256": SHOOT_PLAYER_BINDING_VERIFICATION_SHA256,
             "shoot_far_tile_verification_sha256": SHOOT_FAR_TILE_VERIFICATION_SHA256,
             "shoot_other_player_verification_sha256": SHOOT_OTHER_PLAYER_VERIFICATION_SHA256,
+            "shoot_tail_resource_verification_sha256": SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

@@ -23,14 +23,21 @@ Historical v47 SHA-256:
 See `PORT_AUDIT.md` and `records/digimon-shoot-runtime.md` for the consumer
 proof, negative checks and exact remaining milestone.
 
-Current v49 additionally repairs three added-character physics pointers that
+The v49 intermediate additionally repairs three added-character physics pointers that
 were one `0x78`-byte record early, and installs the uncalled other-player
 phase `73F0..74A2`. The final physics blob matches the corrected converter;
 all added records and native pointer consumers are checked independently.
 This supersedes prior assumptions that asset-manifest agreement proved
-correct fighter physics. Current SHA-256:
+correct fighter physics. Historical v49 SHA-256:
 `93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E`.
 No normal-play, palette-transition ownership, or final-QA gate is closed.
+
+Current v50 adds resident `7394..73A9` and `74A2..74DA` resource segments,
+using the actual GBA HUD tile-`3FC`/palette-6 consumer and the installed OBJ
+slot-5 palette. Source `91` tiles exactly match the commercial GBA payload.
+Both entries remain uncalled; other P0 preloads, global mapping, palette
+backup/transition and controller/menu remain open. Current SHA-256:
+`C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1`.
 
 ## Completion population
 
@@ -44,7 +51,7 @@ No normal-play, palette-transition ownership, or final-QA gate is closed.
 | Final boss | ZeedMillenniummon alternate/second final-boss path | Statically integrated | Reachable Normal-or-harder/no-continue two-phase route, converted battle graphics, sentinel relocation; final runtime regression deferred |
 | Minigame | Digimon Shoot | Palette, tiles, maps, descriptors, initializer slot ID 11, native movement pattern/configuration/two presentation callbacks, threshold scan, exact converted three-rate palette animation, stage-11 main-loop route, dedicated core loop, scroll-palette state machine, native timer palette callback, normal display callback, and scanline threshold callback integrated statically in v30. The rules unit is separately bounded to 6,096 bytes, 43 callbacks, three resolved indirect tables, and a proved three-callback commercial GBA lineage. Internal v36 installs the oracle-checked P1/P0/P2 resources. Internal v39 adds an independently verified ARM7TDMI translation of generator `9229`, the internally connected `94C1`→`9570`→`9617` child chain, and the payload-proved WSC 1.5 `A7`→WSC 1.0 `A5`→GBA `0x4A` native sound request. Internal v40 preserves the unique `CE` payload's pitch, 60-tick timing, and four-step volume decay in a bounded native GBA ID `0x5B` reconstruction. Internal v41 adds the resident `9083`→`90F3`→`912A`→`91AB`→`91EF` parent chain, connecting `0x5B`, `0x4A`, and child generator `9229` internally. v42 installs all verified `7168` initializer P1/P0/P2 resource bytes in a pointer-unclaimed ownership window. v43 appends the Ver. 1.5-only `D2` payload as native ID `0x5C`, preserving nine pitches, 80 ticks, right-only pan, a commercial voice-`0x1F` oracle, and native pitch MOD; v44 corrects CE's source-proved right-only pan in one byte. Corrected entry analysis bounds the real menu→`7168` initializer→26-callback/2,320-byte upper-state→`9908` route and proves native GBA RNG `0x08012600`. v45 proves `ES:071E` is the WSC 1.0 `ES:06A2`→GBA `0x03004D3C` ID-`0x343`/pool-5 lineage and installs its resident native constructor plus `88F6` idle callback. v46 installs the remaining 25 upper-state callbacks, fourth P2 record, intro palette, movement targets, native helper calls, and the three `0x5C` request sites inside an externally unreachable resident graph. Its two `9908` calls terminate at an explicit boundary stub and independent verification confines 4,144 changed bytes to 29 placements | Replace the `9908` boundary with the real controller/rules graph and connect it atomically with the `7168` initializer/menu entry and resident auxiliary component; then complete transition state, reward route, win/loss, and exit transitions; verify conditional sweep and audible playback only during final non-displaying QA |
 | Progression | Tag/reward/rating and related collection state | Impmon and Extra Guilmon pending/permanent unlock semantics integrated statically in current composite v32 | Digimon Shoot completion producer, remaining tag/reward/rating population, new-save and progressed-save persistence, collection display |
-| Opening/presentation | Extended opening with added roster/evolution duels | Cold-boot roots and callback graphs confirmed: GBA/WSC 1.0 are 15 linear + 3 choices; WSC 1.5 is 19 + 5. Internal v35 statically integrates the modulo-5 dispatcher, choice callbacks, rebuilt selector records 11..14, four added linear callbacks, selector-3→13 predecessor change, and sequential slot-3 construction/update/skip handling for resident records 50/49. Current v49 preserves exact v35 as its opening-linear intermediate; an independent verifier checks the changed-byte boundary and ARM call graph | Preserve the full graph through remaining content integration, then run non-displaying full-sequence, timing/visual/audio, and skip-transition proof on the final candidate |
+| Opening/presentation | Extended opening with added roster/evolution duels | Cold-boot roots and callback graphs confirmed: GBA/WSC 1.0 are 15 linear + 3 choices; WSC 1.5 is 19 + 5. Internal v35 statically integrates the modulo-5 dispatcher, choice callbacks, rebuilt selector records 11..14, four added linear callbacks, selector-3→13 predecessor change, and sequential slot-3 construction/update/skip handling for resident records 50/49. Current v50 preserves exact v35 as its opening-linear intermediate; an independent verifier checks the changed-byte boundary and ARM call graph | Preserve the full graph through remaining content integration, then run non-displaying full-sequence, timing/visual/audio, and skip-transition proof on the final candidate |
 
 ## Activation gates
 

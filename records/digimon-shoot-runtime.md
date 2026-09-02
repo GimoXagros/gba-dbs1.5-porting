@@ -678,3 +678,83 @@ Final layer manifest:
 `F6EDFA1E308FA7FD561E69CDD4300B91735C3522ECE85F00CAEC304543735DEF`.
 All three original ROM hashes remain unchanged. No emulator, visible window
 or supplied save was used. Runtime-evidenced progress remains at most 8%.
+
+## v50: tail resource consumers and resident HUD/OBJ binding
+
+The two resolved resource segments of `7168` now have native entries:
+
+| Source segment | Native resident entry | Effect |
+|---|---|---|
+| `7394..73A9` | `085C1700..085C173C` | Load source `3D7A90`, installed at `085DB740`, into OBJ slot 5 |
+| `74A2..74DA` | `085C1800..085C186C` | Reload four HUD tiles, load OBJ slot 6, clear `03004D40` scroll state |
+
+The late tile load must not retain the WSC tile number `91`. Source direct
+P0 `3D7D30` resolves to the 128-byte payload at `3D5DA0`; all four converted
+tiles are byte-identical to commercial GBA `080D2FD0..080D3050`, SHA-256
+`FED06ADACACA6083C841FD002EB50BFAAD16CD70BBDC5B7A7C476871B76C70C7`.
+Retail `080D161C..080D1724` copies that entire payload to `06017F80` using
+32 word pairs. Its literals are at `080D1770/1774`. The OAM producer at
+`08370148/14C` selects `67FC`, through literal `08370268`: tile `3FC`, OBJ
+palette 6. Tile `3FC * 32 + 06010000` equals the same `06017F80` destination.
+The existing Shoot main loop retains this native OAM selection. The new
+late phase therefore copies the exact existing commercial pixels to their
+actual consumer address; no duplicate graphics payload is added.
+
+The two P2 calls use `080132EC`. Its entry stack has
+`[slot,index,unused,unused,P2]`; the loader advances by `index * 34`, reads
+the source palette base, maps `(base - 8 + slot + 16) * 32` into GBA palette
+RAM, skips color zero, and writes exactly fifteen halfwords. The early call
+uses base 8 / slot 5 and writes `050002A2..050002C0`. The late call reuses
+commercial `080D3078` (source `3D6B16`), base 14 / slot 0, and writes
+`050002C2..050002E0`. Both preserve color zero. All sixteen source palette
+colors are checked independently by inverse conversion, while the actual
+loader's fifteen-color write extent is checked separately.
+
+The other two preload identities are no longer unexplained. Source P0
+`3D44E0` (tile base `6D`) appears in the later presentation constructor at
+`93E7..9415`, paired with P1 `3D23B0` and P2 `3D7AC0`. P0 `3D0CA0`
+(tile base `137`) appears at `888B..88BA`, paired with P1 `0DFEC0` and
+P2 `3D7A90`. Their constructor ranges have hashes
+`513B405B41459A9A13109ACADECFCB4F7E3156FC5A8E54C885416B7260D0A138`
+and `2C1580D4E6EBDF6A27F8C4E0AD854263E85781AB7CFBC92FE830F697A4903CA8`.
+This identifies concrete consumers to translate; it does **not** prove that
+their initial copies can be omitted or that their native lifecycle is ready.
+The existing `9229` child entry is a different source generator and is not
+credited with implementing the separate `93E7` construction.
+
+`build_shoot_tail_resources.py` adds only these two resident resource segments
+over exact v49. The total is 37 ARM instructions / 148 code bytes plus 20
+literal bytes; two Expected Writes change 160 bytes. All instructions pass
+the existing assemble/disassemble round trip. Both preserve `r0..r12/LR`,
+not condition flags. There are no external callers or allocations. The
+original `7394` and `74A2` ordering must be preserved by the future complete
+initializer; the entries must not be treated as one contiguous replacement.
+
+`verify_shoot_tail_resources.py` imports no builder. It checks both complete
+instruction populations, the original native P2 and HUD producer/OAM
+consumers, source pixel/palette inverses, pointer/slot/extent relationships,
+the whole-image diff and ten semantic negative cases before checking the
+output hash. The cases include wrong slots, tile destination/count/stride,
+P2 source/base, scroll address, stack cleanup and the native color-zero skip.
+Verifier SHA-256:
+`56A41B0B88EA9BD49402F986A0CAEA63CF24C1156D019B4B99BCEB739CAFB87C`.
+
+Remaining `7168` tail: `73A9..73D6` P0 preloads, `73D6..73F0` global-clear
+mapping, and `74DA..7534` palette backup/white preparation. The ES=`1000`
+versus ES=`0C00` ambiguity remains unresolved; no guessed native write is
+installed. Outer preparation, object/palette ownership, lower rules and
+controller/menu integration remain the same active milestone. These new
+resource entries alone neither complete initialization nor prove gameplay.
+
+Current internal v50 SHA-256:
+`C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1`.
+Two clean main builds, `build/repro-v50-a` and `build/repro-v50-b`, each
+produce 121 files with zero relative-path/hash differences. All nineteen ROM
+layers are reproduced from the three original ROMs. Main manifest:
+`5CDD5FB7595039958DB3B5D37D22168C3216A9CD69791234219E5E33C7F90EA5`.
+Final layer manifest:
+`CA392167BCD1430A295A56E084461E732DC0671B01CBDAF079709110EE93BE72`.
+The final image is 8 MiB with unchanged valid GBA header, entry and `6C`
+complement. Original input hashes are unchanged. No emulator, visible
+window or supplied save was used; runtime-evidenced progress remains at most
+8%. No BPS release or GitHub upload is claimed.
