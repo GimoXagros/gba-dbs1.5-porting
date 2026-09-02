@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Convert the WSC 1.5 character-physics records for GBA IDs 12 through 14."""
+"""Convert WSC 1.5 physics records with pointer-to-payload placement checks.
+
+The explicit legacy option exists only to reproduce the pinned pre-v49 build
+layers. Those layers require the final three-pointer repair before use.
+"""
 
 from __future__ import annotations
 
@@ -54,6 +58,8 @@ def main() -> int:
     parser.add_argument("wsc", type=pathlib.Path)
     parser.add_argument("output", type=pathlib.Path)
     parser.add_argument("--manifest", type=pathlib.Path)
+    parser.add_argument("--legacy-v48-layout", action="store_true",
+                        help="reproduce historical incorrect pointers; only for the guarded repair pipeline")
     args = parser.parse_args()
 
     gba = args.gba.read_bytes()
@@ -88,25 +94,37 @@ def main() -> int:
         raise SystemExit("unexpected official ID-11 special-form mismatch pattern")
 
     pointer_bytes = POINTER_COUNT * 4
-    record12_target = TARGET_BASE + pointer_bytes
+    # Keep the already installed payload coordinates and reserved hole. The
+    # former code padded to record13_target but pointed at record12_target,
+    # shifting all three actual records by one 0x78-byte record.
+    record12_target = TARGET_BASE + pointer_bytes + RECORD_BYTES
     while record12_target % 4:
         record12_target += 1
     record13_target = record12_target + RECORD_BYTES
     record14_target = record13_target + RECORD_BYTES
     pointers = [GBA_BASE + GBA_RECORD_TABLE + index * RECORD_BYTES for index in range(12)]
-    pointers.extend((GBA_BASE + record12_target, GBA_BASE + record13_target, GBA_BASE + record14_target))
+    legacy_bias = RECORD_BYTES if args.legacy_v48_layout else 0
+    pointers.extend(GBA_BASE + target - legacy_bias
+                    for target in (record12_target, record13_target, record14_target))
     blob = bytearray(struct.pack(f"<{POINTER_COUNT}I", *pointers))
-    blob.extend(bytes(record13_target - TARGET_BASE - len(blob)))
+    blob.extend(bytes(record12_target - TARGET_BASE - len(blob)))
     records = {}
     for runtime_id, target in ((12, record12_target), (13, record13_target), (14, record14_target)):
         record = converted_record(wsc, runtime_id)
         blob.extend(record)
         records[str(runtime_id)] = {
-            "target": target,
+            "target": target - legacy_bias,
             "bytes": len(record),
             "sha256": hashlib.sha256(record).hexdigest().upper(),
             "source_offset": WSC_TABLE + runtime_id * RECORD_BYTES,
         }
+
+    if not args.legacy_v48_layout:
+        for runtime_id in (12, 13, 14):
+            pointer = struct.unpack_from("<I", blob, runtime_id * 4)[0]
+            start = pointer - GBA_BASE - TARGET_BASE
+            if blob[start:start + RECORD_BYTES] != converted_record(wsc, runtime_id):
+                raise SystemExit(f"physics pointer does not reach its record: ID {runtime_id}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(blob)

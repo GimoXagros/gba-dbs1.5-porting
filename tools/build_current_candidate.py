@@ -76,6 +76,9 @@ SHOOT_PLAYER_BINDING_VERIFICATION_SHA256 = (
 SHOOT_FAR_TILE_VERIFICATION_SHA256 = (
     "25C5C3F6F96B8335ADA627D199630264D361CECD3C70342D0646E384E802105C"
 )
+SHOOT_OTHER_PLAYER_VERIFICATION_SHA256 = (
+    "6F0B0191F2CC84961908C512F1CEA016FA72EBD9CE5E6A4876940630915B3F20"
+)
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -87,6 +90,7 @@ EXPECTED_ASSETS = {
     "selection-portraits.bin": "6E56A118274A4C07D9B5E9923DA7227B2B8823A1720FC0C6C056312F108B9067",
     "vs-presentation.bin": "2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856",
     "character-physics.bin": "1F632B750D33E68C2D3265A2AB35676CD22145F716800784D13775A23B214600",
+    "character-physics-current.bin": "93C735C0A3EE3A9DF09243246BE38129B97AF6A88F5C4546C0229FB7339753C3",
     "vs-character-events.bin": "2226A35FFA64F6BE0DF610D6600754C4C31B74D29A4D1274DA1C81640EE630A5",
     "evolution-p0.bin": "7DAED3DFC07460C5CE2CA6D377BCEA9DA8892E846BF8ED6AC4E36E8500516DBD",
     "evolution-p1.bin": "58E01C289E3454F95312A35AF657F8606EB994FF3077534C2845F3CDDFC3FECD",
@@ -144,7 +148,8 @@ EXPECTED_LAYERS = {
     "shoot-aux-object.gba": "C8C3AF5DABBE7CCE9F0D124DDEEF3CD6348FCDB085416DBA5E78C65DD5BFB3B4",
     "shoot-upper-state.gba": "034785435B598C93B7FF79924EB8F4B3D9698B6AE1489B2B8186BB548692EEAC",
     "shoot-player-binding.gba": "ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0",
-    "current-candidate.gba": "11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E",
+    "shoot-far-tiles.gba": "11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E",
+    "current-candidate.gba": "93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E",
 }
 
 
@@ -310,7 +315,10 @@ def main() -> int:
     run("build_vs_presentation_assets.py", args.gba, args.wsc15, assets / "vs-presentation.bin",
         "--manifest", assets / "vs-presentation.json")
     run("build_character_physics_assets.py", args.gba, args.wsc15,
-        assets / "character-physics.bin", "--manifest", assets / "character-physics.json")
+        assets / "character-physics.bin", "--manifest", assets / "character-physics.json",
+        "--legacy-v48-layout")
+    run("build_character_physics_assets.py", args.gba, args.wsc15,
+        assets / "character-physics-current.bin", "--manifest", assets / "character-physics-current.json")
     run("build_vs_character_event_assets.py", args.gba, assets / "vs-character-events.bin",
         "--manifest", assets / "vs-character-events.json")
     run("build_evolution_p0_assets.py", args.wsc15, assets / "evolution-p0.bin",
@@ -377,6 +385,7 @@ def main() -> int:
     shoot_aux_object = output / "shoot-aux-object.gba"
     shoot_upper_state = output / "shoot-upper-state.gba"
     shoot_player_binding = output / "shoot-player-binding.gba"
+    shoot_far_tiles = output / "shoot-far-tiles.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -493,12 +502,24 @@ def main() -> int:
         args.gba,
         args.wsc10,
         args.wsc15,
+        shoot_far_tiles,
+        "--manifest",
+        output / "shoot-far-tiles.json",
+    )
+    run(
+        "build_shoot_other_player_binding.py",
+        shoot_far_tiles,
+        args.gba,
+        args.wsc15,
         candidate,
         "--manifest",
         output / "current-candidate.json",
     )
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
+    current_physics = (assets / "character-physics-current.bin").read_bytes()
+    if candidate.read_bytes()[0x485000:0x485000 + len(current_physics)] != current_physics:
+        raise SystemExit("final physics pointers/payloads differ from the corrected asset builder")
     opening_linear_verification = intermediate / "opening-linear-verification.json"
     run(
         "analyze_opening_linear_integration.py",
@@ -669,7 +690,7 @@ def main() -> int:
     run(
         "verify_shoot_far_tile_repair.py",
         shoot_player_binding,
-        candidate,
+        shoot_far_tiles,
         args.gba,
         args.wsc10,
         args.wsc15,
@@ -680,6 +701,21 @@ def main() -> int:
         shoot_far_tile_verification,
         SHOOT_FAR_TILE_VERIFICATION_SHA256,
         "Shoot source-segment/descriptor/pixel repair verification",
+    )
+    shoot_other_player_verification = intermediate / "shoot-other-player-verification.json"
+    run(
+        "verify_shoot_other_player_binding.py",
+        shoot_far_tiles,
+        candidate,
+        args.gba,
+        args.wsc15,
+        "--output",
+        shoot_other_player_verification,
+    )
+    require_hash(
+        shoot_other_player_verification,
+        SHOOT_OTHER_PLAYER_VERIFICATION_SHA256,
+        "Shoot other-player/native-physics consumer verification",
     )
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
@@ -724,6 +760,10 @@ def main() -> int:
             "a subsequent dependent repair corrects five P0 descriptor pointers and installs "
             "all 46 source far descriptors and 393 missing tiles, preserving code and layouts; "
             "the legacy zero-descriptor artifacts remain historical intermediates only; "
+            "the final dependent layer fixes three additional-character physics pointers "
+            "and installs resident source 73F0..74A2 other-player restoration using native "
+            "character resources, the existing OBJ palette mirror and 32-bit physics pointers; "
+            "this second player phase also remains uncalled until complete initialization; "
             "outer initializer preparation/tail/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -757,6 +797,7 @@ def main() -> int:
             "shoot_upper_state_verification_sha256": SHOOT_UPPER_STATE_VERIFICATION_SHA256,
             "shoot_player_binding_verification_sha256": SHOOT_PLAYER_BINDING_VERIFICATION_SHA256,
             "shoot_far_tile_verification_sha256": SHOOT_FAR_TILE_VERIFICATION_SHA256,
+            "shoot_other_player_verification_sha256": SHOOT_OTHER_PLAYER_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

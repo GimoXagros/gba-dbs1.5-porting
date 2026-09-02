@@ -104,6 +104,12 @@ and requires an existing valid object. Finish the outer preparation and tail
 from `7394` together with the controller before replacing the stage-11 spawn
 fallback or enabling menu entry. Consumer-level evidence and the six negative
 regression checks are recorded in `records/digimon-shoot-runtime.md`.
+v49 adds the resident `73F0..74A2` other-player phase at `0x085C1500`, with
+native character restoration, two existing palette-mirror rows, 32-bit physics
+pointers and paired position resets. It also corrects the three pre-existing
+added-character physics pointers that were one record early. The phase is
+still uncalled; `7394..73F0`, `74A2..7534`, outer preparation, shared palette
+ownership and controller/menu connection remain open. No runtime QA was run.
 
 The train display/scroll/palette path, the shared waterfall/Iraira display
 callback, both palette paths, and the waterfall three-phase rolling-hazard

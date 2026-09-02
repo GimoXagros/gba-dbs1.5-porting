@@ -570,7 +570,7 @@ Independent report SHA-256:
 `25C5C3F6F96B8335ADA627D199630264D361CECD3C70342D0646E384E802105C`.
 Layer manifest SHA-256:
 `D23574C6D43D9114E480AA479661AA85D10805BCCF52FBD2D8C702A2CC1F536E`.
-Current internal v48 SHA-256:
+Historical internal v48 SHA-256:
 `11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
 Two clean main builds produce 113 identical files each; build manifest:
 `E8B13CFDC1D4CCCCDE2A43FB9CAEED0915632AE6FB1252D0E986A793566D11C7`.
@@ -581,3 +581,100 @@ corrected final tables. Initializer tail `7394..7534`, outer preparation,
 existing-object lifetime, menu/controller/rules and final non-displaying QA
 remain gates. In particular, restoring a direct-load resource does not prove
 that the as-yet-untranslated initializer tail consumes it.
+
+## v49: actual physics-pointer repair and resident other-player restoration
+
+The next source portion is `4090:73F0..74A2`, raw
+`0x747CF0..0x747DA2`, 178 bytes, SHA-256
+`993C6E36E3700166E7C837D0E7FC82C1EAC4B497D28D98BB558612EF187B9FA8`.
+It conditionally removes the other player's evolved form, restores its
+resources and two palette rows, resets animation, returns to base physics,
+and then resets flags, timer, presentation visibility and current/previous
+positions. The native implementation is resident at `0x085C1500..0x085C1614`:
+66 ARM instructions / 264 code bytes and three four-byte literals.
+
+The mappings are established from actual native consumers, not object-field
+offset arithmetic:
+
+- Source physics `+4E` becomes a **32-bit pointer at native `+60`**, not a
+  halfword at `+62`. Native initializer `0x083530CC..30E4` stores that pointer
+  and reads bounds at record `+24/+26` into object `+52/+54`.
+  Native de-evolution `0x0835A6E8` subtracts `0x50` from the pointer.
+- Native `0x08353304` restores the character resources. Its commercial caller
+  at `0x0835A730..A750` pushes slot, character, then form zero, so entry-SP
+  `[0,4,8]` contains `[form,character,slot]`. The resident phase sets `r11=0`
+  before entering this routine and preserves all entry `r0..r12/LR`.
+- Source position pairs `+26/+2A` and `+28/+2C`, explicitly written together
+  at `4090:2D8E..2DA4`, map to native `+34/+38` and `+36/+3A`; native
+  `0x08353174..3190` independently writes those pairs. This phase retains
+  source coordinate constants `0E00/FF80`; visual placement is unverified.
+- The two 16-halfword source palette copies `FF00 -> 04EA` and
+  `FF80 -> 056A` become OBJ palette rows `05000200 -> 0203E200` and
+  `05000280 -> 0203E280`. Native P2 loader `0x08013308..3328` proves OBJ
+  palette addressing. Native `0x0833FDD0..FE14` already copies hardware
+  OBJ `05000200..05000300` into mirror `0203E200..0203E300` with DMA.
+  This proves the storage representation; the future Shoot transition must
+  still establish ownership/lifetime of the shared mirror before calling
+  the phase. No new RAM buffer is allocated and no fade-parity claim is made.
+
+Checking the first native physics consumer exposed an older, independent
+placement defect. The converter padded to the second declared record before
+appending the first, while its pointers and manifest still named the earlier
+coordinates. The actual complete records already existed one record later:
+
+| Character ID | Incorrect pointer through v48 | Correct pointer in v49 | First halfword read before -> required |
+|---|---|---|---|
+| 12 | `0848503C` (zero padding) | `084850B4` | `0 -> 320` |
+| 13 | `084850B4` (ID 12 data) | `0848512C` | `320 -> 360` |
+| 14 | `0848512C` (ID 13 data) | `084851A4` | `360 -> 357` |
+
+`build_character_physics_assets.py` now produces correct pointers by default
+and checks the data actually reached by every added pointer. Existing payload
+coordinates and the reserved hole are preserved. The explicit
+`--legacy-v48-layout` option only reproduces pinned historical layers for the
+guarded main pipeline; it must never be treated as a correct release asset.
+The final dependent layer repairs the three pointers. The final ROM's entire
+540-byte physics blob must equal the separately generated corrected asset,
+SHA-256 `93C735C0A3EE3A9DF09243246BE38129B97AF6A88F5C4546C0229FB7339753C3`.
+No physics payload, retail record or existing code is moved or rewritten.
+
+The independent verifier imports no builder. It checks all generated
+instructions, native call ABI, palette row extents, conditional paths, and
+the whole output diff. Its field oracle first reproduces 660 halfwords from
+commercial IDs 0..10, then checks all 180 halfwords reached by added IDs
+12..14. ID 11's commercial special form is preserved, not normalized.
+All fifteen base-form bounds are checked. Reverting each of the three pointers
+reproduces a wrong full record, even when two characters happen to share
+identical bounds. Fourteen semantic negative cases are rejected before the
+output hash check. Report SHA-256:
+`6F0B0191F2CC84961908C512F1CEA016FA72EBD9CE5E6A4876940630915B3F20`.
+
+The four Expected Writes change 273 bytes: 269 in the new resident phase and
+four bytes across the three physics pointer words. There are no existing
+aligned pointers or ARM7TDMI B/BL references into `5C1500..5C1700`, and no
+external caller is added. The phase is **not a complete 7168 initializer**.
+Still unresolved are `7394..73F0` and `74A2..7534`, outer setup and object
+lifetime, the shared palette transition, controller/menu, and remaining rules.
+In particular, the source tail sets ES to `1000` before writing `3CD8/3CDA`,
+whereas the common fighter initializer writes these offsets with ES=`0C00`.
+Those are different source addresses; do not substitute native `030048AC/AE`
+solely because the offsets match. No such global clear was installed here.
+
+Further palette evidence, not yet adopted as a replacement: retail WSC 1.0
+`AFFE:0101/0156` at raw `3B00E1/3B0136` uses counter `1000:036C` and palette
+mirror `1000:036E`; Ver. 1.5 uses `03E8/03EA`. Its commercial GBA counterpart
+`0x08377BD0/7C1C` instead invokes `0x0833FE58/FE94`, using native fade state
+`0203F000` and hardware blending. The source increment-to-target function
+`4FFF:1EF5` corresponds to native `08012178`, but no direct retail ARM BL
+calls to that native entry were found. This is not proof of an unused buffer
+or authority to omit the Shoot-specific palette preparation.
+
+Current static v49 SHA-256:
+`93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E`.
+Two clean main builds in `build/repro-v49-a` and `build/repro-v49-b` generated
+118 files each, with zero relative-path/hash differences. Main manifest:
+`32F8C29ABE44503C178562D41E55890D5F0B1F808ED1E894054F8FE7EE06A9AA`.
+Final layer manifest:
+`F6EDFA1E308FA7FD561E69CDD4300B91735C3522ECE85F00CAEC304543735DEF`.
+All three original ROM hashes remain unchanged. No emulator, visible window
+or supplied save was used. Runtime-evidenced progress remains at most 8%.

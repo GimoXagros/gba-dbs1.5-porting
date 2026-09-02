@@ -11,7 +11,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > runtime-evidenced progress is no more than 8%. The single next runtime
 > milestone was completed by observing the retail Right-input consumer. The
 > clean current-candidate milestone is now complete: the hash-identified USA
-> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v48 byte-for-byte in
+> GBA, WSC 1.0, and WSC 1.5 originals reproduce internal v49 byte-for-byte in
 > two independent builds. Its modulo-5 dispatcher, added choice states 3
 > and 4, selector resource records 11..14, four added linear callbacks, and
 > sequential slot-3 reuse for auxiliary records 50/49 are statically integrated.
@@ -46,7 +46,14 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > segments and silently omitted tiles from five Shoot resources. All 46 far
 > descriptors and 393 tiles are now installed through five P0 pointer repairs,
 > preserving code and layouts. The composite is reproducible at SHA-256
-> `11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
+> `11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`
+> for historical v48. v49 corrects three additional-character physics pointers
+> that were one record early and installs resident source `73F0..74A2`
+> other-player restoration. Its final hash is
+> `93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E`.
+> The phase has no caller; full initialization and palette-transition ownership
+> remain open. Fourteen negative checks and complete added physics records
+> are verified against the actual native consumers, not manifest targets alone.
 > This closes part of the opening implementation gap only; exact v32 remains
 > the last runtime-evidenced candidate and the
 > overall runtime-evidenced progress remains no more than 8%. Static cold-boot
@@ -63,7 +70,7 @@ Snapshot date: 2026-09-02 (Asia/Seoul)
 > selector view is rebuilt: P1/P2 and selector
 > 11/13 P0 resources reuse byte-identical commercial GBA assets, while only
 > selector 12/14 P0 containers are newly converted. No emulator or supplied
-> save was used for v48. The parent and child families are internally connected,
+> save was used for v49. The parent and child families are internally connected,
 > but external controller `9908/9A1B` does not yet assign parent `9083`, so the
 > chain remains unreachable from retail play. Audible/timbre parity and playback
 > remain unverified until final non-displaying runtime QA. A new deterministic
@@ -142,13 +149,17 @@ memory dump, screenshot, or emulator state.
   restoring 46 descriptors and 12,576 bytes / 393 tiles. Source `DS:SI`/C2
   semantics, the full commercial 21-descriptor oracle, all pixel data and
   every P1/layout pair are checked independently; ten damaged variants fail.
+- v49 correction of all three shifted added-character physics pointers and a
+  resident other-player restoration phase at `0x085C1500`. Native presentation,
+  two existing OBJ palette-mirror rows, 32-bit physics pointers, bounds and
+  paired positions are consumer-checked. This phase remains uncalled.
 - Opening modulo-5 choice dispatcher and the added `[13,14]` and `[12,11]`
   presentation cases/callbacks.
 - Four added linear opening callbacks, selector-3→13 predecessor change,
   converted timing/event plan, and sequential slot-3 auxiliary-object reuse.
 
-The current static internal composite is v48, identified only by SHA-256
-`11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`.
+The current static internal composite is v49, identified only by SHA-256
+`93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E`.
 That file is intentionally excluded from Git. Exact v32, SHA-256
 `1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
 remains the last runtime-evidenced candidate. It reaches title, responds to
@@ -169,13 +180,16 @@ results, and added-content behavior remain unverified.
 
 `tools/build_current_candidate.py` is now the checked-in main build entry
 point. It regenerates the P4 comparison corpus and all currently consumed
-binary assets from the three original ROMs before assembling seventeen guarded
-layers. Two builds in separate empty output directories both produced v48
+binary assets from the three original ROMs before assembling eighteen guarded
+layers. Two builds in separate empty output directories both produced v49
 SHA-256
-`11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E`;
-all 113 files in each output tree matched by relative path and SHA-256. The
+`93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E`;
+all 118 files in each output tree matched by relative path and SHA-256. The
 build-manifest SHA-256 is
-`E8B13CFDC1D4CCCCDE2A43FB9CAEED0915632AE6FB1252D0E986A793566D11C7`.
+`32F8C29ABE44503C178562D41E55890D5F0B1F808ED1E894054F8FE7EE06A9AA`.
+The explicit legacy physics option is used only to reproduce the pinned
+historical layers; the final layer repairs the pointers and must match the
+separately generated corrected physics blob byte-for-byte.
 The VS generator no longer consumes Patamon/Tailmon emulator RAM dumps:
 palette and tile ranges are read directly from WSC 1.5, while the verified
 sparse 28x18 runtime composition is an explicit checked-in build rule. The
