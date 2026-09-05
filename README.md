@@ -31,6 +31,9 @@ and remaining release gates are retained in [`STATUS.md`](STATUS.md).
 Work is paused at the user's request after the v50 palette-transition
 investigation. Start with [`RESUME.md`](RESUME.md) to continue from the saved
 checkpoint; this documentation-only handoff does not create a v51 build.
+A model-specific continuation package and copy-ready prompt are in
+[`ASTRA_HANDOFF.md`](ASTRA_HANDOFF.md). The recommended setting for this
+reverse-engineering milestone is GPT-6 Astra with `max` reasoning effort.
 Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.

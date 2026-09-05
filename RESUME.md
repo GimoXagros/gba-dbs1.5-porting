@@ -4,6 +4,8 @@
 조사까지 기록하고 작업을 멈춘 체크포인트다. 새 구현은 시작하지 않았다.
 이 문서는 재개 안내이며, 실제 완료 판정은 [PORT_AUDIT.md](PORT_AUDIT.md)가
 기준이다. 전체 복구 감사를 처음부터 반복할 필요는 없다.
+GPT-6 Astra에서 새 작업으로 이어갈 때는
+[ASTRA_HANDOFF.md](ASTRA_HANDOFF.md)의 설정·작업 단계·복사용 명령문을 사용한다.
 
 ## 보존한 기준점
 
@@ -98,7 +100,5 @@ py -3 tools/build_current_candidate.py "<USA GBA 원본 경로>" "<WSC 1.0 원�
 
 ## 다음에 보낼 요청 예시
 
-> RESUME.md의 체크포인트에서 포팅 작업을 이어주세요. v50을 기준으로
-> SHOOT-PALETTE-01의 색상 저장 영역과 전환 연결부터 진행하고, 기존
-> 정적/바이너리 번역 방식을 유지해주세요. 전체 통합 전에는 실행 검증이나
-> 제공한 WSC 세이브를 사용하지 말고, 최종 검증도 화면에 표시하지 마세요.
+GPT-6 Astra에는 [인계 명령문](ASTRA_HANDOFF.md#copy-prompt)을 그대로 사용한다.
+권장 추론 설정은 `max`다.
