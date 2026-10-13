@@ -87,6 +87,17 @@ SHOOT_PALETTE_VERIFICATION_SHA256 = "7A6A9632EEDA2A98498405A2EAD2F78A27AB4BC6CEF
 SHOOT_PALETTE_OWNERSHIP_SHA256 = "2F5FA817B464F13A7606388F9650549A41C801A8FEB439A4FE51A2430A3048ED"
 SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256 = "F2BC89B285C7051DCE8C4A1680344A426CA5201B36F15764302DEB069D184C3E"
 
+SHOOT_LOWER_AUDIO_VERIFICATION_SHA256 = "D177C343BCA6776520048CDA97D584EE539A005577E8CA5B7773E494B2A61AFE"
+SHOOT_LOWER_RULES_VERIFICATION_SHA256 = "313105EF1A8D5C26A42F690DB93A7BE0B25F89771168D0036FC3071E9CE26030"
+SHOOT_GRAPHICS_VERIFICATION_SHA256 = "8D5AB7EE5F2EC2CA7CF30BA374CF87A167A60981C6AB59713DBEE041A9CF0DB5"
+SHOOT_TRANSITION_AUDIO_SHA256 = "48424A2F144A1C41035111E75363E624D5E2A84F9FF9A2E7D9AD4A71B57B6D1B"
+SHOOT_SCENE_OBJECTS_SHA256 = "A4E1DE4CB5000EC31B56471D99490936E2B82C84277976B3FA0F5AA36665F8B5"
+SHOOT_STAGE_ASSET_VERIFICATION_SHA256 = "213203E94233DA124057CC5BE7D9481BBA98F838D475F40C03EEC28EDAEE1E25"
+SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256 = "E9B32C9DBF53FA543D5CC2800C467764D4CE44C6659528EBFB353F8DFC9B5FF5"
+SHOOT_TERMINAL_VERIFICATION_SHA256 = "4D6FE917B45ADF7E26E9F0E4FAE4EF938AF1AC84D91D06B63BC0798D06C466BF"
+SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256 = "7BD2283D660C034FFCC5A7C458E22126C06E55C208CFCB45E5A6B7A863A8752F"
+SHOOT_SRAM_BOUNDARY_SHA256 = "29304FA84432898B857AC8874C1525E57FDE0EABBAFFC5008DBFA80962E27295"
+
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
     "id13-base.bin": "740D81D7F0AA793AB838ACD65C955CA67901A7CBCA2ABDBCF4343B41D1DA4F34",
@@ -160,7 +171,14 @@ EXPECTED_LAYERS = {
     "shoot-tail-resources.gba": "C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1",
     "shoot-rules.gba": "FD4E69C29003325D47A6189C3A05005D38FF7B4B6D442B31A271D360A9A0DE5C",
     "shoot-palette.gba": "2008EC0520554F09C84351220B8A30931E1E636A7CEEE9BF3CBBB12C28C1B5AE",
-    "current-candidate.gba": "726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284",
+    "shoot-initializer-components.gba": "726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284",
+    "shoot-lower-audio.gba": "0F05DD3A5BEBE663A29D0241E1AD6D460763E2DE5D16BCEB4F7092D596B70103",
+    "shoot-lower-rules.gba": "223C64C6D19ACE7610CC7FE7D276DC24CE47748C424894D2A589220F48B21C6E",
+    "shoot-graphics.gba": "6F02E33A164D764BFC5BC071CA5522339032B089D9BF9A3702F5EF9551603C29",
+    "shoot-stage-assets.gba": "00C4A8F4710BC0E2F4A31810CDD6FE2610D9670D9A989273162ADF33167211E7",
+    "shoot-stage-handshake.gba": "F793AB2389B6F03812717709C5FECB05F9406451F79F5CF5C249C2FFE2EF4CEF",
+    "shoot-terminal.gba": "39936F49AB455032B4B71355C2C12127DC35D281670C2D72F48D4273F466CD0D",
+    "current-candidate.gba": "455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48",
 }
 
 
@@ -410,6 +428,13 @@ def main() -> int:
     shoot_tail_resources = output / "shoot-tail-resources.gba"
     shoot_rules = output / "shoot-rules.gba"
     shoot_palette = output / "shoot-palette.gba"
+    shoot_initializer_components = output / "shoot-initializer-components.gba"
+    shoot_lower_audio = output / "shoot-lower-audio.gba"
+    shoot_lower_rules = output / "shoot-lower-rules.gba"
+    shoot_graphics = output / "shoot-graphics.gba"
+    shoot_stage_assets = output / "shoot-stage-assets.gba"
+    shoot_stage_handshake = output / "shoot-stage-handshake.gba"
+    shoot_terminal = output / "shoot-terminal.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -558,10 +583,22 @@ def main() -> int:
     )
     run(
         "build_shoot_initializer.py", shoot_palette, args.gba, args.wsc10, args.wsc15,
-        candidate,
-        "--manifest",
-        output / "current-candidate.json",
+        shoot_initializer_components, "--manifest", output / "shoot-initializer-components.json",
     )
+    run("build_shoot_lower_audio.py", shoot_initializer_components, args.gba, args.wsc10,
+        args.wsc15, shoot_lower_audio, "--manifest", output / "shoot-lower-audio.json")
+    run("build_shoot_lower_rules.py", shoot_lower_audio, args.gba, args.wsc15,
+        shoot_lower_rules, "--manifest", output / "shoot-lower-rules.json")
+    run("build_shoot_graphics_initializer.py", shoot_lower_rules, args.gba, args.wsc10,
+        args.wsc15, shoot_graphics, "--manifest", output / "shoot-graphics.json")
+    run("build_shoot_stage_assets.py", shoot_graphics, args.wsc15, shoot_stage_assets,
+        "--manifest", output / "shoot-stage-assets.json")
+    run("build_shoot_stage_handshake.py", shoot_stage_assets, args.gba, args.wsc10, args.wsc15, shoot_stage_handshake,
+        "--manifest", output / "shoot-stage-handshake.json")
+    run("build_shoot_terminal.py", shoot_stage_handshake, args.gba, args.wsc10, args.wsc15, shoot_terminal,
+        "--manifest", output / "shoot-terminal.json")
+    run("build_shoot_normal_display_route.py", shoot_terminal, args.gba, candidate,
+        "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
     current_physics = (assets / "character-physics-current.bin").read_bytes()
@@ -793,11 +830,52 @@ def main() -> int:
     require_hash(shoot_palette_verification, SHOOT_PALETTE_VERIFICATION_SHA256, "Shoot palette operations")
     shoot_initializer_component_verification = intermediate / "shoot-initializer-component-verification.json"
     run(
-        "verify_shoot_initializer.py", shoot_palette, candidate, args.gba, args.wsc10,
+        "verify_shoot_initializer.py", shoot_palette, shoot_initializer_components, args.gba, args.wsc10,
         args.wsc15, "--output", shoot_initializer_component_verification,
     )
     require_hash(shoot_initializer_component_verification, SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256,
                  "Shoot initializer final instructions and resource consumers")
+    for tool, before, after, pin, report_name, flag in (
+        ("verify_shoot_lower_audio.py", shoot_initializer_components, shoot_lower_audio,
+         SHOOT_LOWER_AUDIO_VERIFICATION_SHA256, "shoot-lower-audio-verification.json", "--output"),
+        ("verify_shoot_lower_rules.py", shoot_lower_audio, shoot_lower_rules,
+         SHOOT_LOWER_RULES_VERIFICATION_SHA256, "shoot-lower-rules-verification.json", "--output"),
+        ("verify_shoot_graphics_initializer.py", shoot_lower_rules, shoot_graphics,
+         SHOOT_GRAPHICS_VERIFICATION_SHA256, "shoot-graphics-verification.json", "--report"),
+    ):
+        report_path = intermediate / report_name
+        run(tool, before, after, args.gba, args.wsc10, args.wsc15, flag, report_path)
+        require_hash(report_path, pin, report_name)
+    transition_audio = intermediate / "shoot-transition-audio.json"
+    run("analyze_shoot_transition_audio.py", args.gba, args.wsc10, args.wsc15,
+        "--output", transition_audio)
+    require_hash(transition_audio, SHOOT_TRANSITION_AUDIO_SHA256, "Shoot transition audio services")
+    scene_objects = intermediate / "shoot-scene-objects.json"
+    run("analyze_shoot_scene_objects.py", args.gba, "--output", scene_objects)
+    require_hash(scene_objects, SHOOT_SCENE_OBJECTS_SHA256, "Shoot scene object ownership")
+    stage_assets_verification = intermediate / "shoot-stage-asset-verification.json"
+    run("verify_shoot_stage_assets.py", shoot_stage_assets, shoot_graphics, args.wsc15, args.gba,
+        "--output", stage_assets_verification)
+    require_hash(stage_assets_verification, SHOOT_STAGE_ASSET_VERIFICATION_SHA256,
+                 "Shoot actual source addresses and native map consumers")
+    stage_handshake_verification = intermediate / "shoot-stage-handshake-verification.json"
+    run("verify_shoot_stage_handshake.py", shoot_stage_assets, shoot_stage_handshake, args.gba, args.wsc10,
+        args.wsc15, "--output", stage_handshake_verification)
+    require_hash(stage_handshake_verification, SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256,
+                 "Shoot main update, display and scanline contracts")
+    terminal_verification = intermediate / "shoot-terminal-verification.json"
+    run("verify_shoot_terminal.py", shoot_stage_handshake, shoot_terminal, args.gba, args.wsc10,
+        args.wsc15, "--output", terminal_verification)
+    require_hash(terminal_verification, SHOOT_TERMINAL_VERIFICATION_SHA256,
+                 "Shoot terminal resident phases and same-update repairs")
+    normal_display_verification = intermediate / "shoot-normal-display-verification.json"
+    run("verify_shoot_normal_display_route.py", shoot_terminal, candidate, args.gba,
+        "--output", normal_display_verification)
+    require_hash(normal_display_verification, SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256,
+                 "Shoot connected normal display with preserved terminal fallback")
+    sram_boundary = intermediate / "shoot-sram-boundary.json"
+    run("analyze_shoot_sram_boundary.py", args.wsc15, "--output", sram_boundary)
+    require_hash(sram_boundary, SHOOT_SRAM_BOUNDARY_SHA256, "Shoot unresolved SRAM observer evidence")
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
         "verify_shoot_initializer_p1_assets.py",
@@ -855,7 +933,22 @@ def main() -> int:
             "initializer components add native graphics resets, stage manager preparation, "
             "the source timer in commercial native units, the proven 0660 clear and two "
             "constructor adapters with independently relocated per-item P1 records; "
-            "outer initializer preparation/tail/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
+            "the next layers append CF/D1 native scores with explicit timbre/stereo/modulation limits, "
+            "33 lower rule routines with a bounded spatial-domain guard, and dedicated graphics/HUD/IRQ "
+            "initialization; compact palette state repairs writes beyond the original 32-byte owner "
+            "and preserves the adjacent live AI state; actual-stage bounds and palette consumers are "
+            "hooked with legacy paths preserved; the actual C9:383F stage-loader source fixes "
+            "the Shoot palette/tile bank offset and installs all twelve maps with original "
+            "two-by-three geometry in the existing native background consumers; "
+            "the source 0E0B main stage update is connected with its original state owner, "
+            "and source-corrected normal display/IRQ are connected only for flag-0400-clear, "
+            "preserving the existing terminal fallback exactly; seventeen terminal phases, "
+            "native result-resource consumers, fatal/nonfatal adapters and four upper-state "
+            "same-update repairs are resident with external damage hooks closed; SRAM observer "
+            "analysis remains explicitly UNRESOLVED_OBSERVER; terminal interrupted-DI and "
+            "camera-domain contracts remain unfulfilled; "
+            "complete outer initializer, scene/menu entry, "
+            "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
@@ -894,6 +987,16 @@ def main() -> int:
             "shoot_palette_verification_sha256": SHOOT_PALETTE_VERIFICATION_SHA256,
             "shoot_palette_ownership_sha256": SHOOT_PALETTE_OWNERSHIP_SHA256,
             "shoot_initializer_component_verification_sha256": SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256,
+            "shoot_lower_audio_verification_sha256": SHOOT_LOWER_AUDIO_VERIFICATION_SHA256,
+            "shoot_lower_rules_verification_sha256": SHOOT_LOWER_RULES_VERIFICATION_SHA256,
+            "shoot_graphics_verification_sha256": SHOOT_GRAPHICS_VERIFICATION_SHA256,
+            "shoot_transition_audio_sha256": SHOOT_TRANSITION_AUDIO_SHA256,
+            "shoot_scene_objects_sha256": SHOOT_SCENE_OBJECTS_SHA256,
+            "shoot_stage_asset_verification_sha256": SHOOT_STAGE_ASSET_VERIFICATION_SHA256,
+            "shoot_stage_handshake_verification_sha256": SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256,
+            "shoot_terminal_verification_sha256": SHOOT_TERMINAL_VERIFICATION_SHA256,
+            "shoot_normal_display_verification_sha256": SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256,
+            "shoot_sram_boundary_unresolved_sha256": SHOOT_SRAM_BOUNDARY_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

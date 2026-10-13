@@ -2,10 +2,12 @@
 
 Audit date: 2026-08-31; implementation resumed 2026-10-13 (Asia/Seoul)
 
-The user resumed implementation from the preserved v50 checkpoint. v51 adds
-native Shoot rule-selection/application, palette operations, bounded initializer
-components and two constructor resource adapters. These remain resident components;
-the complete original-order initializer and normal-play transition are not connected.
+The user resumed implementation from the preserved v50 checkpoint. Current v53
+adds lower rules, dedicated graphics, corrected source-addressed stage assets,
+stage update/normal display, and resident terminal phases to the v51 components.
+The complete original-order initializer and normal-play transition remain
+unconnected. SRAM observers, terminal IRQ live-ins, and spatial domains are
+explicit unresolved contracts, not waived checks.
 See [`RESUME.md`](RESUME.md) for the current boundary. No new runtime claim is made.
 
 This document is the authoritative recovery baseline for the current port.
@@ -186,6 +188,13 @@ ignored clean output directories:
 | Shoot rule-selection/application components | `FD4E69C29003325D47A6189C3A05005D38FF7B4B6D442B31A271D360A9A0DE5C` |
 | Shoot palette operations | `2008EC0520554F09C84351220B8A30931E1E636A7CEEE9BF3CBBB12C28C1B5AE` |
 | Bounded initializer and constructor resources / static v51 | `726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284` |
+| CF/D1 lower audio | `0F05DD3A5BEBE663A29D0241E1AD6D460763E2DE5D16BCEB4F7092D596B70103` |
+| Lower rule population | `223C64C6D19ACE7610CC7FE7D276DC24CE47748C424894D2A589220F48B21C6E` |
+| Dedicated graphics / preserved static v52 | `6F02E33A164D764BFC5BC071CA5522339032B089D9BF9A3702F5EF9551603C29` |
+| Source-addressed stage asset repair | `00C4A8F4710BC0E2F4A31810CDD6FE2610D9670D9A989273162ADF33167211E7` |
+| Stage update/display/IRQ components | `F793AB2389B6F03812717709C5FECB05F9406451F79F5CF5C249C2FFE2EF4CEF` |
+| Resident terminal phases and order repairs | `39936F49AB455032B4B71355C2C12127DC35D281670C2D72F48D4273F466CD0D` |
+| Normal display route / current static v53 | `455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -222,7 +231,7 @@ This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
 the v50 build checks.
 
-On 2026-10-13, two fresh full builds in `build/repro-v51-20261013-a` and
+The preserved v51 checkpoint was built on 2026-10-13 in `build/repro-v51-20261013-a` and
 `build/repro-v51-20261013-b` produced all 22 layers and 131 files each.
 The complete relative-path/SHA-256 comparison has zero differences. Both final
 ROMs hash to `726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284`;
@@ -236,7 +245,7 @@ ROM hashes were rechecked unchanged; the final header complement remains `6C`.
 The main build now refuses a populated output directory before generating files.
 No save access or emulator execution was used in these checks.
 
-New pinned independent report hashes are:
+The v51 pinned independent report hashes are:
 
 | Verification | SHA-256 |
 |---|---|
@@ -590,7 +599,7 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v51 retains prior child/parent/upper-state graphs and repaired resources, and adds rule-selection/application, palette operations, bounded initializer components and `93E7/888B` constructor adapters. The native BG/OBJ projection, selective backup, timer units and resource consumers are verified. Complete original-order initialization and normal-play scene entry remain absent; both `9908` calls still stop at a boundary stub. The 6,096-byte/43-callback lower graph, entry lifetime, bank-sensitive globals, display/HUD setup, hold/audio, rewards, win/loss, menu and exit remain release gates |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v53 includes lower rules, dedicated graphics/HUD, corrected twelve-map resources, connected normal stage/display updates, and resident terminal phases. Complete original-order initialization and normal-play scene entry remain absent; both `9908` calls still stop at a boundary stub. Bank-sensitive SRAM stores, terminal IRQ live-ins, spatial domains, full lifetime/callback routing, audible parity, and end-to-end win/loss/menu/exit remain gates. Uninstalled scene/controller drafts are not counted as integrated content |
 | Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v47 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
@@ -646,9 +655,9 @@ source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
 boundary, and event table in the v35 opening-linear intermediate retained by
-current v51. These are static
+current v53. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v51 runtime evidence was collected. See
+proof. No v51..v53 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -690,7 +699,52 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
-### 2026-10-13 implementation delta
+### Current v53 implementation delta, 2026-10-13
+
+The first milestone remains **DIGIMON SHOOT RULES AND TRANSITIONS**, not complete.
+The new implementation is in the main build and detailed in
+[SHOOT-V53](records/digimon-shoot-runtime.md#shoot-v53):
+
+- CF/D1 native audio scores and 33 lower-rule routines, including `810D`, `8AB8`,
+  `8CDD`, both child constructors, and original same-update branches. The lower
+  pursuit routine still has a bounded spatial precondition; audio timbre and
+  audible modulation parity remain unverified.
+- Dedicated stage-11 graphics/HUD/IRQ preparation. Compact palette state fits
+  its original 32-byte allocation, repairing the previous overlap with live AI
+  state. Actual source palette projection and disable/dim consumers are hooked.
+- The actual loader's C9 bank and segment `383F` correct the prior Shoot asset
+  extraction. Twelve maps use original 2-by-3 geometry; independent inversion
+  checks 111 colors, 32,768 pixels and 6,048 map entries.
+- Source `0E0B` stage update and flag-0400-clear display/normal IRQ are connected.
+  Layer order, old-index reads and the commercial scanline bridge are verified.
+  The flag-0400 path preserves its existing fallback exactly.
+- Seventeen terminal phases, three result resources, fatal/nonfatal adapters,
+  and four upper-state same-update repairs are resident. External damage hooks
+  remain original. The terminal row-clear camera domain is not yet proved.
+
+SRAM report `29304FA8...27295` is included as **UNRESOLVED_OBSERVER**, with no
+dead-store or native-mapping claim. Source `1000:3CD8/3CDA` must not be confused
+with normal fighter globals at `0C00:3CD8/3CDA`. The terminal IRQ's interrupted
+DI dependency remains a separate gate. Full initializer `085C7800`, controller
+hook and scene/menu route are absent. Dependency-gated scene/controller drafts
+are not installed ROM code and their full ROM verifiers have not run.
+
+Two fresh v53 full builds in `build/repro-v53-20261013-a` and
+`build/repro-v53-20261013-b` reproduce all 29 ROM layers and 155 files with zero
+relative-path or SHA-256 differences. Candidate SHA-256:
+`455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48`.
+Build-manifest SHA-256:
+`C6FF837E60965776EF42AA09AA1ACC83B5148239D859657AE6087CE16EE66941`.
+Comparison `build/repro-v53-20261013-comparison.json` SHA-256:
+`8CC96F98AEF076D796FCE731D542BB4AAD179580A906A35F0C20A41329153666`.
+There are 30,992 changed bytes from v52, all guarded by the four new layers.
+The earlier v52 two-build result also matched all 25 layers and 142 files;
+its candidate is `6F02E33A164D764BFC5BC071CA5522339032B089D9BF9A3702F5EF9551603C29`.
+Original ROMs and both v50/v51/v52 candidates were rechecked unchanged; header
+checksum remains `6C`. No save, CPU execution, emulator, or visible window was
+used. Runtime evidence remains v32 and gains no completion credit.
+
+### Preserved v51 implementation delta, 2026-10-13
 
 The three new layers implement 367 ARM instructions: 60 rule-selection/application
 instructions, 196 palette instructions, and 111 bounded initializer/constructor

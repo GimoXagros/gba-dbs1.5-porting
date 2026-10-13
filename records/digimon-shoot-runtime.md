@@ -936,3 +936,85 @@ scheduling, rewards, win/loss, menu and exit remain open. Merely calling the new
 selection or palette helper does not close these gates. First milestone completion
 and normal-play reachability are not claimed. Runtime evidence remains v32 and
 does not gain credit from this static work.
+
+<a id="shoot-v53"></a>
+
+## SHOOT-V53: lower rules, corrected graphics, display and terminal code, 2026-10-13
+
+This continues the same first milestone after local v51 commit
+`edb622d560f078e16b5defe166f98787536ef9b9`. No recovery audit was restarted.
+Seven new main-build layers follow v51. Their complete code, Expected Writes,
+source consumers and independent verification are documented separately:
+
+| Layer | Concrete implementation | Evidence |
+|---|---|---|
+| Lower audio | CF/D1 native scores; commercial instruments and explicit audible limitations | [audio](shoot-lower-audio.md) |
+| Lower rules | 33 routines, `810D/8AB8/8CDD`, `881A/933B` generators, native resources, same-update control flow | [lower rules](shoot-lower-rules.md) |
+| Graphics | Dedicated stage-11 initializer, HUD, compact palette state within its original 32-byte owner, real dim/disable consumers | [graphics](shoot-graphics-initializer.md) |
+| Stage assets | Actual C9:383F source palette/tiles, twelve maps, original two-by-three dimensions, native scrolling descriptors | [stage assets](shoot-stage-assets.md) |
+| Stage handshake | Connected `0E0B` update, source layer order and old-index reads, commercial scanline bridge | [handshake](shoot-stage-handshake.md) |
+| Terminal | Seventeen result/exit phases, resources, damage adapters, four same-update repairs; external damage hooks closed | [terminal](shoot-terminal.md) |
+| Normal display route | Five-instruction router connects flag-0400-clear path and preserves existing 0400 fallback | [normal display](shoot-normal-display-route.md) |
+
+The old stage extraction used the wrong bank offset and only eight maps.
+The installed repair reads palette `4983F0`, tiles `4984D0`, maps `49C4D0`,
+and the two original six-entry descriptor tables. Inverse verification covers
+111 colors, 32,768 pixels and 6,048 map entries. Source HUD tile writes occupy
+stage-bank indices 495..511; all nonzero map cells use indices at most 494.
+The 4,261 common-bank map cells use only tile zero; its complete lifetime is
+still a separate obligation. No rendered result is claimed.
+
+The lower-rule verifier checks complete final code/stack/call contracts,
+finite HP/direction/spatial populations and nineteen semantic corruptions.
+The terminal verifier checks 587 ARM instructions, 26 complete blocks,
+30 Expected Writes, native result-resource inverses and nineteen corruptions.
+The normal display router checks all 65,536 flag values and six corruptions.
+These are static computations over specifications and decoded code, not CPU
+emulation. Commercial audio reset/identity and existing scene-object pools
+have additional source-backed reports:
+[transition audio](shoot-transition-audio.md),
+[scene object pools](shoot-scene-object-pools.md).
+
+### Reproduction
+
+Fresh directories `build/repro-v53-20261013-a` and
+`build/repro-v53-20261013-b` each contain 29 ROM layers and 155 files.
+Every relative path and SHA-256 matches. Final candidate:
+`455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48`.
+Build manifest:
+`C6FF837E60965776EF42AA09AA1ACC83B5148239D859657AE6087CE16EE66941`.
+Full-tree comparison:
+`8CC96F98AEF076D796FCE731D542BB4AAD179580A906A35F0C20A41329153666`.
+The v52 checkpoint separately reproduced 25 layers and 142 files with candidate
+`6F02E33A164D764BFC5BC071CA5522339032B089D9BF9A3702F5EF9551603C29`.
+V53 changes 30,992 bytes from v52. Original ROMs and both v50/v51/v52 results
+were rechecked unchanged. The GBA header checksum remains `6C`.
+
+### Exact remaining gates
+
+- [SRAM analysis](shoot-sram-boundary.md) returns `UNRESOLVED_OBSERVER`.
+  Source `1000:3CD8/3CDA` writes are physically different from the usual
+  `0C00` fighter globals. Neither deadness nor a native field mapping is proved.
+  The [commercial lineage counterexample](shoot-sram-lineage.md) proves that
+  native `030048AC/AE` are live regeneration timers; unconditional merging
+  changes subsequent behavior. It does not assert reachability of the example.
+- Terminal IRQ `0DEC` reads interrupted DI. Its preceding callback restores
+  DI, and the dispatcher does not establish `EA`; no normalization is allowed
+  without a real visibility/timing/ownership proof.
+  [Focused IRQ evidence](shoot-stage-irq-observability.md) checks 1,678,080
+  conditional prior-frame row-coverage cases, but common-bank tile-zero
+  lifetime and preservation against camera refill are still unproved.
+- Terminal `197A` row-clear is presently mapped only for camera Y 0..62;
+  lower `8EF3` also requires upstream coordinate bounds. Neither guard proves
+  source equivalence outside its domain.
+  [Spatial-domain evidence](shoot-spatial-domains.md) preserves the exact
+  16-bit source clear footprint and identifies the camera/cache consumers.
+  Initializer Y zero and stage dimensions alone are insufficient.
+- Full initializer `085C7800` and normal scene/controller/menu entry remain
+  absent. The dependency-gated [scene/route drafts](shoot-scene-transition.md)
+  and controller adapter are not installed, and their full ROM verifiers have
+  not run. Fatal/nonfatal external hooks remain retail code.
+
+The first milestone is **not complete**. No supplied save was opened or
+hashed; no CPU/emulator or visible verification window was used. Runtime
+evidence remains v32, with overall runtime-evidenced progress at most 8%.
