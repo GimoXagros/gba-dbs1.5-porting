@@ -1,11 +1,12 @@
 # Port recovery audit
 
-Audit date: 2026-08-31; last updated 2026-09-02 (Asia/Seoul)
+Audit date: 2026-08-31; implementation resumed 2026-10-13 (Asia/Seoul)
 
-User-requested pause: the palette-transition investigation after v50 is
-recorded, with no new implementation or runtime claim. See
-[`RESUME.md`](RESUME.md) for the checkpoint and exact next work boundary.
-The current candidate and progress baseline below are unchanged.
+The user resumed implementation from the preserved v50 checkpoint. v51 adds
+native Shoot rule-selection/application, palette operations, bounded initializer
+components and two constructor resource adapters. These remain resident components;
+the complete original-order initializer and normal-play transition are not connected.
+See [`RESUME.md`](RESUME.md) for the current boundary. No new runtime claim is made.
 
 This document is the authoritative recovery baseline for the current port.
 It separates committed implementation from behavior actually observed in a
@@ -158,7 +159,7 @@ None. No WonderSwan execution core or compatibility runtime is present.
 
 ## Reproducibility audit
 
-The current static candidate was rebuilt in nineteen guarded layers into two
+The current static candidate is built in twenty-two guarded layers into two
 ignored clean output directories:
 
 | Layer | SHA-256 |
@@ -181,7 +182,10 @@ ignored clean output directories:
 | Shoot constructor correction and player binding / static intermediate v47 | `ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0` |
 | Shoot far-descriptor/tile repair / static intermediate v48 | `11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E` |
 | Added physics pointer repair and other-player binding / static intermediate v49 | `93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E` |
-| Tail HUD/OBJ resource binding / current static composite v50 | `C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1` |
+| Tail HUD/OBJ resource binding / preserved static v50 | `C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1` |
+| Shoot rule-selection/application components | `FD4E69C29003325D47A6189C3A05005D38FF7B4B6D442B31A271D360A9A0DE5C` |
+| Shoot palette operations | `2008EC0520554F09C84351220B8A30931E1E636A7CEEE9BF3CBBB12C28C1B5AE` |
+| Bounded initializer and constructor resources / static v51 | `726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284` |
 
 The full candidate is 8 MiB. Its GBA header has entry word `0xEA00002E`, title
 `DIGIMON BTSP`, game code `A8SE`, maker code `B2`, fixed byte `0x96`, and a
@@ -193,7 +197,8 @@ WSC 1.0, and WSC Ver. 1.5 originals and regenerates the P4 and opening-P1
 conversion corpora, all fourteen consumed character/evolution/VS/boss blobs,
 the opening P0 blob, all twelve consumed stage blobs, the three Shoot child
 resources, the initializer P1/P0/P2 resource set, the source-bound far-tile
-repair, corrected physics asset, other-player and tail-resource phases, and all nineteen ROM layers.
+repair, corrected physics asset, other-player and tail-resource phases, the new
+rule/palette/initializer components, and all twenty-two ROM layers.
 Every source, intermediate, asset, and layer is checked against its expected
 SHA-256.
 
@@ -205,7 +210,7 @@ produces VS blob SHA-256
 `2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856`,
 byte-identical to the prior RAM-derived blob.
 
-Two new runs in separate empty output directories `build/repro-v50-a` and
+The preserved earlier runs in separate empty output directories `build/repro-v50-a` and
 `build/repro-v50-b` each regenerated exact v50 SHA
 `C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1`.
 All 121 files in each output tree match by relative path and SHA-256; the
@@ -216,6 +221,29 @@ The preceding four layers still reproduce exact v32 SHA
 This proves current-candidate reproducibility only; it does not close any
 missing-content or final-QA gate. No emulator or supplied save was used for
 the v50 build checks.
+
+On 2026-10-13, two fresh full builds in `build/repro-v51-20261013-a` and
+`build/repro-v51-20261013-b` produced all 22 layers and 131 files each.
+The complete relative-path/SHA-256 comparison has zero differences. Both final
+ROMs hash to `726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284`;
+the identical build manifest hashes to
+`F3C2B03E5608B5D0533D05F19F82D17D55E938360040C606CFBEB26F7E5705F7`.
+The comparison record `build/repro-v51-20261013-comparison.json` hashes to
+`62E253640552F3E7227F25D2DA7289ED2C78E873BA602FC9C0C42A4834511841`.
+There are 2,340 changed bytes relative to preserved v50, all within the three
+new layers' exact Expected Write intervals. The source hashes and both old v50
+ROM hashes were rechecked unchanged; the final header complement remains `6C`.
+The main build now refuses a populated output directory before generating files.
+No save access or emulator execution was used in these checks.
+
+New pinned independent report hashes are:
+
+| Verification | SHA-256 |
+|---|---|
+| Palette source lifetime and consumer projection | `2F5FA817B464F13A7606388F9650549A41C801A8FEB439A4FE51A2430A3048ED` |
+| Rule selection/application | `7F4DFF7CB239B0C90A80A2168FC1D9BF5F9F05605E7953084A8203C2C8FC7678` |
+| Palette final code and finite channel semantics | `7A6A9632EEDA2A98498405A2EAD2F78A27AB4BC6CEF142CEC9CBDF1FD9B96AAB` |
+| Initializer final code, consumer/ABI/resource inverse | `F2BC89B285C7051DCE8C4A1680344A426CA5201B36F15764302DEB069D184C3E` |
 
 The new native-consumer verifier exposed a historical physics placement
 defect: ID 12 reached zero padding, ID 13 reached ID 12's record, and ID 14
@@ -562,7 +590,7 @@ manifests record `monitor_visible: false`.
 | Collision, events, battle logic | UNKNOWN | Not exercised on exact v32 |
 | Added fighters/evolutions | UNKNOWN | Static routes exist; no exact-v32 runtime proof |
 | Added stage mechanics | UNKNOWN | Static code exists; no exact-v32 runtime proof |
-| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v50 retains the child/parent/upper-state graphs, resources and sounds, the constructor/player corrections, P0 and physics-pointer repairs, and other-player phase. It adds resource segments `7394..73A9` and `74A2..74DA` using verified native HUD/OBJ consumers. Player/resource phases remain uncalled from normal play; both `9908` calls still stop at a boundary stub. The 6,096-byte/43-callback lower rules graph and three indirect tables are bounded but not fully implemented. Remaining `7168` preparation/tail, existing-object and palette-mirror lifetime, menu/controller, rules, rewards, win/loss, exit, conditional sweep and audible behavior remain release gates |
+| Digimon Shoot complete rules and transitions | PARTIAL STATIC ONLY | Current v51 retains prior child/parent/upper-state graphs and repaired resources, and adds rule-selection/application, palette operations, bounded initializer components and `93E7/888B` constructor adapters. The native BG/OBJ projection, selective backup, timer units and resource consumers are verified. Complete original-order initialization and normal-play scene entry remain absent; both `9908` calls still stop at a boundary stub. The 6,096-byte/43-callback lower graph, entry lifetime, bank-sensitive globals, display/HUD setup, hold/audio, rewards, win/loss, menu and exit remain release gates |
 | Tag/rating/opening additions | PARTIAL STATIC ONLY | The complete 19-linear + 5-choice opening graph is preserved in untested v47 through its v35 intermediate; tag/rating producers, persistence/UI, and all opening runtime behavior remain unverified |
 | Alternate final boss route | UNKNOWN | Static integration exists; no exact-v32 runtime proof |
 | BGM | UNKNOWN | Not verified on exact v32 |
@@ -618,9 +646,9 @@ source order with converted durations and activates the record-49 object on
 event `0x25`. The independent verifier checks the callback call targets,
 successors, selectors, native construction/update/skip adapters, changed-byte
 boundary, and event table in the v35 opening-linear intermediate retained by
-current v50. These are static
+current v51. These are static
 implementation facts, not visual, audio, timing, transition, or skip runtime
-proof. No v50 runtime evidence was collected. See
+proof. No v51 runtime evidence was collected. See
 `records/opening-presentation.md` for addresses and manifest hashes.
 
 A hidden/chromeless WSC 1.0 capture attempt parsed its command line but did not
@@ -662,8 +690,58 @@ not yet earned runtime credit under the recovery audit rules.
 
 ## Single next milestone
 
+### 2026-10-13 implementation delta
+
+The three new layers implement 367 ARM instructions: 60 rule-selection/application
+instructions, 196 palette instructions, and 111 bounded initializer/constructor
+instructions. The controller preserves the 64-way source decision table, signed
+difficulty handling and exact RNG call cardinality. Independent finite checking
+covers 262,144 decision partitions and rejects twelve meaningful corruptions.
+The absent `810D`, `8AB8`, and `8CDD` continuations still prevent a complete
+controller adapter; `9908` remains a boundary stub.
+
+Palette projection is now tied to actual consumers: source rows 0..7 use native
+BG0..7, rows 8..15 use OBJ0..7, and their zero colors also feed BG8..15 backdrop
+lookups. The 512-byte mirror and 528-byte hardware projection are distinct. The
+384-byte selective copy, sixteen gray zero colors and the white/black/target
+operations are implemented without modifying high BG colors 1..15. The verifier
+checks all emitted instructions, inverse colors, finite channel progression and
+eleven corruptions. Known competing writers and source snapshot lifetime are
+recorded in [palette ownership](records/shoot-palette-ownership.md).
+
+The separate [scene ownership proof](records/shoot-scene-ownership.md) identifies
+the input/battle task replacements that exclude the known pause and repeated
+match-end producers, and preserves the source restoration/retirement order.
+It locates the future adapter at the existing case-5 allocation `0833FD18` /
+callback literal `0833FDB4`. This requires normal completed startup, no other
+live pause/cutscene owner, and replacement of the selected scene rather than
+allocation of another one. Priority does not deduplicate tasks. This conditional
+proof has sixteen fixed evidence ranges and seven semantic mutation negatives;
+its standalone report hash is
+`5F9323F4641873B03A6187EFF37FF3F1C559E46D028F0CA2887EF2E938ECA291`.
+It is separate from the frozen v51 build graph because v51 installs no scene caller.
+
+Initializer components add four BG descriptor resets, staging resets, the existing
+Shoot graphics clone, stage-manager preparation, timer initialization, the proven
+`1000:0660` halfword clear, and two resource constructor adapters. The timer's
+18,000 source ticks map to 14,400 native ticks through commercial producer and
+HUD-consumer evidence. The initial zero write to `03D4` is preserved before the
+other two flag clears and final `0x10` assignment.
+
+All 35 P1 payload items of the `93E7`/`888B` resources are independently read back;
+their thirteen nonzero per-item references resolve to six owned ten-byte records.
+The native draw consumer uses dynamic staging, so the source fixed-VRAM P0
+preloads are represented by native P0 resource binding. These adapters do not
+allocate an object, choose its first event or implement the surrounding callbacks.
+
+The complete initializer is still absent. `ES=1000:3CD8/3CDA` is not interchangeable
+with `DS=0C00:3CD8/3CDA`; its bank/consumer attribution remains open. Dedicated
+display/IRQ preparation, source HUD/font/map setup and whole entry lifetime must
+be resolved before the resident phases can be connected in original order.
+The first milestone is **not complete**. No supplied save or emulator was used.
+
 The baseline path through one `FIRST RETAIL BATTLE` Right-input consumer is
-complete for exact v32. The clean v50 build preserves the complete static
+complete for exact v32. The v51 build preserves the complete static
 19-linear + 5-choice opening graph and installs the internally connected Shoot
 child generator/callback family over the v36 resource layer plus the bounded
 native `CE`/`D2` sound assets, the internally connected parent chain, and the
@@ -678,9 +756,9 @@ resident other-player portion `73F0..74A2`. The surrounding palette/resource
 steps and transition ownership are not replaced by this portion. v50 adds
 resident `7394..73A9` and `74A2..74DA` resource segments. The HUD tile copy
 uses the actual native tile-`3FC`/OBJ-palette-6 consumer, not the source tile
-number `91`. The other two P0 preload sites are now linked to later source
-presentation constructors at `93E7` and `888B`, but no native replacement
-for their preload/consumer lifecycle is yet established.
+number `91`. The other two P0 preload sites are linked to later source presentation
+constructors at `93E7` and `888B`; v51 supplies native constructor/resource adapters,
+while the surrounding callback and allocation lifecycle remains open.
 The next active implementation milestone returns to the largest known content
 gap: **DIGIMON SHOOT RULES AND TRANSITIONS**. Corrected entry analysis proves
 `9908` is a helper, not the external entry. The next integration must translate

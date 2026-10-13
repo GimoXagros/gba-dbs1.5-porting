@@ -865,3 +865,74 @@ display base does not establish a segment mapping. Existing source palette
 conversion can be independently inverted against the stated retail table.
 These checks require ROMs only, never the supplied save. No new build or
 runtime check was performed for this documentation-only handoff.
+
+<a id="shoot-v51"></a>
+
+## SHOOT-V51: implemented resident components, 2026-10-13
+
+The user resumed actual implementation from clean HEAD
+`f056934bbba3dfa9bbabf46404e12ddd6595b8e9` on `codex/progress-snapshot`.
+The three exact original ROM hashes and both v50 candidate hashes were checked
+before reuse and again after the final builds. No recovery audit restart, save
+read/hash, emulator launch or visible verification window was performed.
+
+### Implemented code and ownership
+
+| Component | Native entry/range | Scope |
+|---|---|---|
+| Rule selection and application | `085C6000`, `085C6200`, table `085C6400` | 64 source decisions, signed difficulty, RNG cardinality and object effects; three required callbacks still absent |
+| Palette snapshot | `085C1900` | 512-byte logical mirror using actual BG/OBJ consumers |
+| Selective preparation | `085C1C00` | 384-byte selected copy, sixteen gray zeros and 528-byte white hardware projection |
+| Fade operations | `085C1D00`, `085C1F00` | White-to-black and black-to-target channel steps, explicit remaining-count ABI, BG0 alias repair |
+| Graphics subset | `085C4000` | Proven BG descriptor/map/staging resets plus existing Shoot graphics clone |
+| Stage-manager subset | `085C4300` | Stage 11, native timer 14,400, source-order flag clears/set, existing expanded stage manager |
+| Proven global clear | `085C4400` | Only source `1000:0660` mapped to native `030048A4` |
+| Constructor resource adapters | `085C4500`, `085C4600` | Actual native fifteen-argument ABI for source `93E7` and `888B` |
+| Relocated resources | `085C4800`, `085C4C00`, `085C5000` | Two complete P1 populations and P2; every nonzero per-item record pointer is local and source-identical |
+
+These add 367 ARM instructions and change 2,340 ROM bytes relative to v50.
+They do not install an outer initializer, scene caller, menu entry or replacement
+for the `9908` boundary. Actual write intervals are guarded independently; pointer
+and ARM-branch-like values reaching untouched gaps are reported and preserved.
+The palette PREPARE entry was moved from prospective `085C1B00` to `085C1C00`
+because an existing aligned value already named the former address.
+
+Detailed evidence and exact call contracts:
+
+- [Palette representation and source lifetime](shoot-palette-ownership.md).
+- [Rule selection and missing continuations](shoot-rules-continuation.md).
+- [Initializer consumers, relocation and remaining effects](shoot-initializer-lifetime.md).
+- [Conditional normal-entry scene ownership](shoot-scene-ownership.md).
+
+### Independent validation and reproduction
+
+The final verifiers import no generator/converter. They inspect every final
+instruction, literal and resource consumer, invert the source representation,
+check complete-ROM write containment, and reject semantic corruption. Rule
+selection has 262,144 finite decision partitions and twelve negative controls;
+palette code has finite channel/projection checks and eleven negatives;
+initializer code/resources have eight negatives and all 111 instructions checked.
+These are static specification and consumer checks, not CPU execution or gameplay QA.
+
+Two fresh full builds generated 22 ROM layers and 131 files each in
+`build/repro-v51-20261013-a` and `build/repro-v51-20261013-b`.
+Every relative path and SHA-256 matches. Final v51 SHA-256:
+`726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284`.
+Build manifest SHA-256:
+`F3C2B03E5608B5D0533D05F19F82D17D55E938360040C606CFBEB26F7E5705F7`.
+The source and preserved v50 hashes are unchanged. The main builder rejects an
+existing populated output folder; that refusal was checked before the two runs.
+
+### Remaining first-milestone work
+
+Bind the conditional scene-owner proof to the actual normal battle entry, retaining
+both task replacements through restore and scene retirement. Close the dedicated
+display/IRQ/HUD/font/map setup and bank-sensitive `ES1000:3CD8/3CDA` writes, then
+connect the complete initializer in original order. Source `DS0C00:3CD8/3CDA`
+fighter globals are a different physical location and cannot be substituted.
+
+The `810D`, `8AB8`, `8CDD` continuations, complete lower rules graph, hold/audio
+scheduling, rewards, win/loss, menu and exit remain open. Merely calling the new
+selection or palette helper does not close these gates. First milestone completion
+and normal-play reachability are not claimed. Runtime evidence remains v32 and
+does not gain credit from this static work.

@@ -82,6 +82,10 @@ SHOOT_OTHER_PLAYER_VERIFICATION_SHA256 = (
 SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256 = (
     "56A41B0B88EA9BD49402F986A0CAEA63CF24C1156D019B4B99BCEB739CAFB87C"
 )
+SHOOT_RULES_VERIFICATION_SHA256 = "7F4DFF7CB239B0C90A80A2168FC1D9BF5F9F05605E7953084A8203C2C8FC7678"
+SHOOT_PALETTE_VERIFICATION_SHA256 = "7A6A9632EEDA2A98498405A2EAD2F78A27AB4BC6CEF142CEC9CBDF1FD9B96AAB"
+SHOOT_PALETTE_OWNERSHIP_SHA256 = "2F5FA817B464F13A7606388F9650549A41C801A8FEB439A4FE51A2430A3048ED"
+SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256 = "F2BC89B285C7051DCE8C4A1680344A426CA5201B36F15764302DEB069D184C3E"
 
 EXPECTED_ASSETS = {
     "id12-base.bin": "129991FB37E43FFE10DADE20E8552706BB2C594AA20D8253F35D542B01A8E0CB",
@@ -153,7 +157,10 @@ EXPECTED_LAYERS = {
     "shoot-player-binding.gba": "ECE3D7E6428A81C93767FC72F79BC8EA5BD7E243E814FBEDCC6FFB079CEFDFC0",
     "shoot-far-tiles.gba": "11940B101AD0FA2DDA0886A5A04D3A750FE2D87411ADCA512F4ADEE78888284E",
     "shoot-other-player.gba": "93A325538474B6BB7978854CFD55BC3161B129DCDEF884E5B076507FA708EA1E",
-    "current-candidate.gba": "C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1",
+    "shoot-tail-resources.gba": "C294106D381C1492D02D1FF0CBD3DBB6BDC07BF783C044A0D6E10BE0A6E2A0B1",
+    "shoot-rules.gba": "FD4E69C29003325D47A6189C3A05005D38FF7B4B6D442B31A271D360A9A0DE5C",
+    "shoot-palette.gba": "2008EC0520554F09C84351220B8A30931E1E636A7CEEE9BF3CBBB12C28C1B5AE",
+    "current-candidate.gba": "726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284",
 }
 
 
@@ -190,6 +197,8 @@ def main() -> int:
     require_hash(args.wsc15, WSC15_SHA256, "WSC Ver. 1.5 original")
 
     output = args.output_dir.resolve()
+    if output.exists() and (not output.is_dir() or any(output.iterdir())):
+        raise SystemExit("output directory must be new or empty; existing builds are preserved")
     assets = output / "converted-assets"
     stages = output / "stage-assets"
     opening_assets = output / "opening-assets"
@@ -295,6 +304,13 @@ def main() -> int:
         DIRECT_P1_COMMERCIAL_ORACLE_SHA256,
         "direct P1 commercial oracle",
     )
+    shoot_palette_ownership = intermediate / "shoot-palette-ownership.json"
+    run(
+        "analyze_shoot_palette_ownership.py", args.gba, args.wsc10, args.wsc15,
+        "--output", shoot_palette_ownership,
+    )
+    require_hash(shoot_palette_ownership, SHOOT_PALETTE_OWNERSHIP_SHA256,
+                 "Shoot palette representation and unresolved ownership boundary")
 
     animation_specs = (
         ("id12-base", "0x29B8A0", "0x448000"),
@@ -391,6 +407,9 @@ def main() -> int:
     shoot_player_binding = output / "shoot-player-binding.gba"
     shoot_far_tiles = output / "shoot-far-tiles.gba"
     shoot_other_player = output / "shoot-other-player.gba"
+    shoot_tail_resources = output / "shoot-tail-resources.gba"
+    shoot_rules = output / "shoot-rules.gba"
+    shoot_palette = output / "shoot-palette.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -525,6 +544,20 @@ def main() -> int:
         shoot_other_player,
         args.gba,
         args.wsc15,
+        shoot_tail_resources,
+        "--manifest",
+        output / "shoot-tail-resources.json",
+    )
+    run(
+        "build_shoot_rules.py", shoot_tail_resources, args.gba, args.wsc10, args.wsc15,
+        shoot_rules, "--manifest", output / "shoot-rules.json",
+    )
+    run(
+        "build_shoot_palette_transition.py", shoot_rules, args.gba, args.wsc15,
+        shoot_palette, "--manifest", output / "shoot-palette.json",
+    )
+    run(
+        "build_shoot_initializer.py", shoot_palette, args.gba, args.wsc10, args.wsc15,
         candidate,
         "--manifest",
         output / "current-candidate.json",
@@ -735,7 +768,7 @@ def main() -> int:
     run(
         "verify_shoot_tail_resources.py",
         shoot_other_player,
-        candidate,
+        shoot_tail_resources,
         args.gba,
         args.wsc15,
         "--output",
@@ -746,6 +779,25 @@ def main() -> int:
         SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256,
         "Shoot tail resource/actual HUD and OBJ palette consumer verification",
     )
+    shoot_rules_verification = intermediate / "shoot-rules-verification.json"
+    run(
+        "verify_shoot_rules.py", shoot_tail_resources, shoot_rules, args.gba, args.wsc10,
+        args.wsc15, "--output", shoot_rules_verification,
+    )
+    require_hash(shoot_rules_verification, SHOOT_RULES_VERIFICATION_SHA256, "Shoot controller components")
+    shoot_palette_verification = intermediate / "shoot-palette-verification.json"
+    run(
+        "verify_shoot_palette_transition.py", shoot_rules, shoot_palette, args.gba, args.wsc15,
+        "--output", shoot_palette_verification,
+    )
+    require_hash(shoot_palette_verification, SHOOT_PALETTE_VERIFICATION_SHA256, "Shoot palette operations")
+    shoot_initializer_component_verification = intermediate / "shoot-initializer-component-verification.json"
+    run(
+        "verify_shoot_initializer.py", shoot_palette, candidate, args.gba, args.wsc10,
+        args.wsc15, "--output", shoot_initializer_component_verification,
+    )
+    require_hash(shoot_initializer_component_verification, SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256,
+                 "Shoot initializer final instructions and resource consumers")
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
     run(
         "verify_shoot_initializer_p1_assets.py",
@@ -796,6 +848,13 @@ def main() -> int:
             "two further resident resource segments implement source 7394..73A9 OBJ slot-5 "
             "palette loading and 74A2..74DA native HUD tile-3FC/palette-6 loading plus scroll reset; "
             "they reuse exact commercial HUD pixels and have no external caller; "
+            "new resident controller selection/application components preserve the 64-way source "
+            "decision table and RNG cardinality without connecting absent callbacks; palette "
+            "operations preserve selective backup, split BG/OBJ row consumers and source-channel "
+            "cadence, with exclusive scene ownership still an unfulfilled caller precondition; "
+            "initializer components add native graphics resets, stage manager preparation, "
+            "the source timer in commercial native units, the proven 0660 clear and two "
+            "constructor adapters with independently relocated per-item P1 records; "
             "outer initializer preparation/tail/menu entry, external controller 9908/9A1B rules, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
@@ -831,6 +890,10 @@ def main() -> int:
             "shoot_far_tile_verification_sha256": SHOOT_FAR_TILE_VERIFICATION_SHA256,
             "shoot_other_player_verification_sha256": SHOOT_OTHER_PLAYER_VERIFICATION_SHA256,
             "shoot_tail_resource_verification_sha256": SHOOT_TAIL_RESOURCE_VERIFICATION_SHA256,
+            "shoot_rules_verification_sha256": SHOOT_RULES_VERIFICATION_SHA256,
+            "shoot_palette_verification_sha256": SHOOT_PALETTE_VERIFICATION_SHA256,
+            "shoot_palette_ownership_sha256": SHOOT_PALETTE_OWNERSHIP_SHA256,
+            "shoot_initializer_component_verification_sha256": SHOOT_INITIALIZER_COMPONENT_VERIFICATION_SHA256,
         },
         "assets": EXPECTED_ASSETS,
         "stage_assets": EXPECTED_STAGE_ASSETS,

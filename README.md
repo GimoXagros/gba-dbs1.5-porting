@@ -28,9 +28,9 @@ in `outputs/`.
 The recovery audit, actual-runtime matrix, and corrected progress baseline are
 tracked in [`PORT_AUDIT.md`](PORT_AUDIT.md). The earlier implementation notes
 and remaining release gates are retained in [`STATUS.md`](STATUS.md).
-Work is paused at the user's request after the v50 palette-transition
-investigation. Start with [`RESUME.md`](RESUME.md) to continue from the saved
-checkpoint; this documentation-only handoff does not create a v51 build.
+Implementation resumed on 2026-10-13. v51 adds resident Shoot rule, palette
+and initializer components; the complete normal-play entry remains unconnected.
+Start with [`RESUME.md`](RESUME.md) for the current implementation boundary.
 A model-specific continuation package and copy-ready prompt are in
 [`ASTRA_HANDOFF.md`](ASTRA_HANDOFF.md). The recommended setting for this
 reverse-engineering milestone is GPT-6 Astra with `max` reasoning effort.
@@ -38,8 +38,8 @@ Reverse-engineering evidence is kept locally because
 it contains source-derived captures and dumps; the committed tools regenerate
 that evidence from user-supplied, hash-identified inputs.
 
-The current static internal composite is **v50**, built from the three
-hash-identified originals through nineteen checked ROM layers. Its exact
+The current static internal composite is **v51**, built from the three
+hash-identified originals through twenty-two checked ROM layers. Its exact
 image and manifest hashes, historical layers, and remaining gates are recorded
 in [`PORT_AUDIT.md`](PORT_AUDIT.md#reproducibility-audit).
 Each builder refuses an unexpected input SHA-256, so a layer change must
@@ -59,9 +59,9 @@ py -3 tools/build_current_candidate.py "<USA-GBA-original>" "<WSC-1.0-original>"
 ```
 
 It regenerates the commercial WSC-to-GBA comparison corpora, every currently
-consumed character/evolution/VS/stage/boss/opening asset, and all nineteen ROM
+consumed character/evolution/VS/stage/boss/opening asset, and all twenty-two ROM
 layers. It fails on any unexpected source, intermediate, asset, or layer
-SHA-256. Two independent empty-directory runs reproduced exact v50,
-including all 121 output files, byte-for-byte. This is a
+SHA-256 and refuses populated output directories. Two independent empty-directory
+runs reproduced exact v51, including all 131 output files, byte-for-byte. This is a
 reproducibility result for the current incomplete candidate, not a complete
 Ver. 1.5 port or a distributable ROM.
