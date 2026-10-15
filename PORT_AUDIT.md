@@ -1,5 +1,31 @@
 # Port recovery audit
 
+## 2026-10-15 v54 implementation update
+
+The user explicitly authorized invisible development-time source/GBA runtime
+verification. Earlier defer-until-integration wording below is superseded;
+the supplied WSC save remains unopened and unhashed. The final requested local
+deliverable is a completed GBA ROM, but this checkpoint is not complete.
+
+v54 installs the missing Shoot collision grid in both BG resource consumers
+and repairs the successful 193B-to-197A same-invocation transition. See
+`records/shoot-spatial-repair.md`. Both full source-input builds passed all
+checks: 30 ROM layers and 158 identical relative-path/hash pairs. Candidate:
+`CAB43EA68A6620D150CA853FC51D4690AAF0889A6D7351D90F99128FE5DD2C69`.
+Manifest: `B0795BA5A4AFB743A824EC43C0D411348DE752FE47528D045730A8BE72624D53`.
+
+Original WSC cold boot, roster and first battle were observed using an isolated
+Mednafen 1.32.1 source build6985841 and emucap corecd0a39b, no visible window,
+no supplied save and no guest-memory writes. The logged route does not reach
+Shoot and cannot close its terminal/SRAM observer or coordinate gates.
+Evidence: `build/source-runtime-20261015/probe-log.json`.
+
+The old mGBA0.10.5 private-desktop environment showed abnormal screens for both
+retail USA and candidate, so those screens are not proof of a port regression.
+The preserved development mGBA buildfa977ccbc815efc93aefad9acddc9af0577d7827
+displayed the retail USA title normally. Runtime results must identify their
+exact emulator and input timing; static reproducibility is not runtime parity.
+
 Audit date: 2026-08-31; implementation resumed 2026-10-13 (Asia/Seoul)
 
 The user resumed implementation from the preserved v50 checkpoint. Current v53

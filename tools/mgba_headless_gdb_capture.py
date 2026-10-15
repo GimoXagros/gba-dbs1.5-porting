@@ -217,6 +217,7 @@ class GdbRemote:
     def __init__(self, connection: socket.socket) -> None:
         self.connection = connection
         self.connection.settimeout(10.0)
+        self.asynchronous_stops: list[str] = []
 
     @staticmethod
     def _packet(payload: bytes) -> bytes:
@@ -229,8 +230,8 @@ class GdbRemote:
             raise ConnectionError("mGBA GDB connection closed")
         return value
 
-    def receive_packet(self) -> bytes:
-        while True:
+    def receive_packet(self, started: bool = False) -> bytes:
+        while not started:
             value = self._read_byte()
             if value == b"$":
                 break
@@ -240,7 +241,7 @@ class GdbRemote:
             if value == b"#":
                 break
             payload.extend(value)
-        received_checksum = int(self.connection.recv(2), 16)
+        received_checksum = int(self._read_byte() + self._read_byte(), 16)
         if (sum(payload) & 0xFF) != received_checksum:
             self.connection.sendall(b"-")
             raise RuntimeError("bad checksum in GDB response")
@@ -249,8 +250,16 @@ class GdbRemote:
 
     def command(self, payload: str) -> bytes:
         self.connection.sendall(self._packet(payload.encode("ascii")))
-        acknowledgement = self._read_byte()
-        if acknowledgement != b"+":
+        while True:
+            acknowledgement = self._read_byte()
+            if acknowledgement == b"+":
+                break
+            if acknowledgement == b"$":
+                pending = self.receive_packet(started=True)
+                if pending[:1] not in (b"S", b"T"):
+                    raise RuntimeError(f"unexpected GDB packet before acknowledgement: {pending!r}")
+                self.asynchronous_stops.append(pending.decode("ascii"))
+                continue
             raise RuntimeError(f"GDB command was not acknowledged: {acknowledgement!r}")
         response = self.receive_packet()
         if response.startswith(b"E"):
@@ -536,6 +545,7 @@ def main() -> int:
                 "pre_input_states": pre_input_states,
                 "input_consumer_traces": input_consumer_traces,
                 "gdb": {
+                    "asynchronous_stops": remote.asynchronous_stops,
                     "initial_stop": initial_stop,
                     "final_stop": final_stop,
                     "registers_hex": registers,

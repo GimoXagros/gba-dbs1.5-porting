@@ -96,6 +96,7 @@ SHOOT_STAGE_ASSET_VERIFICATION_SHA256 = "213203E94233DA124057CC5BE7D9481BBA98F83
 SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256 = "E9B32C9DBF53FA543D5CC2800C467764D4CE44C6659528EBFB353F8DFC9B5FF5"
 SHOOT_TERMINAL_VERIFICATION_SHA256 = "4D6FE917B45ADF7E26E9F0E4FAE4EF938AF1AC84D91D06B63BC0798D06C466BF"
 SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256 = "7BD2283D660C034FFCC5A7C458E22126C06E55C208CFCB45E5A6B7A863A8752F"
+SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256 = "3BB0886B55FB760CD423BBFF58582049FDCD5F8CA52CE90D90A2F307D22548E4"
 SHOOT_SRAM_BOUNDARY_SHA256 = "29304FA84432898B857AC8874C1525E57FDE0EABBAFFC5008DBFA80962E27295"
 
 EXPECTED_ASSETS = {
@@ -178,7 +179,8 @@ EXPECTED_LAYERS = {
     "shoot-stage-assets.gba": "00C4A8F4710BC0E2F4A31810CDD6FE2610D9670D9A989273162ADF33167211E7",
     "shoot-stage-handshake.gba": "F793AB2389B6F03812717709C5FECB05F9406451F79F5CF5C249C2FFE2EF4CEF",
     "shoot-terminal.gba": "39936F49AB455032B4B71355C2C12127DC35D281670C2D72F48D4273F466CD0D",
-    "current-candidate.gba": "455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48",
+    "shoot-normal-display.gba": "455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48",
+    "current-candidate.gba": "CAB43EA68A6620D150CA853FC51D4690AAF0889A6D7351D90F99128FE5DD2C69",
 }
 
 
@@ -435,6 +437,7 @@ def main() -> int:
     shoot_stage_assets = output / "shoot-stage-assets.gba"
     shoot_stage_handshake = output / "shoot-stage-handshake.gba"
     shoot_terminal = output / "shoot-terminal.gba"
+    shoot_normal_display = output / "shoot-normal-display.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -597,7 +600,9 @@ def main() -> int:
         "--manifest", output / "shoot-stage-handshake.json")
     run("build_shoot_terminal.py", shoot_stage_handshake, args.gba, args.wsc10, args.wsc15, shoot_terminal,
         "--manifest", output / "shoot-terminal.json")
-    run("build_shoot_normal_display_route.py", shoot_terminal, args.gba, candidate,
+    run("build_shoot_normal_display_route.py", shoot_terminal, args.gba, shoot_normal_display,
+        "--manifest", output / "shoot-normal-display.json")
+    run("build_shoot_spatial_repair.py", shoot_normal_display, args.gba, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -869,11 +874,16 @@ def main() -> int:
     require_hash(terminal_verification, SHOOT_TERMINAL_VERIFICATION_SHA256,
                  "Shoot terminal resident phases and same-update repairs")
     normal_display_verification = intermediate / "shoot-normal-display-verification.json"
-    run("verify_shoot_normal_display_route.py", shoot_terminal, candidate, args.gba,
+    run("verify_shoot_normal_display_route.py", shoot_terminal, shoot_normal_display, args.gba,
         "--output", normal_display_verification)
     require_hash(normal_display_verification, SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256,
                  "Shoot connected normal display with preserved terminal fallback")
     sram_boundary = intermediate / "shoot-sram-boundary.json"
+    spatial_verification = intermediate / "shoot-spatial-repair-verification.json"
+    run("verify_shoot_spatial_repair.py", shoot_normal_display, candidate, args.gba,
+        args.wsc10, args.wsc15, "--output", spatial_verification)
+    require_hash(spatial_verification, SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256,
+                 "Shoot collision grid and same-invocation terminal transition")
     run("analyze_shoot_sram_boundary.py", args.wsc15, "--output", sram_boundary)
     require_hash(sram_boundary, SHOOT_SRAM_BOUNDARY_SHA256, "Shoot unresolved SRAM observer evidence")
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
@@ -947,6 +957,8 @@ def main() -> int:
             "same-update repairs are resident with external damage hooks closed; SRAM observer "
             "analysis remains explicitly UNRESOLVED_OBSERVER; terminal interrupted-DI and "
             "camera-domain contracts remain unfulfilled; "
+            "the final repair binds both Shoot backgrounds to the complete source collision grid "
+            "and executes terminal 197A in the successful 193B invocation; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
@@ -996,6 +1008,7 @@ def main() -> int:
             "shoot_stage_handshake_verification_sha256": SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256,
             "shoot_terminal_verification_sha256": SHOOT_TERMINAL_VERIFICATION_SHA256,
             "shoot_normal_display_verification_sha256": SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256,
+            "shoot_spatial_repair_verification_sha256": SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256,
             "shoot_sram_boundary_unresolved_sha256": SHOOT_SRAM_BOUNDARY_SHA256,
         },
         "assets": EXPECTED_ASSETS,
