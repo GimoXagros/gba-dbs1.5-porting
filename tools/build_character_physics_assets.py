@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Convert WSC 1.5 physics records with pointer-to-payload placement checks.
+"""Convert WSC 1.5 physics through the source character pointer table.
 
-The explicit legacy option exists only to reproduce the pinned pre-v49 build
-layers. Those layers require the final three-pointer repair before use.
+Explicit legacy modes reproduce the frozen v48/v49 assets, including their
+incorrect arithmetic source routing. They are not current physics assets.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC15_SHA256 = "C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7"
 GBA_BASE = 0x08000000
 WSC_TABLE = 0x3B847E
+WSC_POINTER_TABLE = 0x3B8460
 GBA_RECORD_TABLE = 0x353508
 RECORD_BYTES = 0x78
 RECORD_HALFWORDS = RECORD_BYTES // 2
@@ -44,9 +45,24 @@ def convert_field(index: int, value: int) -> int:
     return value
 
 
-def converted_record(wsc: bytes, runtime_id: int) -> bytes:
+def source_record_offset(wsc: bytes, runtime_id: int, *, legacy_source_routing: bool = False) -> int:
+    if not 0 <= runtime_id < POINTER_COUNT:
+        raise ValueError("character ID outside the source pointer table")
+    if legacy_source_routing:
+        return WSC_TABLE + runtime_id * RECORD_BYTES
+    # Source 7435EC..743601 selects ES=2846, C2=BB and loads a 16-bit
+    # offset from ES:[character*2]. IDs 12-14 are not in arithmetic ID order.
+    relative = struct.unpack_from("<H", wsc, WSC_POINTER_TABLE + runtime_id * 2)[0]
+    physical = 0x2846 * 16 + relative
+    if not 0x20000 <= physical <= 0x30000 - RECORD_BYTES:
+        raise ValueError("physics record leaves its source C2 bank window")
+    return (0xBB & 0x7F) * 0x10000 + (physical & 0xFFFF)
+
+
+def converted_record(wsc: bytes, runtime_id: int, *, legacy_source_routing: bool = False) -> bytes:
     source = struct.unpack_from(
-        f"<{RECORD_HALFWORDS}h", wsc, WSC_TABLE + runtime_id * RECORD_BYTES
+        f"<{RECORD_HALFWORDS}h", wsc,
+        source_record_offset(wsc, runtime_id, legacy_source_routing=legacy_source_routing)
     )
     values = [convert_field(index, value) for index, value in enumerate(source)]
     return struct.pack(f"<{RECORD_HALFWORDS}h", *values)
@@ -58,8 +74,11 @@ def main() -> int:
     parser.add_argument("wsc", type=pathlib.Path)
     parser.add_argument("output", type=pathlib.Path)
     parser.add_argument("--manifest", type=pathlib.Path)
-    parser.add_argument("--legacy-v48-layout", action="store_true",
-                        help="reproduce historical incorrect pointers; only for the guarded repair pipeline")
+    legacy = parser.add_mutually_exclusive_group()
+    legacy.add_argument("--legacy-v48-layout", action="store_true",
+                        help="reproduce frozen v48 pointer and source-routing errors")
+    legacy.add_argument("--legacy-v49-layout", action="store_true",
+                        help="reproduce frozen v49 corrected pointers but incorrect source routing")
     args = parser.parse_args()
 
     gba = args.gba.read_bytes()
@@ -68,6 +87,7 @@ def main() -> int:
         raise SystemExit("refusing unknown GBA input")
     if hashlib.sha256(wsc).hexdigest().upper() != WSC15_SHA256:
         raise SystemExit("refusing unknown WSC 1.5 input")
+    legacy_source = args.legacy_v48_layout or args.legacy_v49_layout
 
     mismatches = []
     for runtime_id in range(12):
@@ -75,7 +95,7 @@ def main() -> int:
             GBA_RECORD_TABLE + runtime_id * RECORD_BYTES:
             GBA_RECORD_TABLE + (runtime_id + 1) * RECORD_BYTES
         ]
-        actual = converted_record(wsc, runtime_id)
+        actual = converted_record(wsc, runtime_id, legacy_source_routing=legacy_source)
         for index, (left, right) in enumerate(zip(
             struct.unpack(f"<{RECORD_HALFWORDS}h", actual),
             struct.unpack(f"<{RECORD_HALFWORDS}h", expected),
@@ -110,20 +130,21 @@ def main() -> int:
     blob.extend(bytes(record12_target - TARGET_BASE - len(blob)))
     records = {}
     for runtime_id, target in ((12, record12_target), (13, record13_target), (14, record14_target)):
-        record = converted_record(wsc, runtime_id)
+        record = converted_record(wsc, runtime_id, legacy_source_routing=legacy_source)
         blob.extend(record)
         records[str(runtime_id)] = {
             "target": target - legacy_bias,
             "bytes": len(record),
             "sha256": hashlib.sha256(record).hexdigest().upper(),
-            "source_offset": WSC_TABLE + runtime_id * RECORD_BYTES,
+            "source_offset": source_record_offset(wsc, runtime_id, legacy_source_routing=legacy_source),
         }
 
     if not args.legacy_v48_layout:
         for runtime_id in (12, 13, 14):
             pointer = struct.unpack_from("<I", blob, runtime_id * 4)[0]
             start = pointer - GBA_BASE - TARGET_BASE
-            if blob[start:start + RECORD_BYTES] != converted_record(wsc, runtime_id):
+            if blob[start:start + RECORD_BYTES] != converted_record(
+                    wsc, runtime_id, legacy_source_routing=legacy_source):
                 raise SystemExit(f"physics pointer does not reach its record: ID {runtime_id}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -142,6 +163,9 @@ def main() -> int:
         "official_id11_special_form_mismatch_fields": mismatches,
         "claim_scope": "character physics/hitbox records; conversion exactly reproduces official GBA IDs 0-10",
     }
+    if not legacy_source:
+        result["source_pointer_table"] = WSC_POINTER_TABLE
+        result["source_routing"] = "ES 2846 / C2 BB, unsigned word at character * 2"
     if args.manifest:
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
         args.manifest.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

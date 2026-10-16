@@ -1,5 +1,21 @@
 # Runtime investigation, 2026-10-15
 
+## Attribution corrected on 2026-10-16
+
+The image classifications below did not prove a three-physics-pointer regression.
+The preserved far/other/revert captures have identical register, screenshot and
+six memory-region hashes. New execution probes reproduce the same undefined
+instruction failure in both far and other layers, before the physics constructor.
+The actual cause is callback 6 selecting entry 13 through the old eleven-entry
+presentation view. Its wrong P1/P0 pair produces an enormous renderer count and
+overwrites IWRAM. The guarded fix changes the view literal at raw0853F4, while
+retaining all three corrected physics pointers. See
+[the exact fault chain and repaired runtime](opening-presentation-routing-repair.md).
+The three physics payloads also had an independent source-routing defect; see
+[the actual source table repair](character-physics-routing.md).
+
+The original observations below remain historical notes, not current attribution.
+
 All runs used invisible private desktops. No supplied WSC save was opened,
 hashed or loaded. Full manifests, memory dumps and screenshots remain under
 ignored build/runtime-* directories. No modified ROM is a release.

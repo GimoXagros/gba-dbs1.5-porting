@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "status": "reference-catalog-not-runtime-font",
+  "source_language": "ja",
+  "reference": {
+    "attachment": "user supplied Digicode kana chart, 2026-10-16",
+    "sha256": null,
+    "identity_note": "Attachment visible in conversation; supplied Desktop path not present when checked. No pixel extraction or hash claimed."
+  },
+  "glyphs": [
+    {
+      "id": "jp-3042",
+      "hiragana": "あ",
+      "katakana": "ア",
+      "reference_row": 1,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-3044",
+      "hiragana": "い",
+      "katakana": "イ",
+      "reference_row": 1,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-3046",
+      "hiragana": "う",
+      "katakana": "ウ",
+      "reference_row": 1,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-3048",
+      "hiragana": "え",
+      "katakana": "エ",
+      "reference_row": 1,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-304a",
+      "hiragana": "お",
+      "katakana": "オ",
+      "reference_row": 1,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-306f",
+      "hiragana": "は",
+      "katakana": "ハ",
+      "reference_row": 1,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-3072",
+      "hiragana": "ひ",
+      "katakana": "ヒ",
+      "reference_row": 1,
+      "reference_column": 7
+    },
+    {
+      "id": "jp-3075",
+      "hiragana": "ふ",
+      "katakana": "フ",
+      "reference_row": 1,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-3078",
+      "hiragana": "へ",
+      "katakana": "ヘ",
+      "reference_row": 1,
+      "reference_column": 9
+    },
+    {
+      "id": "jp-307b",
+      "hiragana": "ほ",
+      "katakana": "ホ",
+      "reference_row": 1,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-304b",
+      "hiragana": "か",
+      "katakana": "カ",
+      "reference_row": 2,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-304d",
+      "hiragana": "き",
+      "katakana": "キ",
+      "reference_row": 2,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-304f",
+      "hiragana": "く",
+      "katakana": "ク",
+      "reference_row": 2,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-3051",
+      "hiragana": "け",
+      "katakana": "ケ",
+      "reference_row": 2,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-3053",
+      "hiragana": "こ",
+      "katakana": "コ",
+      "reference_row": 2,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-307e",
+      "hiragana": "ま",
+      "katakana": "マ",
+      "reference_row": 2,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-307f",
+      "hiragana": "み",
+      "katakana": "ミ",
+      "reference_row": 2,
+      "reference_column": 7
+    },
+    {
+      "id": "jp-3080",
+      "hiragana": "む",
+      "katakana": "ム",
+      "reference_row": 2,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-3081",
+      "hiragana": "め",
+      "katakana": "メ",
+      "reference_row": 2,
+      "reference_column": 9
+    },
+    {
+      "id": "jp-3082",
+      "hiragana": "も",
+      "katakana": "モ",
+      "reference_row": 2,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-3055",
+      "hiragana": "さ",
+      "katakana": "サ",
+      "reference_row": 3,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-3057",
+      "hiragana": "し",
+      "katakana": "シ",
+      "reference_row": 3,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-3059",
+      "hiragana": "す",
+      "katakana": "ス",
+      "reference_row": 3,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-305b",
+      "hiragana": "せ",
+      "katakana": "セ",
+      "reference_row": 3,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-305d",
+      "hiragana": "そ",
+      "katakana": "ソ",
+      "reference_row": 3,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-3084",
+      "hiragana": "や",
+      "katakana": "ヤ",
+      "reference_row": 3,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-3086",
+      "hiragana": "ゆ",
+      "katakana": "ユ",
+      "reference_row": 3,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-3088",
+      "hiragana": "よ",
+      "katakana": "ヨ",
+      "reference_row": 3,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-305f",
+      "hiragana": "た",
+      "katakana": "タ",
+      "reference_row": 4,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-3061",
+      "hiragana": "ち",
+      "katakana": "チ",
+      "reference_row": 4,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-3064",
+      "hiragana": "つ",
+      "katakana": "ツ",
+      "reference_row": 4,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-3066",
+      "hiragana": "て",
+      "katakana": "テ",
+      "reference_row": 4,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-3068",
+      "hiragana": "と",
+      "katakana": "ト",
+      "reference_row": 4,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-3089",
+      "hiragana": "ら",
+      "katakana": "ラ",
+      "reference_row": 4,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-308a",
+      "hiragana": "り",
+      "katakana": "リ",
+      "reference_row": 4,
+      "reference_column": 7
+    },
+    {
+      "id": "jp-308b",
+      "hiragana": "る",
+      "katakana": "ル",
+      "reference_row": 4,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-308c",
+      "hiragana": "れ",
+      "katakana": "レ",
+      "reference_row": 4,
+      "reference_column": 9
+    },
+    {
+      "id": "jp-308d",
+      "hiragana": "ろ",
+      "katakana": "ロ",
+      "reference_row": 4,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-306a",
+      "hiragana": "な",
+      "katakana": "ナ",
+      "reference_row": 5,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-306b",
+      "hiragana": "に",
+      "katakana": "ニ",
+      "reference_row": 5,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-306c",
+      "hiragana": "ぬ",
+      "katakana": "ヌ",
+      "reference_row": 5,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-306d",
+      "hiragana": "ね",
+      "katakana": "ネ",
+      "reference_row": 5,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-306e",
+      "hiragana": "の",
+      "katakana": "ノ",
+      "reference_row": 5,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-308f",
+      "hiragana": "わ",
+      "katakana": "ワ",
+      "reference_row": 5,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-3092",
+      "hiragana": "を",
+      "katakana": "ヲ",
+      "reference_row": 5,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-3093",
+      "hiragana": "ん",
+      "katakana": "ン",
+      "reference_row": 5,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-304c",
+      "hiragana": "が",
+      "katakana": "ガ",
+      "reference_row": 6,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-304e",
+      "hiragana": "ぎ",
+      "katakana": "ギ",
+      "reference_row": 6,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-3050",
+      "hiragana": "ぐ",
+      "katakana": "グ",
+      "reference_row": 6,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-3052",
+      "hiragana": "げ",
+      "katakana": "ゲ",
+      "reference_row": 6,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-3054",
+      "hiragana": "ご",
+      "katakana": "ゴ",
+      "reference_row": 6,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-3070",
+      "hiragana": "ば",
+      "katakana": "バ",
+      "reference_row": 6,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-3073",
+      "hiragana": "び",
+      "katakana": "ビ",
+      "reference_row": 6,
+      "reference_column": 7
+    },
+    {
+      "id": "jp-3076",
+      "hiragana": "ぶ",
+      "katakana": "ブ",
+      "reference_row": 6,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-3079",
+      "hiragana": "べ",
+      "katakana": "ベ",
+      "reference_row": 6,
+      "reference_column": 9
+    },
+    {
+      "id": "jp-307c",
+      "hiragana": "ぼ",
+      "katakana": "ボ",
+      "reference_row": 6,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-3056",
+      "hiragana": "ざ",
+      "katakana": "ザ",
+      "reference_row": 7,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-3058",
+      "hiragana": "じ",
+      "katakana": "ジ",
+      "reference_row": 7,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-305a",
+      "hiragana": "ず",
+      "katakana": "ズ",
+      "reference_row": 7,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-305c",
+      "hiragana": "ぜ",
+      "katakana": "ゼ",
+      "reference_row": 7,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-305e",
+      "hiragana": "ぞ",
+      "katakana": "ゾ",
+      "reference_row": 7,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-3071",
+      "hiragana": "ぱ",
+      "katakana": "パ",
+      "reference_row": 7,
+      "reference_column": 6
+    },
+    {
+      "id": "jp-3074",
+      "hiragana": "ぴ",
+      "katakana": "ピ",
+      "reference_row": 7,
+      "reference_column": 7
+    },
+    {
+      "id": "jp-3077",
+      "hiragana": "ぷ",
+      "katakana": "プ",
+      "reference_row": 7,
+      "reference_column": 8
+    },
+    {
+      "id": "jp-307a",
+      "hiragana": "ぺ",
+      "katakana": "ペ",
+      "reference_row": 7,
+      "reference_column": 9
+    },
+    {
+      "id": "jp-307d",
+      "hiragana": "ぽ",
+      "katakana": "ポ",
+      "reference_row": 7,
+      "reference_column": 10
+    },
+    {
+      "id": "jp-3060",
+      "hiragana": "だ",
+      "katakana": "ダ",
+      "reference_row": 8,
+      "reference_column": 1
+    },
+    {
+      "id": "jp-3062",
+      "hiragana": "ぢ",
+      "katakana": "ヂ",
+      "reference_row": 8,
+      "reference_column": 2
+    },
+    {
+      "id": "jp-3065",
+      "hiragana": "づ",
+      "katakana": "ヅ",
+      "reference_row": 8,
+      "reference_column": 3
+    },
+    {
+      "id": "jp-3067",
+      "hiragana": "で",
+      "katakana": "デ",
+      "reference_row": 8,
+      "reference_column": 4
+    },
+    {
+      "id": "jp-3069",
+      "hiragana": "ど",
+      "katakana": "ド",
+      "reference_row": 8,
+      "reference_column": 5
+    },
+    {
+      "id": "jp-30fc",
+      "hiragana": "ー",
+      "katakana": "ー",
+      "reference_row": 8,
+      "reference_column": 6
+    }
+  ],
+  "unresolved": [
+    "small kana",
+    "kanji readings in actual strings",
+    "punctuation and digits",
+    "font pixels and native consumer ABI"
+  ],
+  "policy": "Japanese original/readings are authoritative; Latin letters present in that Japanese text use the separate Latin chart with shared uppercase/lowercase glyphs. No English translation or automatic romanization. Unknown characters fail.",
+  "additional_references": [
+    {
+      "attachment": "Latin A.a through Z.z chart, user supplied 2026-10-16",
+      "role": "Latin characters explicitly present in Japanese original/readings; case-insensitive chart identity, authorized by user"
+    },
+    {
+      "attachment": "5690ED333418E70024.jpg, user supplied 2026-10-16",
+      "role": "Japanese detailed chart and sentence comparison",
+      "examples": [
+        "あぐもん",
+        "やがみたいち",
+        "でじもんあどべんちゃー"
+      ],
+      "notes": "Romanized captions are explanatory; Japanese reading remains conversion authority. Small-kana and long-vowel pixel correspondence still needs exact review."
+    }
+  ],
+  "latin_glyphs": [
+    {
+      "id": "latin-a",
+      "uppercase": "A",
+      "lowercase": "a",
+      "reference_row": 1,
+      "reference_column": 1
+    },
+    {
+      "id": "latin-b",
+      "uppercase": "B",
+      "lowercase": "b",
+      "reference_row": 1,
+      "reference_column": 2
+    },
+    {
+      "id": "latin-c",
+      "uppercase": "C",
+      "lowercase": "c",
+      "reference_row": 1,
+      "reference_column": 3
+    },
+    {
+      "id": "latin-d",
+      "uppercase": "D",
+      "lowercase": "d",
+      "reference_row": 1,
+      "reference_column": 4
+    },
+    {
+      "id": "latin-e",
+      "uppercase": "E",
+      "lowercase": "e",
+      "reference_row": 1,
+      "reference_column": 5
+    },
+    {
+      "id": "latin-f",
+      "uppercase": "F",
+      "lowercase": "f",
+      "reference_row": 1,
+      "reference_column": 6
+    },
+    {
+      "id": "latin-g",
+      "uppercase": "G",
+      "lowercase": "g",
+      "reference_row": 1,
+      "reference_column": 7
+    },
+    {
+      "id": "latin-h",
+      "uppercase": "H",
+      "lowercase": "h",
+      "reference_row": 1,
+      "reference_column": 8
+    },
+    {
+      "id": "latin-i",
+      "uppercase": "I",
+      "lowercase": "i",
+      "reference_row": 1,
+      "reference_column": 9
+    },
+    {
+      "id": "latin-j",
+      "uppercase": "J",
+      "lowercase": "j",
+      "reference_row": 1,
+      "reference_column": 10
+    },
+    {
+      "id": "latin-k",
+      "uppercase": "K",
+      "lowercase": "k",
+      "reference_row": 1,
+      "reference_column": 11
+    },
+    {
+      "id": "latin-l",
+      "uppercase": "L",
+      "lowercase": "l",
+      "reference_row": 1,
+      "reference_column": 12
+    },
+    {
+      "id": "latin-m",
+      "uppercase": "M",
+      "lowercase": "m",
+      "reference_row": 1,
+      "reference_column": 13
+    },
+    {
+      "id": "latin-n",
+      "uppercase": "N",
+      "lowercase": "n",
+      "reference_row": 2,
+      "reference_column": 1
+    },
+    {
+      "id": "latin-o",
+      "uppercase": "O",
+      "lowercase": "o",
+      "reference_row": 2,
+      "reference_column": 2
+    },
+    {
+      "id": "latin-p",
+      "uppercase": "P",
+      "lowercase": "p",
+      "reference_row": 2,
+      "reference_column": 3
+    },
+    {
+      "id": "latin-q",
+      "uppercase": "Q",
+      "lowercase": "q",
+      "reference_row": 2,
+      "reference_column": 4
+    },
+    {
+      "id": "latin-r",
+      "uppercase": "R",
+      "lowercase": "r",
+      "reference_row": 2,
+      "reference_column": 5
+    },
+    {
+      "id": "latin-s",
+      "uppercase": "S",
+      "lowercase": "s",
+      "reference_row": 2,
+      "reference_column": 6
+    },
+    {
+      "id": "latin-t",
+      "uppercase": "T",
+      "lowercase": "t",
+      "reference_row": 2,
+      "reference_column": 7
+    },
+    {
+      "id": "latin-u",
+      "uppercase": "U",
+      "lowercase": "u",
+      "reference_row": 2,
+      "reference_column": 8
+    },
+    {
+      "id": "latin-v",
+      "uppercase": "V",
+      "lowercase": "v",
+      "reference_row": 2,
+      "reference_column": 9
+    },
+    {
+      "id": "latin-w",
+      "uppercase": "W",
+      "lowercase": "w",
+      "reference_row": 2,
+      "reference_column": 10
+    },
+    {
+      "id": "latin-x",
+      "uppercase": "X",
+      "lowercase": "x",
+      "reference_row": 2,
+      "reference_column": 11
+    },
+    {
+      "id": "latin-y",
+      "uppercase": "Y",
+      "lowercase": "y",
+      "reference_row": 2,
+      "reference_column": 12
+    },
+    {
+      "id": "latin-z",
+      "uppercase": "Z",
+      "lowercase": "z",
+      "reference_row": 2,
+      "reference_column": 13
+    }
+  ]
+}

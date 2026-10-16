@@ -97,6 +97,8 @@ SHOOT_STAGE_HANDSHAKE_VERIFICATION_SHA256 = "E9B32C9DBF53FA543D5CC2800C467764D4C
 SHOOT_TERMINAL_VERIFICATION_SHA256 = "4D6FE917B45ADF7E26E9F0E4FAE4EF938AF1AC84D91D06B63BC0798D06C466BF"
 SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256 = "7BD2283D660C034FFCC5A7C458E22126C06E55C208CFCB45E5A6B7A863A8752F"
 SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256 = "3BB0886B55FB760CD423BBFF58582049FDCD5F8CA52CE90D90A2F307D22548E4"
+CHARACTER_PHYSICS_ROUTING_VERIFICATION_SHA256 = "C6823829AF3EC159BF2FAA85C00CE2D5C1E97603CD40BFA35987221D9B42E88A"
+OPENING_PRESENTATION_ROUTING_VERIFICATION_SHA256 = "E7E453C645762232D0B4668FEA6FA760A5C76F7DE1B50094144218841FB9C42A"
 SHOOT_SRAM_BOUNDARY_SHA256 = "29304FA84432898B857AC8874C1525E57FDE0EABBAFFC5008DBFA80962E27295"
 
 EXPECTED_ASSETS = {
@@ -109,7 +111,7 @@ EXPECTED_ASSETS = {
     "selection-portraits.bin": "6E56A118274A4C07D9B5E9923DA7227B2B8823A1720FC0C6C056312F108B9067",
     "vs-presentation.bin": "2D212622DB36E3D86281768F8C3438D394451FA275D519AA32B97FEE697D2856",
     "character-physics.bin": "1F632B750D33E68C2D3265A2AB35676CD22145F716800784D13775A23B214600",
-    "character-physics-current.bin": "93C735C0A3EE3A9DF09243246BE38129B97AF6A88F5C4546C0229FB7339753C3",
+    "character-physics-current.bin": "B1DC4C8BC816DE6EF5952403C75A1BF4140A8F6A01A2051A33A3F65809EC29DF",
     "vs-character-events.bin": "2226A35FFA64F6BE0DF610D6600754C4C31B74D29A4D1274DA1C81640EE630A5",
     "evolution-p0.bin": "7DAED3DFC07460C5CE2CA6D377BCEA9DA8892E846BF8ED6AC4E36E8500516DBD",
     "evolution-p1.bin": "58E01C289E3454F95312A35AF657F8606EB994FF3077534C2845F3CDDFC3FECD",
@@ -180,7 +182,16 @@ EXPECTED_LAYERS = {
     "shoot-stage-handshake.gba": "F793AB2389B6F03812717709C5FECB05F9406451F79F5CF5C249C2FFE2EF4CEF",
     "shoot-terminal.gba": "39936F49AB455032B4B71355C2C12127DC35D281670C2D72F48D4273F466CD0D",
     "shoot-normal-display.gba": "455F98AFB4DCAA22D7666BB5AA5C0A4AA93EAAC48755563A191092A0162B0D48",
-    "current-candidate.gba": "CAB43EA68A6620D150CA853FC51D4690AAF0889A6D7351D90F99128FE5DD2C69",
+    "shoot-spatial-repair.gba": "CAB43EA68A6620D150CA853FC51D4690AAF0889A6D7351D90F99128FE5DD2C69",
+    "character-physics-routing.gba": "8B91E5DA0147E16CC949785F73F6447878529B404949CB27EEA81B47275A77C2",
+    "opening-presentation-routing.gba": "E2B700D26818148C0C196DC1C594AB5CE5FD6CBDD348384F7617D168CC62AE4D",
+    "character-p0-completion.gba": "973E06247F43C1E70EB69C6BB27135D6A6C634AAFCF0C0770E7621708A078A3D",
+    "character-audio.gba": "10372B5606647673F829EC676853C1987F17E64BA19EA51EB751F92FA22B3354",
+    "character-p1-completion.gba": "3F9437068817749C3EB75BF382D5F870EB8539EE49E3D70AAED10D6C93E52CAA",
+    "character-resource-routing.gba": "3D554185AE5686FA9FDD0D735D6EDCB9C7C3A2015EE2A60B7B85C914D0191065",
+    "opening-callback6-parity.gba": "A559CC981736E376EEEF6D4097D93EC8965CFCE26FF23A5A269D4D049D4F2949",
+    "selection-palette-routing.gba": "C5152150749B1E16C7B39BCF7E67C69810FE31C970CCA78988828921DA9AC017",
+    "current-candidate.gba": "1B1AA23C4913881B2F7FCAF28692D7A7EAC7B046D1A5E1F09ED3D77CC4054995",
 }
 
 
@@ -438,6 +449,15 @@ def main() -> int:
     shoot_stage_handshake = output / "shoot-stage-handshake.gba"
     shoot_terminal = output / "shoot-terminal.gba"
     shoot_normal_display = output / "shoot-normal-display.gba"
+    shoot_spatial_repair = output / "shoot-spatial-repair.gba"
+    physics_routing = output / "character-physics-routing.gba"
+    opening_routing = output / "opening-presentation-routing.gba"
+    character_p0 = output / "character-p0-completion.gba"
+    character_audio = output / "character-audio.gba"
+    character_p1 = output / "character-p1-completion.gba"
+    character_routing = output / "character-resource-routing.gba"
+    callback6_parity = output / "opening-callback6-parity.gba"
+    selection_palette = output / "selection-palette-routing.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -602,7 +622,25 @@ def main() -> int:
         "--manifest", output / "shoot-terminal.json")
     run("build_shoot_normal_display_route.py", shoot_terminal, args.gba, shoot_normal_display,
         "--manifest", output / "shoot-normal-display.json")
-    run("build_shoot_spatial_repair.py", shoot_normal_display, args.gba, args.wsc15, candidate,
+    run("build_shoot_spatial_repair.py", shoot_normal_display, args.gba, args.wsc15, shoot_spatial_repair,
+        "--manifest", output / "shoot-spatial-repair.json")
+    run("build_character_physics_routing.py", shoot_spatial_repair, args.gba, args.wsc15, physics_routing,
+        "--manifest", output / "character-physics-routing.json")
+    run("build_opening_presentation_routing_repair.py", physics_routing, args.gba, args.wsc15, opening_routing,
+        "--manifest", output / "opening-presentation-routing.json")
+    run("build_character_p0_completion.py", opening_routing, args.gba, args.wsc15, character_p0,
+        "--manifest", output / "character-p0-completion.json")
+    run("build_character_audio.py", character_p0, args.gba, args.wsc15, character_audio,
+        "--manifest", output / "character-audio.json")
+    run("build_character_p1_completion.py", character_audio, args.gba, args.wsc10, args.wsc15, character_p1,
+        "--manifest", output / "character-p1-completion.json")
+    run("build_character_resource_routing.py", character_p1, args.gba, args.wsc10, args.wsc15, character_routing,
+        "--manifest", output / "character-resource-routing.json")
+    run("build_opening_callback6_parity.py", character_routing, args.gba, args.wsc10, args.wsc15, callback6_parity,
+        "--manifest", output / "opening-callback6-parity.json")
+    run("build_selection_palette_routing_repair.py", callback6_parity, args.gba, selection_palette,
+        "--manifest", output / "selection-palette-routing.json")
+    run("build_player_spawn_literal_repair.py", selection_palette, args.gba, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -800,6 +838,7 @@ def main() -> int:
         args.wsc15,
         "--output",
         shoot_other_player_verification,
+        "--legacy-v49-source-routing",
     )
     require_hash(
         shoot_other_player_verification,
@@ -880,10 +919,39 @@ def main() -> int:
                  "Shoot connected normal display with preserved terminal fallback")
     sram_boundary = intermediate / "shoot-sram-boundary.json"
     spatial_verification = intermediate / "shoot-spatial-repair-verification.json"
-    run("verify_shoot_spatial_repair.py", shoot_normal_display, candidate, args.gba,
+    run("verify_shoot_spatial_repair.py", shoot_normal_display, shoot_spatial_repair, args.gba,
         args.wsc10, args.wsc15, "--output", spatial_verification)
     require_hash(spatial_verification, SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256,
                  "Shoot collision grid and same-invocation terminal transition")
+    physics_verification = intermediate / "character-physics-routing-verification.json"
+    run("verify_character_physics_routing.py", shoot_spatial_repair, physics_routing,
+        args.gba, args.wsc15, "--output", physics_verification)
+    require_hash(physics_verification, CHARACTER_PHYSICS_ROUTING_VERIFICATION_SHA256,
+                 "actual source pointer routing and complete native physics groups")
+    opening_routing_verification = intermediate / "opening-presentation-routing-verification.json"
+    run("verify_opening_presentation_routing_repair.py", physics_routing, opening_routing,
+        args.gba, args.wsc15, opening_routing_verification)
+    require_hash(opening_routing_verification, OPENING_PRESENTATION_ROUTING_VERIFICATION_SHA256,
+                 "opening selector view and native renderer resource bounds")
+    for tool, before, after, sources, expected in (
+        ("verify_character_p0_completion.py", opening_routing, character_p0, [args.gba, args.wsc15],
+         "9330DCE05012EC852202F59A5994F9362B193035DB6A1D68E43D78C325E6ECEB"),
+        ("verify_character_audio.py", character_p0, character_audio, [args.gba, args.wsc15],
+         "191A6B7E03D8C0A994834CBD84F4A12CB038B41EAFFCD1DA8F1DA92E9E8E1217"),
+        ("verify_character_p1_completion.py", character_audio, character_p1, [args.gba, args.wsc10, args.wsc15],
+         "FAC5E6F50B55BF4789E4FB06EB6454DF1AFB8DCE5172E08A7F35275AD08E87E7"),
+        ("verify_character_resource_routing.py", character_p1, character_routing, [args.gba, args.wsc10, args.wsc15],
+         "476488DE9B0413D53BACA1125B41241FC6322ACB54D2AA139E20E187CCFE6C2A"),
+        ("verify_opening_callback6_parity.py", character_routing, callback6_parity, [args.gba, args.wsc10, args.wsc15],
+         "1F7673D861FFA2342ABDA367CA4EF661E63CFABFD4D8EDCD6586DAF7BF65EB00"),
+        ("verify_selection_palette_routing_repair.py", callback6_parity, selection_palette, [args.gba],
+         "BB7C2B169796F71EAF2FFD39E1A8AB6CE7300E979EF8D108B967B4B49423E2AD"),
+        ("verify_player_spawn_literal_repair.py", selection_palette, candidate, [args.gba, args.wsc10, args.wsc15],
+         "5AA3B9172D5E9462B310E6A60478A9B6C89307D0416A933F1CB1BF4E466DBD0E"),
+    ):
+        report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
+        run(tool, before, after, *sources, report)
+        require_hash(report, expected, tool)
     run("analyze_shoot_sram_boundary.py", args.wsc15, "--output", sram_boundary)
     require_hash(sram_boundary, SHOOT_SRAM_BOUNDARY_SHA256, "Shoot unresolved SRAM observer evidence")
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
@@ -959,6 +1027,16 @@ def main() -> int:
             "camera-domain contracts remain unfulfilled; "
             "the final repair binds both Shoot backgrounds to the complete source collision grid "
             "and executes terminal 197A in the successful 193B invocation; "
+            "the next repair follows the actual noncontiguous source physics pointer table "
+            "for IDs 12..14 while retaining corrected native pointers; callback 6 selector 13 "
+            "now uses the expanded presentation view to prevent out-of-table resource reads; "
+            "complete P0 descriptor tails and companion graphics are installed; five bounded native scores "
+            "and all fourteen added-character P1 containers are installed, with 544 source events "
+            "and 2742 commands; four canonical resource groups now bind 46 preserved retail "
+            "and 14 added records, complete palettes and companion P4, with native evolution views; "
+            "callback6 preserves source position, two flag writes, event0 and palette13; "
+            "selection portrait palette DMA now resolves the actual table and hardware destination; "
+            "the relocated ordinary fighter spawner resolves native stage state before source-backed coordinates; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
@@ -1009,6 +1087,8 @@ def main() -> int:
             "shoot_terminal_verification_sha256": SHOOT_TERMINAL_VERIFICATION_SHA256,
             "shoot_normal_display_verification_sha256": SHOOT_NORMAL_DISPLAY_VERIFICATION_SHA256,
             "shoot_spatial_repair_verification_sha256": SHOOT_SPATIAL_REPAIR_VERIFICATION_SHA256,
+            "character_physics_routing_verification_sha256": CHARACTER_PHYSICS_ROUTING_VERIFICATION_SHA256,
+            "opening_presentation_routing_verification_sha256": OPENING_PRESENTATION_ROUTING_VERIFICATION_SHA256,
             "shoot_sram_boundary_unresolved_sha256": SHOOT_SRAM_BOUNDARY_SHA256,
         },
         "assets": EXPECTED_ASSETS,

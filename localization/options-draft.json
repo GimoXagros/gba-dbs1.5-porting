@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "status": "draft-not-product-build-input",
+  "source": "native Japanese Options P0 0809F980 / P1 080A02E8, decoded by analyze_language_consumers",
+  "source_atlas": "build/language-consumers-20261016/options-japanese.png",
+  "entries": [
+    {
+      "id": "options.event-0",
+      "event": 0,
+      "ja_transcription": "しあいじかん",
+      "ja_reading": "しあいじかん",
+      "ko_draft": "대전 시간",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-2",
+      "event": 2,
+      "ja_transcription": "むずかしさ",
+      "ja_reading": "むずかしさ",
+      "ko_draft": "난이도",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-3",
+      "event": 3,
+      "ja_transcription": "かんたん",
+      "ja_reading": "かんたん",
+      "ko_draft": "쉬움",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-4",
+      "event": 4,
+      "ja_transcription": "サウンドテスト",
+      "ja_reading": "サウンドテスト",
+      "ko_draft": "사운드 테스트",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-6",
+      "event": 6,
+      "ja_transcription": "データをけす",
+      "ja_reading": "データをけす",
+      "ko_draft": "데이터 지우기",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-7",
+      "event": 7,
+      "ja_transcription": "もどる",
+      "ja_reading": "もどる",
+      "ko_draft": "돌아가기",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    },
+    {
+      "id": "options.event-11",
+      "event": 11,
+      "ja_transcription": "ふつう",
+      "ja_reading": "ふつう",
+      "ko_draft": "보통",
+      "review": "needs native consumer and rendered-layout verification",
+      "decorative_marker": "separate square bullet preserved in source; not translated text"
+    }
+  ],
+  "scope": "Seven transcribed static labels only; numeric values, all difficulty variants, confirmation prompts and new Language row are not a complete localization corpus"
+}

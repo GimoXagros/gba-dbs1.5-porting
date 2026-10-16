@@ -20,6 +20,12 @@ import sys
 import time
 import uuid
 
+from mgba_capture_provenance import (
+    assert_gdb_port_free,
+    verify_gdb_owner,
+    verify_loaded_rom_samples,
+)
+
 
 DESKTOP_ALL_ACCESS = 0x01FF
 WM_KEYDOWN = 0x0100
@@ -28,6 +34,7 @@ VK_F12 = 0x7B
 VK_RETURN = 0x0D
 VK_X = 0x58
 VK_RIGHT = 0x27
+VK_DOWN = 0x28
 MGBA_GDB_PORT = 2345
 RIGHT_INPUT_CONSUMER = 0x08375140
 
@@ -77,6 +84,9 @@ class PrivateDesktopProcess:
         if sys.platform != "win32":
             raise RuntimeError("private-desktop capture is Windows-only")
 
+        if "-g" in arguments:
+            assert_gdb_port_free(MGBA_GDB_PORT)
+
         user32 = ctypes.WinDLL("user32", use_last_error=True)
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
@@ -89,6 +99,9 @@ class PrivateDesktopProcess:
         self._terminate_process = kernel32.TerminateProcess
         self._terminate_process.argtypes = [wintypes.HANDLE, wintypes.UINT]
         self._terminate_process.restype = wintypes.BOOL
+        self._wait_process = kernel32.WaitForSingleObject
+        self._wait_process.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        self._wait_process.restype = wintypes.DWORD
         self._post_message = user32.PostMessageW
         self._post_message.argtypes = [
             wintypes.HWND,
@@ -97,6 +110,9 @@ class PrivateDesktopProcess:
             wintypes.LPARAM,
         ]
         self._post_message.restype = wintypes.BOOL
+        self._map_virtual_key = user32.MapVirtualKeyW
+        self._map_virtual_key.argtypes = [wintypes.UINT, wintypes.UINT]
+        self._map_virtual_key.restype = wintypes.UINT
         self._get_window_pid = user32.GetWindowThreadProcessId
         self._get_window_pid.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
         self._get_window_pid.restype = wintypes.DWORD
@@ -183,7 +199,10 @@ class PrivateDesktopProcess:
         if not self._enum_desktop_windows(self.desktop, collect, 0):
             raise ctypes.WinError(ctypes.get_last_error())
         message = WM_KEYDOWN if pressed else WM_KEYUP
-        parameter = 1 if pressed else 0xC0000001
+        parameter = (1 | (self._map_virtual_key(virtual_key, 0) << 16)
+                     | (0 if pressed else 0xC0000000))
+        if virtual_key in (0x25, 0x26, 0x27, 0x28):
+            parameter |= 1 << 24
         for window in windows:
             self._post_message(window, message, virtual_key, parameter)
         return len(windows)
@@ -196,7 +215,11 @@ class PrivateDesktopProcess:
     def close(self) -> None:
         if getattr(self, "process", None):
             if self.process.hProcess:
-                self._terminate_process(self.process.hProcess, 0)
+                if not self._terminate_process(self.process.hProcess, 0):
+                    if self._wait_process(self.process.hProcess, 0) != 0:
+                        raise ctypes.WinError(ctypes.get_last_error())
+                if self._wait_process(self.process.hProcess, 5000) != 0:
+                    raise RuntimeError(f"mGBA PID {self.pid} did not exit before cleanup")
             if self.process.hThread:
                 self._close_handle(self.process.hThread)
             if self.process.hProcess:
@@ -262,6 +285,9 @@ class GdbRemote:
                 continue
             raise RuntimeError(f"GDB command was not acknowledged: {acknowledgement!r}")
         response = self.receive_packet()
+        while response[:1] in (b"S", b"T") and payload not in ("?", "s", "c"):
+            self.asynchronous_stops.append(response.decode("ascii"))
+            response = self.receive_packet()
         if response.startswith(b"E"):
             raise RuntimeError(f"GDB command {payload!r} failed: {response!r}")
         return response
@@ -315,13 +341,21 @@ def capture_player_objects(remote: GdbRemote) -> dict[str, object]:
     return result
 
 
-def connect_gdb(port: int, timeout: float) -> socket.socket:
+def connect_gdb(
+    port: int, timeout: float, *, expected_pid: int | None = None
+) -> socket.socket:
     deadline = time.monotonic() + timeout
     last_error: OSError | None = None
     while time.monotonic() < deadline:
         connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             connection.connect(("127.0.0.1", port))
+            if expected_pid is not None:
+                try:
+                    verify_gdb_owner(connection, expected_pid)
+                except Exception:
+                    connection.close()
+                    raise
             return connection
         except OSError as error:
             last_error = error
@@ -354,6 +388,7 @@ def parse_args() -> argparse.Namespace:
         action="append",
         help="press the default mGBA Right key at this runtime second",
     )
+    parser.add_argument("--press-down-at", type=float, action="append")
     parser.add_argument("--key-hold-seconds", type=float, default=0.25)
     return parser.parse_args()
 
@@ -384,6 +419,7 @@ def main() -> int:
         (at_seconds, "Right", VK_RIGHT)
         for at_seconds in (args.press_right_at or [])
     )
+    scheduled_inputs.extend((at, "Down", VK_DOWN) for at in (args.press_down_at or []))
     scheduled_inputs.sort()
     if scheduled_inputs:
         if scheduled_inputs[0][0] < 0 or args.key_hold_seconds <= 0:
@@ -409,13 +445,16 @@ def main() -> int:
     ]
     started_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     with PrivateDesktopProcess(mgba, arguments, Path.cwd()) as process:
-        with connect_gdb(MGBA_GDB_PORT, 10.0) as connection:
+        with connect_gdb(MGBA_GDB_PORT, 10.0, expected_pid=process.pid) as connection:
             remote = GdbRemote(connection)
             supported = remote.command("qSupported").decode("ascii", errors="replace")
             initial_stop = remote.command("?").decode("ascii", errors="replace")
+            gdb_owner = verify_gdb_owner(connection, process.pid)
+            loaded_rom = verify_loaded_rom_samples(remote, rom)
             input_events = []
             pre_input_states = []
             input_consumer_traces = []
+            held_input_states = []
             if not scheduled_inputs:
                 final_stop_bytes = remote.continue_for(args.seconds)
             else:
@@ -484,7 +523,14 @@ def main() -> int:
                     else:
                         key_down_windows = process.post_key_state(virtual_key, True)
                         time.sleep(args.key_hold_seconds)
+                        held_stop = remote.interrupt().decode("ascii")
+                        held_input_states.append({
+                            "key": key, "stop": held_stop,
+                            "keyinput_hex": remote.read_memory(0x04000130, 2).hex(),
+                            "frame_input_hex": remote.read_memory(0x03001302, 2).hex(),
+                        })
                         key_up_windows = process.post_key_state(virtual_key, False)
+                        remote.start_continue()
                     elapsed = at_seconds + args.key_hold_seconds
                     input_events.append(
                         {
@@ -494,7 +540,7 @@ def main() -> int:
                                 if virtual_key == VK_RETURN
                                 else "VK_X"
                                 if virtual_key == VK_X
-                                else "VK_RIGHT"
+                                else "VK_RIGHT" if virtual_key == VK_RIGHT else "VK_DOWN"
                             ),
                             "at_seconds": at_seconds,
                             "hold_seconds": args.key_hold_seconds,
@@ -522,13 +568,14 @@ def main() -> int:
 
             display_control = int.from_bytes(regions["io.bin"][0:2], "little")
             manifest = {
-                "schema": "mgba-headless-gdb-capture-v1",
+                "schema": "mgba-headless-gdb-capture-v2",
                 "started_utc": started_utc,
                 "capture_seconds": args.seconds,
                 "rom": {
                     "filename": rom.name,
                     "size": rom.stat().st_size,
                     "sha256": rom_hash,
+                    "loaded_rom_identity": loaded_rom,
                 },
                 "emulator": {
                     "filename": mgba.name,
@@ -538,12 +585,15 @@ def main() -> int:
                 "process": {
                     "pid": process.pid,
                     "private_desktop": True,
+                    "private_desktop_name": process.desktop_name,
+                    "gdb_endpoint_owner": gdb_owner,
                     "monitor_visible": False,
                     "screenshot_windows": screenshot_windows,
                 },
                 "input_events": input_events,
                 "pre_input_states": pre_input_states,
                 "input_consumer_traces": input_consumer_traces,
+                "held_input_states": held_input_states,
                 "gdb": {
                     "asynchronous_stops": remote.asynchronous_stops,
                     "initial_stop": initial_stop,

@@ -5,6 +5,10 @@ No builder imports, CPU model, emulator, saved state, or supplied save. Fixed
 instruction populations are decoded with Capstone. Semantic negative cases
 are rejected before any output hash check, so a manifest cannot certify a
 wrong argument order, narrow physics pointer, or palette-copy extent.
+
+The explicit historical option reproduces the frozen v49 report, whose
+arithmetic source routing was subsequently disproved. Current physics uses
+verify_character_physics_routing.py and the actual source pointer table.
 """
 
 from __future__ import annotations
@@ -81,9 +85,18 @@ def check_record(actual: bytes, source: bytes, label: str) -> None:
             raise ValueError(f"{label} field {index}: observed {observed}, expected {expected}")
 
 
-def check_physics(data: bytes, gba: bytes, wsc: bytes) -> list[dict]:
+def physics_source(wsc: bytes, character: int, *, legacy_source_routing: bool = False) -> bytes:
+    if legacy_source_routing:
+        at = 0x3B847E + character * 120
+    else:
+        offset = struct.unpack_from("<H", wsc, 0x3B8460 + character * 2)[0]
+        at = 0x3B0000 + ((0x28460 + offset) & 0xFFFF)
+    return wsc[at:at + 120]
+
+
+def check_physics(data: bytes, gba: bytes, wsc: bytes, *, legacy_source_routing: bool = False) -> list[dict]:
     for character in range(11):
-        source = wsc[0x3B847E + character * 120:0x3B847E + (character + 1) * 120]
+        source = physics_source(wsc, character, legacy_source_routing=legacy_source_routing)
         retail = gba[0x353508 + character * 120:0x353508 + (character + 1) * 120]
         check_record(retail, source, f"retail {character}")
     records = []
@@ -93,7 +106,7 @@ def check_physics(data: bytes, gba: bytes, wsc: bytes) -> list[dict]:
         if pointer != expected:
             raise ValueError(f"unexpected expanded physics pointer for {character}")
         start = pointer - BASE
-        source = wsc[0x3B847E + character * 120:0x3B847E + (character + 1) * 120]
+        source = physics_source(wsc, character, legacy_source_routing=legacy_source_routing)
         actual = data[start:start + 120]
         if character >= 12:
             check_record(actual, source, f"installed {character}")
@@ -143,7 +156,7 @@ def check_phase(data: bytes) -> None:
     literal(data, 0x5C1548, 0x0203E200)
 
 
-def check_consumers(gba: bytes, wsc: bytes, after: bytes) -> list[dict]:
+def check_consumers(gba: bytes, wsc: bytes, after: bytes, *, legacy_source_routing: bool = False) -> list[dict]:
     sequence(gba, 0x3530CC, 0x3530E4, [
         "ldr r1, [r8, r1, lsl #2]", "str r1, [r4, #0x60]",
         "ldrsh r0, [r1, #0x24]", "strh r0, [r4, #0x52]",
@@ -187,7 +200,7 @@ def check_consumers(gba: bytes, wsc: bytes, after: bytes) -> list[dict]:
         raise ValueError("source restoration phase changed")
     if word(after, 0x3532FC) != 0x08485000 or word(after, 0x353324) != 0xE359000F:
         raise ValueError("expanded native physics/character consumers are absent")
-    return check_physics(after, gba, wsc)
+    return check_physics(after, gba, wsc, legacy_source_routing=legacy_source_routing)
 
 
 def main() -> int:
@@ -195,13 +208,15 @@ def main() -> int:
     for name in ("before", "after", "gba", "wsc15"):
         parser.add_argument(name, type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path)
+    parser.add_argument("--legacy-v49-source-routing", action="store_true",
+                        help="reproduce the historical report; does not certify current source routing")
     args = parser.parse_args()
     before, after, gba, wsc = (getattr(args, key).read_bytes() for key in ("before", "after", "gba", "wsc15"))
     for data, expected in ((before, BEFORE), (gba, GBA), (wsc, WSC15)):
         if digest(data) != expected:
             raise ValueError("input ROM identity mismatch")
     check_phase(after)
-    records = check_consumers(gba, wsc, after)
+    records = check_consumers(gba, wsc, after, legacy_source_routing=args.legacy_v49_source_routing)
     negatives = []
     for label, site, value in (
         ("wrong other player", 0x5C1608, 0x030048A0),
@@ -229,7 +244,7 @@ def main() -> int:
         site = 0x485000 + character * 4
         old_pointer = word(before, site)
         start = old_pointer - BASE
-        source = wsc[0x3B847E + character * 120:0x3B847E + (character + 1) * 120]
+        source = physics_source(wsc, character, legacy_source_routing=args.legacy_v49_source_routing)
         try:
             check_record(before[start:start + 120], source, f"old ID {character}")
         except ValueError as error:
@@ -239,7 +254,7 @@ def main() -> int:
         mutated = bytearray(after)
         mutated[site:site + 4] = before[site:site + 4]
         try:
-            check_physics(mutated, gba, wsc)
+            check_physics(mutated, gba, wsc, legacy_source_routing=args.legacy_v49_source_routing)
         except ValueError:
             negatives.append(f"reverted physics pointer {character}")
         else:

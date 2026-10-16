@@ -157,7 +157,9 @@ def main() -> int:
     for character in (12, 13, 14):
         old_pointer = 0x0848503C + (character - 12) * 0x78
         new_pointer = old_pointer + 0x78
-        record = converted_record(sources["wsc15"], character)
+        # This frozen v49 layer reproduces its historical arithmetic-source
+        # payloads. A later routing repair installs the actual source records.
+        record = converted_record(sources["wsc15"], character, legacy_source_routing=True)
         start = new_pointer - BASE
         if before[start:start + 0x78] != record:
             raise SystemExit(f"actual physics payload differs for ID {character}")
