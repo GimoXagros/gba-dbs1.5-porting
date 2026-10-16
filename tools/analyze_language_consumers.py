@@ -175,17 +175,31 @@ def decode_asset(data: bytes, spec: tuple) -> dict:
             "bound_scope": "one resource frame; not a whole-screen OAM aggregate"}
 
 
-def render_asset(data: bytes, asset: dict, output: Path) -> dict:
+def render_asset(data: bytes, asset: dict, output: Path, all_frames: bool = False) -> dict:
     from PIL import Image, ImageDraw
-    rows = len(asset["events"])
     scale = 3
-    image = Image.new("RGB", (304, rows * 40), (25, 25, 25))
-    pen = ImageDraw.Draw(image)
     layouts = {x["layout"]: x for x in asset["layouts"]}
-    for event in asset["events"]:
-        y0 = event["event"] * 40
-        pen.text((4, y0 + 12), str(event["event"]), fill=(200, 200, 200))
-        layout = layouts[event["layouts"][0]]
+    frames = [(event["event"], index, layouts[layout])
+              for event in asset["events"]
+              for index, layout in enumerate(event["layouts"])
+              if all_frames or index == 0]
+    # Complete previews must include tall decorative sprites and every value
+    # frame; the historical first-frame preview remains byte-reproducible.
+    row_height, width, left = 40, 304, 28
+    if all_frames:
+        left = 48
+        row_height = max(40, max((max(p["y"] for p in frame["entries"]) -
+                                 min(p["y"] for p in frame["entries"]) + 8) * scale + 8
+                                for _, _, frame in frames))
+        width = max(width, max((max(p["x"] for p in frame["entries"]) -
+                                min(p["x"] for p in frame["entries"]) + 8) * scale + left + 4
+                               for _, _, frame in frames))
+    image = Image.new("RGB", (width, len(frames) * row_height), (25, 25, 25))
+    pen = ImageDraw.Draw(image)
+    for row, (event_id, frame_id, layout) in enumerate(frames):
+        y0 = row * row_height
+        label = f"{event_id}:{frame_id}" if all_frames else str(event_id)
+        pen.text((4, y0 + 12), label, fill=(200, 200, 200))
         min_x = min(p["x"] for p in layout["entries"])
         min_y = min(p["y"] for p in layout["entries"])
         for part in layout["entries"]:
@@ -197,15 +211,15 @@ def render_asset(data: bytes, asset: dict, output: Path) -> dict:
                     packed = data[tile_raw + sy * 4 + sx // 2]
                     color = (packed >> (4 * (sx & 1))) & 15
                     if color:
-                        px = 28 + (part["x"] - min_x + xx) * scale
+                        px = left + (part["x"] - min_x + xx) * scale
                         py = y0 + 4 + (part["y"] - min_y + yy) * scale
                         shade = min(255, 55 + color * 13)
                         pen.rectangle((px, py, px + scale - 1, py + scale - 1), fill=(shade,) * 3)
     output.mkdir(parents=True, exist_ok=True)
-    path = output / (asset["name"] + ".png")
+    path = output / (asset["name"] + ("-all-frames" if all_frames else "") + ".png")
     image.save(path)
     return {"name": path.name, "sha256": sha(path.read_bytes()),
-            "kind": "static-ROM-resource first-frame preview, grayscale"}
+            "kind": "static-ROM-resource " + ("all-frames" if all_frames else "first-frame") + " preview, grayscale"}
 
 
 def analyze(gba: bytes, w10: bytes, w15: bytes, candidate: bytes) -> dict:
@@ -301,6 +315,8 @@ def main() -> int:
     for arg in ("gba", "wsc10", "wsc15", "candidate", "report"):
         p.add_argument(arg, type=Path)
     p.add_argument("--render-directory", type=Path)
+    p.add_argument("--all-frames", action="store_true",
+                   help="render every event frame with complete sprite bounds")
     a = p.parse_args()
     need(a.gba.suffix.lower() == a.candidate.suffix.lower() == ".gba", "GBA paths only")
     need(a.wsc10.suffix.lower() == a.wsc15.suffix.lower() == ".wsc", "WSC paths only")
@@ -308,7 +324,7 @@ def main() -> int:
     gba, w10, w15, candidate = (x.read_bytes() for x in (a.gba, a.wsc10, a.wsc15, a.candidate))
     report = analyze(gba, w10, w15, candidate)
     if a.render_directory:
-        report["resource_previews"] = [render_asset(gba, x, a.render_directory) for x in report["assets"]]
+        report["resource_previews"] = [render_asset(gba, x, a.render_directory, a.all_frames) for x in report["assets"]]
     a.report.parent.mkdir(parents=True, exist_ok=True)
     a.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print("[language-consumers] PASS: five native rows; two static option atlases; persistence proposal only")

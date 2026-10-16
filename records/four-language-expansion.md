@@ -58,6 +58,15 @@ their actual source usages and rendering policies are established.
 
 See `language-consumers.md` and `analyze_language_consumers.py` for the actual
 five-row Options menu, both retained language atlases, and the bounded native
-EEPROM record inventory. `localization/options-draft.json` preserves seven
-Japanese label transcriptions with Korean translation drafts; it is explicitly
+EEPROM record inventory. `localization/options-draft.json` preserves ten
+Japanese text-frame transcriptions with Korean translation drafts, including
+all three difficulty values and both confirmation choices; it is explicitly
 not a product-build input or a complete text corpus.
+
+`analyze_language_consumers.py --render-directory <directory> --all-frames`
+now renders every event frame with complete sprite bounds, rather than only
+the first value in each event. Source event/frame coordinates remain attached
+to each preview row. Inspection corrected event 11 frame 0 from the mistaken
+`ふつう`/`보통` to `いいえ`/`아니요`; `ふつう` belongs to event 3 frame 1.
+All ten explicit readings pass the reference Digicode encoder. This proves
+reference-glyph coverage for this draft only, not native rendering.

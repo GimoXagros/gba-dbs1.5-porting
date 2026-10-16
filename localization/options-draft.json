@@ -25,11 +25,32 @@
     {
       "id": "options.event-3",
       "event": 3,
+      "frame": 0,
       "ja_transcription": "かんたん",
       "ja_reading": "かんたん",
       "ko_draft": "쉬움",
       "review": "needs native consumer and rendered-layout verification",
-      "decorative_marker": "separate square bullet preserved in source; not translated text"
+      "decorative_marker": null
+    },
+    {
+      "id": "options.event-3.frame-1",
+      "event": 3,
+      "frame": 1,
+      "ja_transcription": "ふつう",
+      "ja_reading": "ふつう",
+      "ko_draft": "보통",
+      "review": "decoded source frame checked; native consumer and rendered-layout verification pending",
+      "decorative_marker": null
+    },
+    {
+      "id": "options.event-3.frame-2",
+      "event": 3,
+      "frame": 2,
+      "ja_transcription": "むずかしい",
+      "ja_reading": "むずかしい",
+      "ko_draft": "어려움",
+      "review": "decoded source frame checked; native consumer and rendered-layout verification pending",
+      "decorative_marker": null
     },
     {
       "id": "options.event-4",
@@ -61,12 +82,23 @@
     {
       "id": "options.event-11",
       "event": 11,
-      "ja_transcription": "ふつう",
-      "ja_reading": "ふつう",
-      "ko_draft": "보통",
+      "frame": 0,
+      "ja_transcription": "いいえ",
+      "ja_reading": "いいえ",
+      "ko_draft": "아니요",
       "review": "needs native consumer and rendered-layout verification",
-      "decorative_marker": "separate square bullet preserved in source; not translated text"
+      "decorative_marker": null
+    },
+    {
+      "id": "options.event-11.frame-1",
+      "event": 11,
+      "frame": 1,
+      "ja_transcription": "はい",
+      "ja_reading": "はい",
+      "ko_draft": "예",
+      "review": "decoded source frame checked; native consumer and rendered-layout verification pending",
+      "decorative_marker": null
     }
   ],
-  "scope": "Seven transcribed static labels only; numeric values, all difficulty variants, confirmation prompts and new Language row are not a complete localization corpus"
+  "scope": "Ten source text frames including three difficulty values and both confirmation choices; numeric/decorative frames and the new Language row remain outside this draft. Not a complete game localization corpus."
 }

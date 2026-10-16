@@ -90,8 +90,11 @@ are the five row labels; 1 is the time values, 3 the difficulty values, 5 the
 digits, 8 arrows, 9 the animated head, 10 a colon, and 11 the erase confirmation.
 The first English frames read `TIME`, `90`, `LEVEL`, `EASY`, `SOUND TEST`, `0`,
 `ERASE DATA`, `RETURN`, arrow, head, colon, `NO`. Their Japanese counterparts
-are retained in the USA ROM, including `しょうぶじかん`, `むずかしさ`,
-`かんたん`, `サウンドテスト`, `データクリア`, `もどる`, and `いいえ`.
+are retained in the USA ROM, including `しあいじかん`, `むずかしさ`,
+`かんたん`, `サウンドテスト`, `データをけす`, `もどる`, and `いいえ`.
+These readings were checked against the decoded atlas at nearest-neighbor
+magnification. Event 11's first frame is `いいえ` (No), not `ふつう` (Normal);
+the Korean draft for that frame is therefore `아니요`.
 
 The 20-part bound is per resource frame. It does not prove a complete screen's
 OAM total, nor that four atlases can all be active simultaneously. A new Options
@@ -184,6 +187,8 @@ must not be inferred from them.
   --render-directory build/language-consumers-20261016
 ```
 
+Add `--all-frames` to render every event frame and its complete sprite bounds.
+The default first-frame preview remains unchanged for historical reproduction.
 The optional preview path uses Pillow. The read-only analyzer itself needs only
 the Python standard library. It records full input hashes, preserved native
 slices, exact guarded words, complete source-pattern and record-pointer
