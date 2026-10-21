@@ -191,7 +191,14 @@ EXPECTED_LAYERS = {
     "character-resource-routing.gba": "3D554185AE5686FA9FDD0D735D6EDCB9C7C3A2015EE2A60B7B85C914D0191065",
     "opening-callback6-parity.gba": "A559CC981736E376EEEF6D4097D93EC8965CFCE26FF23A5A269D4D049D4F2949",
     "selection-palette-routing.gba": "C5152150749B1E16C7B39BCF7E67C69810FE31C970CCA78988828921DA9AC017",
-    "current-candidate.gba": "1B1AA23C4913881B2F7FCAF28692D7A7EAC7B046D1A5E1F09ED3D77CC4054995",
+    "player-spawn-literal.gba": "1B1AA23C4913881B2F7FCAF28692D7A7EAC7B046D1A5E1F09ED3D77CC4054995",
+    "added-stage-collision.gba": "7FB315945EEA965CBD5DDF0FAD84B6FCCFF9D6364974769964022281E92445DD",
+    "logical-stage-spawn.gba": "83B80FAAF0B983B9FC3BD4085FF682C07D28EC9DEA8362F2BDE2534E341E43FD",
+    "train-graphics-repair.gba": "96638ACB58BD615B35C306B886C03F1A6206ADB0B4123AB539D7D03DEC12D530",
+    "iraira-floor-launch.gba": "7D9849EA7E46ECEB9C41D21194277E694F34A2E190E4DAE38083D451E8D27470",
+    "roster-list-routing.gba": "7DBFA0B464AB9A0E2DA55049855A0BC08AABAAACDA1AF3E21CC780F2864854E9",
+    "vs-name-layout-repair.gba": "99EFB070C3DC604040B4F67B70DB9D2099186C8401A3F8E9CDE981567AC3EFD1",
+    "current-candidate.gba": "AAD4D471696955AC2DB07DD112CE349AACC3CF57C32C2C0D33906769E43EBEFF",
 }
 
 
@@ -458,6 +465,13 @@ def main() -> int:
     character_routing = output / "character-resource-routing.gba"
     callback6_parity = output / "opening-callback6-parity.gba"
     selection_palette = output / "selection-palette-routing.gba"
+    player_spawn = output / "player-spawn-literal.gba"
+    added_collision = output / "added-stage-collision.gba"
+    logical_spawn = output / "logical-stage-spawn.gba"
+    train_graphics = output / "train-graphics-repair.gba"
+    iraira_floor = output / "iraira-floor-launch.gba"
+    roster_list = output / "roster-list-routing.gba"
+    vs_names = output / "vs-name-layout-repair.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -640,7 +654,21 @@ def main() -> int:
         "--manifest", output / "opening-callback6-parity.json")
     run("build_selection_palette_routing_repair.py", callback6_parity, args.gba, selection_palette,
         "--manifest", output / "selection-palette-routing.json")
-    run("build_player_spawn_literal_repair.py", selection_palette, args.gba, args.wsc15, candidate,
+    run("build_player_spawn_literal_repair.py", selection_palette, args.gba, args.wsc15, player_spawn,
+        "--manifest", output / "player-spawn-literal.json")
+    run("build_added_stage_collision.py", player_spawn, args.gba, args.wsc10, args.wsc15, added_collision,
+        "--manifest", output / "added-stage-collision.json")
+    run("build_logical_stage_spawn.py", added_collision, args.wsc15, logical_spawn,
+        "--manifest", output / "logical-stage-spawn.json")
+    run("build_train_graphics_repair.py", logical_spawn, args.gba, args.wsc10, args.wsc15, train_graphics,
+        "--manifest", output / "train-graphics-repair.json")
+    run("build_iraira_floor_launch.py", train_graphics, args.gba, args.wsc10, args.wsc15, iraira_floor,
+        "--manifest", output / "iraira-floor-launch.json")
+    run("build_roster_list_routing.py", iraira_floor, args.gba, args.wsc15, roster_list,
+        "--manifest", output / "roster-list-routing.json")
+    run("build_vs_name_layout_repair.py", roster_list, args.gba, args.wsc10, args.wsc15, vs_names,
+        "--manifest", output / "vs-name-layout-repair.json")
+    run("build_selection_palette_index_repair.py", vs_names, args.gba, candidate,
         "--manifest", output / "current-candidate.json")
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -946,8 +974,23 @@ def main() -> int:
          "1F7673D861FFA2342ABDA367CA4EF661E63CFABFD4D8EDCD6586DAF7BF65EB00"),
         ("verify_selection_palette_routing_repair.py", callback6_parity, selection_palette, [args.gba],
          "BB7C2B169796F71EAF2FFD39E1A8AB6CE7300E979EF8D108B967B4B49423E2AD"),
-        ("verify_player_spawn_literal_repair.py", selection_palette, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_player_spawn_literal_repair.py", selection_palette, player_spawn, [args.gba, args.wsc10, args.wsc15],
          "5AA3B9172D5E9462B310E6A60478A9B6C89307D0416A933F1CB1BF4E466DBD0E"),
+        ("verify_added_stage_collision.py", player_spawn, added_collision, [args.gba, args.wsc10, args.wsc15],
+         "B7B695D12609FFACF06F84C10E26E7A797D2CCD5C90F508AE1AE2221B99A5AD0"),
+        ("verify_logical_stage_spawn.py", added_collision, logical_spawn, [args.wsc15],
+         "D8C5A070EDA84A4CAD2ACB8A0D3910BEE7B1E5272990918F60F49F0D64BE5094"),
+        ("verify_train_graphics_repair.py", logical_spawn, train_graphics, [args.gba, args.wsc10, args.wsc15],
+         "C4DCF5669AB21BB92978EE0ECE6B5EC027BC0CDF42CDE72D1FBDB9AEDFF084EC"),
+        ("verify_iraira_floor_launch.py", train_graphics, iraira_floor, [args.gba, args.wsc10, args.wsc15],
+         "3E9CC0CD8498605C34DD8904663211875107F36D8FD5DE29F8140372DF7699B0"),
+        ("verify_roster_list_routing.py", iraira_floor, roster_list, [args.gba, args.wsc15],
+         "1CA72D8AE54AA88E6F7786BAE85B1876169FA8225022DE441BB275C6410FCD96"),
+        ("verify_vs_name_layout_repair.py", roster_list, vs_names,
+         [args.gba, args.wsc10, args.wsc15, ROOT / "records/fixtures/id14-vs-name-overflow-20261021.json"],
+         "D5080E7D2813E274BCB19E4B688A357734ABFF1F7B722EEC3739D7ED63AA09F8"),
+        ("verify_selection_palette_index_repair.py", vs_names, candidate, [args.gba],
+         "D699F79E826696454DD9E614A9C8B67193EFCE52692399DC5D61E1A899D4D2C1"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
@@ -1037,6 +1080,19 @@ def main() -> int:
             "callback6 preserves source position, two flag writes, event0 and palette13; "
             "selection portrait palette DMA now resolves the actual table and hardware destination; "
             "the relocated ordinary fighter spawner resolves native stage state before source-backed coordinates; "
+            "three complete added-stage collision grids bind five native descriptors, with a bounded twelve-row "
+            "floor classification table; spawn selects the existing logical-stage service without changing "
+            "campaign progression, whose temporary character-route policy remains incomplete; "
+            "Train binds all36 source maps and100 descriptors to two native backgrounds, restores "
+            "the twelve-row camera table, and uses the proven palette and display-snapshot owners; "
+            "source-only Train hazard state remains unimplemented; "
+            "Iraira class14 now invokes the source-backed launch trigger, quiet initial/wait phases "
+            "and eight bounded scores, with two effect consumers using the same logical stage; "
+            "source-only character13 aerial branches and audio timbre parity remain unimplemented; "
+            "three roster consumers use immutable expanded lists without overwriting the native "
+            "selection presentation handle; source alternate-mode roster policy remains unchanged; "
+            "VS names append two source layouts to the retained native font, and the palette-only "
+            "selection path resolves the fighter ID from the same immutable roster views; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "

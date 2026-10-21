@@ -34,6 +34,7 @@ VK_F12 = 0x7B
 VK_RETURN = 0x0D
 VK_X = 0x58
 VK_RIGHT = 0x27
+VK_LEFT = 0x25
 VK_DOWN = 0x28
 MGBA_GDB_PORT = 2345
 RIGHT_INPUT_CONSUMER = 0x08375140
@@ -389,6 +390,9 @@ def parse_args() -> argparse.Namespace:
         help="press the default mGBA Right key at this runtime second",
     )
     parser.add_argument("--press-down-at", type=float, action="append")
+    parser.add_argument("--press-left-at", type=float, action="append")
+    parser.add_argument("--plain-right-input", action="store_true",
+                        help="send menu Right input without the battle-only consumer probe")
     parser.add_argument("--key-hold-seconds", type=float, default=0.25)
     return parser.parse_args()
 
@@ -420,6 +424,7 @@ def main() -> int:
         for at_seconds in (args.press_right_at or [])
     )
     scheduled_inputs.extend((at, "Down", VK_DOWN) for at in (args.press_down_at or []))
+    scheduled_inputs.extend((at, "Left", VK_LEFT) for at in (args.press_left_at or []))
     scheduled_inputs.sort()
     if scheduled_inputs:
         if scheduled_inputs[0][0] < 0 or args.key_hold_seconds <= 0:
@@ -462,7 +467,7 @@ def main() -> int:
                 elapsed = 0.0
                 for at_seconds, key, virtual_key in scheduled_inputs:
                     time.sleep(at_seconds - elapsed)
-                    if key == "Right":
+                    if key == "Right" and not args.plain_right_input:
                         remote.interrupt()
                         pre_input_states.append(
                             {
@@ -528,6 +533,8 @@ def main() -> int:
                             "key": key, "stop": held_stop,
                             "keyinput_hex": remote.read_memory(0x04000130, 2).hex(),
                             "frame_input_hex": remote.read_memory(0x03001302, 2).hex(),
+                            "game_state_hex": remote.read_memory(0x03002310, 32).hex(),
+                            "selection_state_hex": remote.read_memory(0x03004710, 64).hex(),
                         })
                         key_up_windows = process.post_key_state(virtual_key, False)
                         remote.start_continue()
@@ -540,7 +547,8 @@ def main() -> int:
                                 if virtual_key == VK_RETURN
                                 else "VK_X"
                                 if virtual_key == VK_X
-                                else "VK_RIGHT" if virtual_key == VK_RIGHT else "VK_DOWN"
+                                else "VK_RIGHT" if virtual_key == VK_RIGHT
+                                else "VK_LEFT" if virtual_key == VK_LEFT else "VK_DOWN"
                             ),
                             "at_seconds": at_seconds,
                             "hold_seconds": args.key_hold_seconds,
@@ -554,6 +562,15 @@ def main() -> int:
             screenshot_windows = process.post_key(VK_F12)
             time.sleep(2.0)
             screenshots = sorted(output_dir.glob("*.png"))
+            screenshot_attempts = 1
+            # Qt may process the shortcut late while the debugger is stopped.
+            # Retry only this file-output request; never resume or mutate guest
+            # memory to obtain a picture matching a different captured state.
+            while not screenshots and screenshot_attempts < 3:
+                screenshot_windows = process.post_key(VK_F12)
+                screenshot_attempts += 1
+                time.sleep(2.0)
+                screenshots = sorted(output_dir.glob("*.png"))
             registers = remote.command("g").decode("ascii")
             regions = {
                 "io.bin": remote.read_memory(0x04000000, 0x400),
@@ -589,8 +606,10 @@ def main() -> int:
                     "gdb_endpoint_owner": gdb_owner,
                     "monitor_visible": False,
                     "screenshot_windows": screenshot_windows,
+                    "screenshot_attempts": screenshot_attempts,
                 },
                 "input_events": input_events,
+                "right_input_battle_probe_enabled": not args.plain_right_input,
                 "pre_input_states": pre_input_states,
                 "input_consumer_traces": input_consumer_traces,
                 "held_input_states": held_input_states,

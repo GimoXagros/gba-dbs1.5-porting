@@ -91,6 +91,11 @@ def main():
                     event[name] = {'address': f'{address:08X}',
                                    'hex': remote.read_memory(address, size).hex()}
                 event['asynchronous_stops'] = list(remote.asynchronous_stops)
+                if a.then_write_address is not None:
+                    event['watched_halfword'] = {
+                        'address': f'{a.then_write_address:08X}',
+                        'hex': remote.read_memory(a.then_write_address, 2).hex(),
+                    }
                 save()
                 if stop.startswith(('S04', 'S0b')):
                     for name, address, size in [('iwram', 0x03000000, 0x8000),
