@@ -5,6 +5,7 @@ from pathlib import Path
 import struct
 from contextlib import ExitStack
 import threading
+import time
 
 from mgba_headless_gdb_capture import PrivateDesktopProcess, GdbRemote, connect_gdb, sha256
 from mgba_capture_provenance import verify_loaded_rom_samples, verify_gdb_owner
@@ -18,13 +19,21 @@ def main():
     p.add_argument('--hits', type=int, default=8)
     p.add_argument('--exec-address', type=lambda s: int(s, 0))
     p.add_argument('--exec-kind', type=int, choices=(2, 4), default=4)
-    p.add_argument('--then-write-address', type=lambda s: int(s, 0))
+    next_watch = p.add_mutually_exclusive_group()
+    next_watch.add_argument('--then-write-address', type=lambda s: int(s, 0))
+    next_watch.add_argument('--then-exec-address', type=lambda s: int(s, 0))
+    p.add_argument('--stop-on-zero-write', action='store_true')
     p.add_argument('--timeout', type=float, default=45)
     p.add_argument('--press-start-at', type=float)
     p.add_argument('--press-a-at', type=float, action='append', default=[])
     p.add_argument('--press-right-at', type=float, action='append', default=[])
+    p.add_argument('--press-left-at', type=float, action='append', default=[])
     p.add_argument('--press-down-at', type=float, action='append', default=[])
     a = p.parse_args()
+    if a.stop_on_zero_write and a.then_write_address is None:
+        p.error('--stop-on-zero-write requires --then-write-address')
+    if a.timeout <= 0 or a.hits <= 0:
+        p.error('--timeout and --hits must be positive')
     a.output.mkdir(parents=True, exist_ok=False)
     report = {'rom_sha256': sha256(a.rom), 'emulator_sha256': sha256(a.mgba),
               'monitor_visible': False, 'guest_writes': [], 'events': [],
@@ -56,10 +65,12 @@ def main():
             cleanup.callback(stop_inputs)
             schedule = [(at, 0x58) for at in a.press_a_at]
             schedule += [(at, 0x27) for at in a.press_right_at]
+            schedule += [(at, 0x25) for at in a.press_left_at]
             schedule += [(at, 0x28) for at in a.press_down_at]
             if a.press_start_at is not None:
                 schedule.append((a.press_start_at, 0x0D))
             report['scheduled_inputs'] = schedule
+            deadline = time.monotonic() + a.timeout
             for at, key in schedule:
                 if at < 0 or at + 0.25 >= a.timeout:
                     raise ValueError('input outside the bounded probe interval')
@@ -69,13 +80,28 @@ def main():
                     timer.start()
             connection.settimeout(a.timeout)
             for _ in range(a.hits):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    connection.settimeout(10)
+                    report['bounded_timeout_stop'] = remote.command('?').decode()
+                    save()
+                    break
+                connection.settimeout(remaining)
                 remote.start_continue()
                 try:
                     stop = remote.receive_packet().decode()
                 except TimeoutError:
+                    connection.settimeout(10)
                     report['bounded_timeout_stop'] = remote.interrupt().decode()
                     save()
                     break
+                connection.settimeout(10)
+                if a.stop_on_zero_write and stop.startswith('T05watch:'):
+                    value = int.from_bytes(remote.read_memory(a.then_write_address, 4), 'little')
+                    if value != 0:
+                        report['nonzero_writes_skipped'] = report.get('nonzero_writes_skipped', 0) + 1
+                        continue
+                    report['zero_write_observed'] = True
                 registers = remote.command('g').decode()
                 words = struct.unpack('<17I', bytes.fromhex(registers))
                 event = {'stop': stop, 'registers': [f'{x:08X}' for x in words]}
@@ -97,6 +123,8 @@ def main():
                         'hex': remote.read_memory(a.then_write_address, 2).hex(),
                     }
                 save()
+                if report.get('zero_write_observed'):
+                    break
                 if stop.startswith(('S04', 'S0b')):
                     for name, address, size in [('iwram', 0x03000000, 0x8000),
                                                 ('ewram', 0x02000000, 0x40000)]:
@@ -106,6 +134,8 @@ def main():
                 save()
                 if a.then_write_address is not None:
                     watches = [f'2,{a.then_write_address:x},2']
+                elif a.then_exec_address is not None:
+                    watches = [f'0,{a.then_exec_address:x},{a.exec_kind}']
                 for watch in watches:
                     remote.command('Z' + watch)
     print(json.dumps(report))

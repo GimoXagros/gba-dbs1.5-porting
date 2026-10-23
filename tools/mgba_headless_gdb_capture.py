@@ -33,6 +33,7 @@ WM_KEYUP = 0x0101
 VK_F12 = 0x7B
 VK_RETURN = 0x0D
 VK_X = 0x58
+VK_Z = 0x5A
 VK_RIGHT = 0x27
 VK_LEFT = 0x25
 VK_DOWN = 0x28
@@ -390,6 +391,7 @@ def parse_args() -> argparse.Namespace:
         help="press the default mGBA Right key at this runtime second",
     )
     parser.add_argument("--press-down-at", type=float, action="append")
+    parser.add_argument("--press-b-at", type=float, action="append")
     parser.add_argument("--press-left-at", type=float, action="append")
     parser.add_argument("--plain-right-input", action="store_true",
                         help="send menu Right input without the battle-only consumer probe")
@@ -424,6 +426,7 @@ def main() -> int:
         for at_seconds in (args.press_right_at or [])
     )
     scheduled_inputs.extend((at, "Down", VK_DOWN) for at in (args.press_down_at or []))
+    scheduled_inputs.extend((at, "B", VK_Z) for at in (args.press_b_at or []))
     scheduled_inputs.extend((at, "Left", VK_LEFT) for at in (args.press_left_at or []))
     scheduled_inputs.sort()
     if scheduled_inputs:
@@ -547,6 +550,7 @@ def main() -> int:
                                 if virtual_key == VK_RETURN
                                 else "VK_X"
                                 if virtual_key == VK_X
+                                else "VK_Z" if virtual_key == VK_Z
                                 else "VK_RIGHT" if virtual_key == VK_RIGHT
                                 else "VK_LEFT" if virtual_key == VK_LEFT else "VK_DOWN"
                             ),

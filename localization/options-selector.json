@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "status": "development-options-component",
+  "languages": ["en", "ja", "ko", "digicode"],
+  "labels": ["LANGUAGE", "げんご", "언어", "げんご"],
+  "names": ["ENGLISH", "にほんご", "한국어", "デジコード"],
+  "save_errors": ["SAVE ERROR", "ほぞんエラー", "저장 실패", "ほぞんエラー"],
+  "commit": "A commits and exits; re-enter Options to render the chosen language",
+  "scope": "Options labels and values only; other native consumers are not routed yet",
+  "digicode": "development pixel transcription reviewed against local symbol references; Japanese reading base; bounded Options review passed, final font certification pending"
+}

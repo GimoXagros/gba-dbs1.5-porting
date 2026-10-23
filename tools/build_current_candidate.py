@@ -15,6 +15,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC10_SHA256 = "58220B9C050C3BF29B4953885C9576BE103EA8E00A7BCB96CCA18607E19E9735"
 WSC15_SHA256 = "C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7"
+FONT_SHA256 = "4CA44E617B1A51D420B32AE1AC4663A6DAD0D5F7036E62F78F52B0086779DFED"
+FONT_LICENSE_SHA256 = "76B3F3DD55B1F37C31E440E7224EF732F8D1D0DB23CA9C4A610F575261C49A4C"
 CORPUS_SHA256 = "6E648C301837662DCC26613B1D237E55CF356277C3BE13AFA530A45927D7B8E2"
 OPENING_P1_CORPUS_SHA256 = (
     "B9F671AB5FE6E66DA7351AFFFAFD7C6E4D07370E84D231E501A6D8C51B52B887"
@@ -198,7 +200,11 @@ EXPECTED_LAYERS = {
     "iraira-floor-launch.gba": "7D9849EA7E46ECEB9C41D21194277E694F34A2E190E4DAE38083D451E8D27470",
     "roster-list-routing.gba": "7DBFA0B464AB9A0E2DA55049855A0BC08AABAAACDA1AF3E21CC780F2864854E9",
     "vs-name-layout-repair.gba": "99EFB070C3DC604040B4F67B70DB9D2099186C8401A3F8E9CDE981567AC3EFD1",
-    "current-candidate.gba": "AAD4D471696955AC2DB07DD112CE349AACC3CF57C32C2C0D33906769E43EBEFF",
+    "selection-palette-index-repair.gba": "AAD4D471696955AC2DB07DD112CE349AACC3CF57C32C2C0D33906769E43EBEFF",
+    "waterfall-display-repair.gba": "C50ADCF54D29B327CCF5BFAE21F51784AC2A7A9544DF6093680BDB6387F93DFF",
+    "character-followup-routing.gba": "F1BC5A96024E7035AFF2F6653C2C56258E52C5D13E556B2E950B234E55895D0E",
+    "options-language-selector.gba": "3B40BC0C9B253499A1AEC063E855C932191953718491F99DF44405C9CB91911C",
+    "current-candidate.gba": "F2D484BBF873B6CAE38CB5DCA32E57A16B514D4C0517BBD083BDDC45FBF010A0",
 }
 
 
@@ -228,11 +234,20 @@ def main() -> int:
     parser.add_argument("wsc10", type=pathlib.Path, help="WonderSwan Color retail 1.0 original")
     parser.add_argument("wsc15", type=pathlib.Path, help="WonderSwan Color Ver. 1.5 original")
     parser.add_argument("output_dir", type=pathlib.Path)
+    parser.add_argument("--font", required=True, type=pathlib.Path, help="pinned Galmuri11-Condensed BDF")
+    parser.add_argument("--font-license", required=True, type=pathlib.Path, help="original SIL Open Font License text")
     args = parser.parse_args()
+
+    try:
+        from PIL import Image, ImageFilter
+    except ImportError as error:
+        raise SystemExit("Full build requires Pillow for independent Digicode verification; use a Python runtime with Pillow installed.") from error
 
     require_hash(args.gba, GBA_SHA256, "USA GBA original")
     require_hash(args.wsc10, WSC10_SHA256, "WSC 1.0 original")
     require_hash(args.wsc15, WSC15_SHA256, "WSC Ver. 1.5 original")
+    require_hash(args.font, FONT_SHA256, "Options font source")
+    require_hash(args.font_license, FONT_LICENSE_SHA256, "Options font license")
 
     output = args.output_dir.resolve()
     if output.exists() and (not output.is_dir() or any(output.iterdir())):
@@ -472,6 +487,10 @@ def main() -> int:
     iraira_floor = output / "iraira-floor-launch.gba"
     roster_list = output / "roster-list-routing.gba"
     vs_names = output / "vs-name-layout-repair.gba"
+    selection_index = output / "selection-palette-index-repair.gba"
+    waterfall_display = output / "waterfall-display-repair.gba"
+    character_followup = output / "character-followup-routing.gba"
+    language_options = output / "options-language-selector.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -668,8 +687,17 @@ def main() -> int:
         "--manifest", output / "roster-list-routing.json")
     run("build_vs_name_layout_repair.py", roster_list, args.gba, args.wsc10, args.wsc15, vs_names,
         "--manifest", output / "vs-name-layout-repair.json")
-    run("build_selection_palette_index_repair.py", vs_names, args.gba, candidate,
+    run("build_selection_palette_index_repair.py", vs_names, args.gba, selection_index,
+        "--manifest", output / "selection-palette-index-repair.json")
+    run("build_waterfall_display_repair.py", selection_index, args.gba, args.wsc10, args.wsc15, waterfall_display,
+        "--manifest", output / "waterfall-display-repair.json")
+    run("build_character_followup_routing.py", waterfall_display, args.gba, args.wsc10, args.wsc15, character_followup,
+        "--manifest", output / "character-followup-routing.json")
+    run("build_options_selector.py", character_followup, args.gba, args.font, args.font_license, language_options,
+        "--manifest", output / "options-language-selector.json")
+    run("build_character_action_routing.py", language_options, args.gba, args.wsc10, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
+    (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
     current_physics = (assets / "character-physics-current.bin").read_bytes()
@@ -989,12 +1017,30 @@ def main() -> int:
         ("verify_vs_name_layout_repair.py", roster_list, vs_names,
          [args.gba, args.wsc10, args.wsc15, ROOT / "records/fixtures/id14-vs-name-overflow-20261021.json"],
          "D5080E7D2813E274BCB19E4B688A357734ABFF1F7B722EEC3739D7ED63AA09F8"),
-        ("verify_selection_palette_index_repair.py", vs_names, candidate, [args.gba],
+        ("verify_selection_palette_index_repair.py", vs_names, selection_index, [args.gba],
          "D699F79E826696454DD9E614A9C8B67193EFCE52692399DC5D61E1A899D4D2C1"),
+        ("verify_waterfall_display_repair.py", selection_index, waterfall_display, [args.gba, args.wsc10, args.wsc15],
+         "2FE4896E11B5CD9C63AD30010594C7A613F9C0AE2DA21459DCCBE73D0F29A6D1"),
+        ("verify_character_followup_routing.py", waterfall_display, character_followup, [args.gba, args.wsc10, args.wsc15],
+         "A96E3DB159C9F33B867D0B96C4290423640DC24C695803F9485058E8C25FC3A9"),
+        ("verify_options_selector.py", character_followup, language_options,
+         [args.gba, args.font, output / "options-language-selector.json"],
+         "85F723E9B043A161788B1821F6D2BF895D3906254EFF6CBF255CB8D1B9094175"),
+        ("verify_character_action_routing.py", language_options, candidate, [args.gba, args.wsc10, args.wsc15],
+         "D9B1BBC12B8DF71CB3E9522F780063EC699AD12E8D246FBD10A0F2C08A5EFDF8"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
         require_hash(report, expected, tool)
+    glyphs = intermediate / "digicode-font.json"
+    language_inventory = intermediate / "language-native-inventory.json"
+    digicode_review = intermediate / "digicode-resource-verification.json"
+    run("digicode_glyphs.py", glyphs)
+    require_hash(glyphs, "ABDFB29C40C3C8F38BB64214B1F3695FED4774C32362A6ACC1F4EE5D90029EEA", "Digicode pixel identities")
+    run("analyze_language_consumers.py", args.gba, args.wsc10, args.wsc15, selection_index, language_inventory)
+    require_hash(language_inventory, "9B0E4A7C563C5F9497F02FAAFAADB5314D6CEDF5A00C6314AA62A11C24E9AD21", "native language inventory")
+    run("verify_digicode_resource.py", language_options, output / "options-language-selector.json", glyphs, language_inventory, digicode_review)
+    require_hash(digicode_review, "947522802723845EF01DD7090F5F39D3BF6D06BA1209FE6BDB42EE11633DA05F", "independent Digicode resource review")
     run("analyze_shoot_sram_boundary.py", args.wsc15, "--output", sram_boundary)
     require_hash(sram_boundary, SHOOT_SRAM_BOUNDARY_SHA256, "Shoot unresolved SRAM observer evidence")
     shoot_initializer_p1_verification = intermediate / "shoot-initializer-p1-verification.json"
@@ -1093,6 +1139,13 @@ def main() -> int:
             "selection presentation handle; source alternate-mode roster policy remains unchanged; "
             "VS names append two source layouts to the retained native font, and the palette-only "
             "selection path resolves the fighter ID from the same immutable roster views; "
+            "Waterfall restores source layer ownership, display phase and bounded palette state; "
+            "the indexed damage follow-up view covers all fifteen source fighters; "
+            "Options supports English, Japanese, Korean and Japanese-reading Digicode with "
+            "a native owned selector task and checked save failure paths; other text consumers "
+            "and whole-game localization remain incomplete; "
+            "fourteen input action tables cover fifteen source fighters and the four "
+            "source-changed ID11 evolution actions while preserving existing native descriptors; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
@@ -1102,6 +1155,8 @@ def main() -> int:
             "gba_usa_sha256": GBA_SHA256,
             "wsc_10_sha256": WSC10_SHA256,
             "wsc_15_sha256": WSC15_SHA256,
+            "options_font_sha256": FONT_SHA256,
+            "options_font_license_sha256": FONT_LICENSE_SHA256,
         },
         "intermediate": {
             "p4_base_conversion_corpus_sha256": CORPUS_SHA256,

@@ -75,8 +75,8 @@ record writer; a RAM-only selection would therefore not establish persistence.
 
 These are P0/P1 native sprite resources, not encoded text strings requiring
 a new text renderer. All referenced layouts and every tile reference were
-parsed against the real atlas. Static P0 flag `+0E=8` selects the single
-preloaded descriptor. The resource previews show first event frames in
+parsed against the real atlas. Static P0 flag `+0E=8` selects a single source
+descriptor. The resource previews show first event frames in
 grayscale; they are not emulator screenshots.
 
 | Resource | P0 raw | P1 raw | P2 raw | Tiles / bytes | Events / layouts | Maximum parts in one frame |
@@ -194,3 +194,16 @@ the Python standard library. It records full input hashes, preserved native
 slices, exact guarded words, complete source-pattern and record-pointer
 populations, all P1 frames, and all P0 tile references. Later candidates may be
 analyzed only if every inspected native range and contract remains unchanged.
+
+## Implementation follow-up, 2026-10-23
+
+The read-only findings above retain their original date and candidate identity.
+The header-byte proposal was subsequently approved in
+`records/language-padding-owner-review.md` and implemented as exact `A0..A3`
+tags by the bounded Options component in `records/options-language-selector.md`.
+It adds the sixth row, four actual Options resource routes, native commit and
+failed-write retry/repair handling, and full task/OAM/coordinate accounting.
+English and Japanese assets are preserved. Original resources outside Options
+still require separate routing and localization; whole-game four-language
+completion is not claimed. The implementation record distinguishes standalone
+runtime evidence from integrated-ROM verification and remaining checks.
