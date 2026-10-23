@@ -185,6 +185,24 @@ Root-owned 6675 observations:
 Staging and restart have `language-runtime-verification.json` PASS reports.
 These observations do not transfer automatically to integrated ROM 3B40BC0C.
 
+Additional root-owned observations on the same four-language standalone
+candidate confirm Korean persistence and cancellation:
+
+| Capture under `build/` | `capture.json` SHA-256 | Observation |
+| --- | --- | --- |
+| `runtime-options-four-korean-commit-20261023` | `71506CA997D49B3F76945F49C8CF03009B7D46C68931B1B0704460BA59CFB352` | Successful Korean commit |
+| `runtime-options-four-korean-restart-20261023` | `44897CD00324506CFEBFBAC200BF5852CD1D9E517CE5A312E5AB52AE94B546F6` | Fresh process: tag A2, entry 2, 101 OAM, full Korean screenshot and checker PASS |
+| `runtime-options-four-cancel-20261023` | `C3DEE55B5293D992C0C75DA2711CFC0AD7843FD4CDC4410E6A5EFC1BDBEBAD7B` | B after staging Digicode preserves A2/checksum and exits natively to mode3 |
+| `runtime-options-four-cancel-restart-20261023` | `6B962175D19E636275057B2349E422A63EB7BA98334FE07A5746E0075DFF5347` | Fresh process retains Korean, 101 OAM, checker PASS |
+
+The exact integrated F2D candidate subsequently passed Digicode commit and
+fresh-process Options reload. Root's [runtime record](runtime-repair-20261023.md)
+pins both capture hashes and the complete expected-write inverse used to verify
+the Options component inside that exact ROM. Reload showed tag A3, entry and
+pending 3, error 0, 102 OAM, all 18 presentation resources/staging checked,
+and complete Return bounds inside the native window. These are bounded observed
+interactions; actual permanent-write failure and power interruption remain open.
+
 ## Reproduction and remaining checks
 
 Run from the repository with the project Python runtime. Builder arguments:
@@ -201,5 +219,6 @@ Digicode's separate actual-resource checker command is in its record.
 Not verified here: physical failure injection, permanent failure, power
 interruption, exhaustive live interactions, all four fresh-process transitions
 on the integrated ROM, final font readability/authentication, and non-Options
-title/error/result/gameplay localization. Main-pipeline and further runtime
+error/result/gameplay localization. The separate [title component](title-language.md)
+is now in development; it does not make all other consumers complete. Main-pipeline and further runtime
 evidence remain root-owned. This is a bounded development component.

@@ -204,7 +204,10 @@ EXPECTED_LAYERS = {
     "waterfall-display-repair.gba": "C50ADCF54D29B327CCF5BFAE21F51784AC2A7A9544DF6093680BDB6387F93DFF",
     "character-followup-routing.gba": "F1BC5A96024E7035AFF2F6653C2C56258E52C5D13E556B2E950B234E55895D0E",
     "options-language-selector.gba": "3B40BC0C9B253499A1AEC063E855C932191953718491F99DF44405C9CB91911C",
-    "current-candidate.gba": "F2D484BBF873B6CAE38CB5DCA32E57A16B514D4C0517BBD083BDDC45FBF010A0",
+    "character-input-action.gba": "F2D484BBF873B6CAE38CB5DCA32E57A16B514D4C0517BBD083BDDC45FBF010A0",
+    "character-recovery-routing.gba": "A18B0EDA679D381BF143C49438459ABC7F02F0871D10FE347C79C5582CF62F71",
+    "title-language.gba": "143ECA1C15D495E59D52252C7BB046217FEDD462772CC887A4D2D4C9830F4A80",
+    "current-candidate.gba": "A3E0B217C2F077CC628D1543434567CE4B6B77AAF766DFA1903033ECB6474E61",
 }
 
 
@@ -491,6 +494,9 @@ def main() -> int:
     waterfall_display = output / "waterfall-display-repair.gba"
     character_followup = output / "character-followup-routing.gba"
     language_options = output / "options-language-selector.gba"
+    character_action = output / "character-input-action.gba"
+    character_recovery = output / "character-recovery-routing.gba"
+    title_language = output / "title-language.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -695,7 +701,13 @@ def main() -> int:
         "--manifest", output / "character-followup-routing.json")
     run("build_options_selector.py", character_followup, args.gba, args.font, args.font_license, language_options,
         "--manifest", output / "options-language-selector.json")
-    run("build_character_action_routing.py", language_options, args.gba, args.wsc10, args.wsc15, candidate,
+    run("build_character_action_routing.py", language_options, args.gba, args.wsc10, args.wsc15, character_action,
+        "--manifest", output / "character-input-action.json")
+    run("build_character_damage_routing.py", character_action, args.gba, args.wsc10, args.wsc15, character_recovery,
+        "--manifest", output / "character-recovery-routing.json")
+    run("build_title_language.py", character_recovery, args.gba, args.wsc10, args.wsc15, args.font, args.font_license, title_language,
+        "--manifest", output / "title-language.json")
+    run("build_character_hit_routing.py", title_language, args.gba, args.wsc10, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1026,8 +1038,12 @@ def main() -> int:
         ("verify_options_selector.py", character_followup, language_options,
          [args.gba, args.font, output / "options-language-selector.json"],
          "85F723E9B043A161788B1821F6D2BF895D3906254EFF6CBF255CB8D1B9094175"),
-        ("verify_character_action_routing.py", language_options, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_character_action_routing.py", language_options, character_action, [args.gba, args.wsc10, args.wsc15],
          "D9B1BBC12B8DF71CB3E9522F780063EC699AD12E8D246FBD10A0F2C08A5EFDF8"),
+        ("verify_character_damage_routing.py", character_action, character_recovery, [args.gba, args.wsc10, args.wsc15],
+         "9D2E87557FC06DEB0816EA2917F1AC0897FBC47110BA14079C7CE3DF2202E9C0"),
+        ("verify_character_hit_routing.py", title_language, candidate, [args.gba, args.wsc10, args.wsc15],
+         "775EA0F411E73DA7940BFAA74DD9127CC88D896DD7D5C15C3802576BA3857DCE"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
@@ -1037,6 +1053,10 @@ def main() -> int:
     digicode_review = intermediate / "digicode-resource-verification.json"
     run("digicode_glyphs.py", glyphs)
     require_hash(glyphs, "ABDFB29C40C3C8F38BB64214B1F3695FED4774C32362A6ACC1F4EE5D90029EEA", "Digicode pixel identities")
+    title_review = intermediate / "title-language-verification.json"
+    run("verify_title_language.py", character_recovery, title_language, args.gba, args.wsc10, args.wsc15,
+        args.font, args.font_license, output / "title-language.json", title_review, "--digicode-font", glyphs)
+    require_hash(title_review, "9974145ADB151ABE505E0CB09467C38342DE899CBEC848740999BC4534FCC724", "independent title review")
     run("analyze_language_consumers.py", args.gba, args.wsc10, args.wsc15, selection_index, language_inventory)
     require_hash(language_inventory, "9B0E4A7C563C5F9497F02FAAFAADB5314D6CEDF5A00C6314AA62A11C24E9AD21", "native language inventory")
     run("verify_digicode_resource.py", language_options, output / "options-language-selector.json", glyphs, language_inventory, digicode_review)
@@ -1146,6 +1166,9 @@ def main() -> int:
             "and whole-game localization remain incomplete; "
             "fourteen input action tables cover fifteen source fighters and the four "
             "source-changed ID11 evolution actions while preserving existing native descriptors; "
+            "the separate thirteen-row recovery table now covers all fifteen source fighters; "
+            "the five existing title labels select English, source Japanese, Korean or Japanese-reading Digicode; "
+            "four indexed hit/follow-up views cover fifteen fighters, including source variant8 across the original record blocks; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "

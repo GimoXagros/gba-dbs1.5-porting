@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "status": "development-source-backed-title-component",
+  "scope": "The five existing native title events only; later Ver. 1.5 menu entries are outside this component.",
+  "source": "WSC 1.5 fixed Japanese title branch at 0x780148; P0 0x3C3FE0, P1 0x3D3A80, P2 0x3D7EE0.",
+  "digicode_normalization": "Only source オプション uses the explicit reading おぷしよん. Small ョ maps to the reviewed ヨ identity; the frozen encoder/catalog remain unchanged. The user chart example and creator reference both support small-kana/full-size-glyph aliasing. Other unsupported input still fails.",
+  "punctuation": "The Japanese source exclamation and D-ARK hyphen retain their exact native pixels and palette indices. The hyphen is not the Japanese long-vowel symbol.",
+  "entries": [
+    {"event": 0, "source_ja": "スタートボタンをおしてね！", "korean_draft": "시작 버튼을 눌러 주세요", "digicode_reading": "スタートボタンをおしてね", "native_suffix": "!"},
+    {"event": 1, "source_ja": "ひとりでバトル", "korean_draft": "혼자 대전", "digicode_reading": "ひとりでバトル"},
+    {"event": 2, "source_ja": "ともだちとバトル", "korean_draft": "친구와 대전", "digicode_reading": "ともだちとバトル"},
+    {"event": 3, "source_ja": "オプション", "korean_draft": "설정", "digicode_reading": "おぷしよん"},
+    {"event": 4, "source_ja": "D-ARK", "korean_draft": "D-ARK", "digicode_parts": ["D", "native-hyphen", "ARK"]}
+  ]
+}
