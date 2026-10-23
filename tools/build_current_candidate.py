@@ -207,7 +207,10 @@ EXPECTED_LAYERS = {
     "character-input-action.gba": "F2D484BBF873B6CAE38CB5DCA32E57A16B514D4C0517BBD083BDDC45FBF010A0",
     "character-recovery-routing.gba": "A18B0EDA679D381BF143C49438459ABC7F02F0871D10FE347C79C5582CF62F71",
     "title-language.gba": "143ECA1C15D495E59D52252C7BB046217FEDD462772CC887A4D2D4C9830F4A80",
-    "current-candidate.gba": "A3E0B217C2F077CC628D1543434567CE4B6B77AAF766DFA1903033ECB6474E61",
+    "character-hit-routing.gba": "A3E0B217C2F077CC628D1543434567CE4B6B77AAF766DFA1903033ECB6474E61",
+    "result-pose-routing.gba": "DBB66875367C01CE60A60FD47819191F44FF04FBFD23C09F591100E738CF265C",
+    "waterfall-third-pattern.gba": "B31A46AEC0DD74736CB300339D1475DF23363E8A97E3D79846E3CE64073C3AF8",
+    "current-candidate.gba": "389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1",
 }
 
 
@@ -497,6 +500,9 @@ def main() -> int:
     character_action = output / "character-input-action.gba"
     character_recovery = output / "character-recovery-routing.gba"
     title_language = output / "title-language.gba"
+    character_hit = output / "character-hit-routing.gba"
+    result_pose = output / "result-pose-routing.gba"
+    waterfall_third = output / "waterfall-third-pattern.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -707,7 +713,13 @@ def main() -> int:
         "--manifest", output / "character-recovery-routing.json")
     run("build_title_language.py", character_recovery, args.gba, args.wsc10, args.wsc15, args.font, args.font_license, title_language,
         "--manifest", output / "title-language.json")
-    run("build_character_hit_routing.py", title_language, args.gba, args.wsc10, args.wsc15, candidate,
+    run("build_character_hit_routing.py", title_language, args.gba, args.wsc10, args.wsc15, character_hit,
+        "--manifest", output / "character-hit-routing.json")
+    run("build_result_pose_routing.py", character_hit, args.gba, args.wsc10, args.wsc15, result_pose,
+        "--manifest", output / "result-pose-routing.json")
+    run("build_waterfall_third_pattern.py", result_pose, args.gba, args.wsc10, args.wsc15, waterfall_third,
+        "--manifest", output / "waterfall-third-pattern.json")
+    run("build_stage_priority_routing.py", waterfall_third, args.gba, args.wsc10, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1042,8 +1054,14 @@ def main() -> int:
          "D9B1BBC12B8DF71CB3E9522F780063EC699AD12E8D246FBD10A0F2C08A5EFDF8"),
         ("verify_character_damage_routing.py", character_action, character_recovery, [args.gba, args.wsc10, args.wsc15],
          "9D2E87557FC06DEB0816EA2917F1AC0897FBC47110BA14079C7CE3DF2202E9C0"),
-        ("verify_character_hit_routing.py", title_language, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_character_hit_routing.py", title_language, character_hit, [args.gba, args.wsc10, args.wsc15],
          "775EA0F411E73DA7940BFAA74DD9127CC88D896DD7D5C15C3802576BA3857DCE"),
+        ("verify_result_pose_routing.py", character_hit, result_pose, [args.gba, args.wsc10, args.wsc15],
+         "C399601AA969E290F9C61A345CDE035374235BFE0D40B1A6E68E01E7293FFB08"),
+        ("verify_waterfall_third_pattern.py", result_pose, waterfall_third, [args.gba, args.wsc10, args.wsc15],
+         "0F30817BB70154F582B6E2FED3A286C440CBF84F97F7E2C1952962CAB9F1B4A1"),
+        ("verify_stage_priority_routing.py", waterfall_third, candidate, [args.gba, args.wsc10, args.wsc15],
+         "0D922956162CB291190290EE0B1FA5083FA2826D49619A1AD061880BBD6465B3"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
@@ -1169,6 +1187,9 @@ def main() -> int:
             "the separate thirteen-row recovery table now covers all fifteen source fighters; "
             "the five existing title labels select English, source Japanese, Korean or Japanese-reading Digicode; "
             "four indexed hit/follow-up views cover fifteen fighters, including source variant8 across the original record blocks; "
+            "two result-pose byte-pair views preserve the source win/lose events for all fifteen fighters; "
+            "the third Waterfall pattern binds its source mode3 constructor and shared continuations, with corrected successor-row clearing; "
+            "two manager lookups prioritize dedicated logical stage11 over temporary character routes; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "

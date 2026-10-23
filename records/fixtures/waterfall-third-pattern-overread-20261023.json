@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "kind": "observed-waterfall-missing-third-config",
+  "rom_sha256": "DBB66875367C01CE60A60FD47819191F44FF04FBFD23C09F591100E738CF265C",
+  "emulator_sha256": "0D9A2779ADD78D41A093C3AF8CEC7D72CC07A5451C8A1E1B167B48CD54950288",
+  "probe_sha256": "C49C2E376474C48807BE7FEC374976B6EF222A3BE14687C53A981D3F2AC2F773",
+  "probe_path": "build/runtime-invalid-callback-writer-20261023/probe.json",
+  "guest_writes": [],
+  "monitor_visible": false,
+  "stop": "T05watch:02011198;",
+  "writer_pc": "0836D85C",
+  "next_pc": "0836D860",
+  "object": "02011198",
+  "presentation": "02011244",
+  "loaded_callback_slot_pointer": "FFFFFFFF",
+  "written_word": "2D0020E9",
+  "object_prefix_hex": "e920002d08110000080000000000ffff",
+  "presentation_hex": "00000000000000000820000000000000000000007d010000000000000000000000000000000000000000000000000000ffff000000000000000000000000010000180000a43d0d08a0300d08903f0d08",
+  "valid_callback_writes_skipped": 1,
+  "scope": "Observed mGBA invalid-pointer dereference value, not a portable hardware open-bus oracle; source-table bounds and callback implementation require separate proof."
+}

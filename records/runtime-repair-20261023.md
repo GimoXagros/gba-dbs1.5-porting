@@ -138,3 +138,62 @@ F2D에서 회복 표를 13행에서 15행으로 연결하고, 타이틀 다섯 �
 두 빌드의 231개 파일 경로·해시가 모두 같다. 비교 보고서 SHA-256은
 `8D332AFD80265755626A245E65F2A4562157D1947488ECC73666539333D9A42B`,
 빌드 매니페스트는 `A87275A171E74E2746ED58AD9AB4352FB1B61AB8AEEB2ECBCEF23E872B1FFE3B`다.
+
+## 후속 장시간 실행에서 확인한 별도 중단
+
+DBB 결과 포즈 후보의 202초 실행은 결과 화면 검증에 실패했다.
+`build/runtime-result-pose-id14-screen-20261023/capture.json` SHA-256은
+`30B00B4B75738A12F7F913E47DA3F98AE5B68E1D627CFC0441EAD7EE9F6DAD4B`다.
+모드는 여전히 7이었고, 무대 객체의 실행 주소 `02011198`에 `2D0020E9`가 있었다.
+PC는 `2D0020E8`, LR은 공통 실행기 복귀점 `083525C8`이었다. 스크린샷도 얻지 못했다.
+결과 포즈 수정은 전투 코드를 바꾸지 않으므로, 앞선 A3E의 한 번의 컨티뉴 도달로
+전체 전투가 안정적이라고 판단하면 안 된다. 정확한 쓰기 원인은 추적 중이다.
+
+기존 캡처 검사기는 렌더러·OAM·중단 신호만 확인해 이 캡처를 PASS로 표시했다.
+그 결과는 `invariants-without-pc-check.json`으로 보존했다. 현재 검사기는 실행 주소의
+유효 영역과 ARM/Thumb 정렬도 검사하며 이 캡처를 거부한다. 실제 A3E 컨티뉴 캡처와
+한국어 메뉴는 강화한 검사도 통과했다. 회귀 결과는
+`build/native-capture-pc-regression-20261023.json`에 있다.
+
+후속 쓰기 관찰에서 `0836D85C`가 해당 잘못된 값을 저장하는 지점을 잡았다.
+그 직전 `r1=FFFFFFFF`를 역참조했으며, 당시 객체는 선택 캐릭터가 아닌
+무대 관리자 그래픽을 사용하는 객체였다. 실제 ID14 플레이어 `02011710`의
+실행 주소는 유효했다. 증거는
+`build/runtime-invalid-callback-writer-20261023/probe.json`, SHA-256
+`C49C2E376474C48807BE7FEC374976B6EF222A3BE14687C53A981D3F2AC2F773`이다.
+한 번의 유효한 실행 주소 쓰기 뒤 잘못된 쓰기를 포착했으며, 게임 메모리는 수정하지 않았다.
+원본의 무대 패턴 레코드와 현재 GBA 소비자 연결을 대조 중이다.
+
+## Waterfall third-pattern repair: actual constructor observation
+
+On the `389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1`
+candidate, a fresh invisible process with ordinary controller input reached
+`0836D348` with initial pattern index `r3=2`, then `08629668` in the restored
+third constructor. The same stage object `02011198` that previously received
+`2D0020E9` now held callback `08585274`; its phase at `+94` was `00C0`, and
+global mode `0300256A` was `0003`. Both stops were intentional `S05k`, with no
+asynchronous exception, timeout or guest memory writes. This proves actual
+constructor execution and its first shared wait entry, not every later phase.
+
+Evidence: `build/runtime-waterfall-third-targeted-20261023-a/probe.json`,
+SHA-256 `17CC88BF92185B6D19D3DFA7319CFAA6D817F73106670EBB16D21B736AF3247F`.
+The adjacent `runtime-verification.json` asserts the exact addresses, callback,
+phase, mode, provenance and bounded stop conditions. The probe's optional first
+register condition ends a non-target seed early without modifying it; the
+observed target seed exercised its matching branch. A separate uninterrupted
+230-second battle capture is required for the subsequent runtime claim.
+
+
+The separate `389F` ordinary-input 230-second run then reached native mode9
+CONTINUE without asynchronous exceptions. The captured PC was `08011200`,
+32 non-affine OAM objects were enabled, and the copied renderer retained
+`D18F290027729112F393814CDAE81BA110F94192D2C82B75A8CBA40C4501F685`.
+The actual screenshot was reviewed: the CONTINUE prompt, YES/NO choices and
+Tailmon pose were coherent. This is one complete first-battle path, not a
+whole-game stability claim; the separate targeted probe proves mode3 execution.
+
+Capture: `build/runtime-waterfall-repaired-round-20261023/capture.json`,
+SHA-256 `7B221DDE8140CA33AA8840C7B19F9671D651E7552B3164F492C2415410BC7F68`.
+The strengthened `verify_native_capture_invariants.py` passes this capture
+and rejects the earlier unmapped-PC failure; no visible window or supplied
+WSC save was used.

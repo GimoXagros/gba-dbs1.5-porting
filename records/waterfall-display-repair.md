@@ -200,5 +200,19 @@ or every remaining gameplay path complete.
 Complete movement, attacks, hazards,
 campaign parity and Iraira display/palette behavior remain outside closure.
 
+## Later third-pattern correction
+
+The later DBB long-run failure is a distinct stage-entity configuration
+overread, not the player follow-up failure above. The source Waterfall
+cycle selects indices `[1,0,2,1]`, while the previous configuration converter
+copied only two records. Source third record `7450C1` points through slot
+`4823` to callback `4090:3FCA`, which writes hazard mode3. The earlier
+exclusion of that callback as unrelated in `records/object-config-conversion.md`
+and `records/stage-runtime.md` is superseded by this actual consumer proof.
+The bounded correction and its evidence are in
+`records/waterfall-third-pattern.md`. Display phase `03002568` and compact
+palette owner `03003D30` remain distinct from hazard `0300256A`; the display
+and palette claims in this record do not establish complete stage stability.
+
 This verification agent launched no emulator and opened or hashed no save.
 The pipeline and all other agents' source changes were left untouched.

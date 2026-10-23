@@ -30,6 +30,16 @@ def inspect(capture,gba):
         need(Path(name).name == name, 'local region filename')
         data = (capture / name).read_bytes()
         need(len(data) == identity['size'] and sha(data) == identity['sha256'], 'captured region identity: ' + name)
+    registers = bytes.fromhex(manifest['gdb']['registers_hex'])
+    need(len(registers) == 17 * 4, 'complete ARM register snapshot')
+    words = struct.unpack('<17I', registers)
+    pc, cpsr = words[15], words[16]
+    rom_size = manifest['rom']['size']
+    mapped = (0 <= pc < 0x4000 or 0x02000000 <= pc < 0x02040000 or
+              0x03000000 <= pc < 0x03008000 or
+              any(base <= pc < base + rom_size for base in (0x08000000, 0x0A000000, 0x0C000000)))
+    need(mapped and pc % (2 if cpsr & 0x20 else 4) == 0,
+         'stopped PC must be aligned in native executable memory')
     ir=(capture/'iwram.bin').read_bytes()
     oam=(capture/'oam.bin').read_bytes()
     need(len(ir)==0x8000 and len(oam)==128*8,'IWRAM and hardware OAM extents')
@@ -45,6 +55,7 @@ def inspect(capture,gba):
     return dict(status='PASS',rom_sha256=manifest['rom']['sha256'],
         capture_manifest_sha256=sha((capture/'capture.json').read_bytes()),
         renderer_sha256=sha(ir[0x200:0x380]),oam_records=128,
+        program_counter=f'{pc:08X}', executable_address_valid=True,
         enabled_objects_at_capture=active,affine_objects_at_capture=affine,
         reference='https://www.coranac.com/tonc/text/regobj.htm',
         claim_scope='provenance, bounded no-fault observation and copied-code integrity; visual correctness and complete gameplay excluded')
