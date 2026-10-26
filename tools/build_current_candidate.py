@@ -210,7 +210,8 @@ EXPECTED_LAYERS = {
     "character-hit-routing.gba": "A3E0B217C2F077CC628D1543434567CE4B6B77AAF766DFA1903033ECB6474E61",
     "result-pose-routing.gba": "DBB66875367C01CE60A60FD47819191F44FF04FBFD23C09F591100E738CF265C",
     "waterfall-third-pattern.gba": "B31A46AEC0DD74736CB300339D1475DF23363E8A97E3D79846E3CE64073C3AF8",
-    "current-candidate.gba": "389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1",
+    "stage-priority-routing.gba": "389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1",
+    "current-candidate.gba": "4BA39E7EBBBE3AA41AEFFC2FFAA3B5BB038694301B58F0F5FE45714485B4C7FC",
 }
 
 
@@ -503,6 +504,7 @@ def main() -> int:
     character_hit = output / "character-hit-routing.gba"
     result_pose = output / "result-pose-routing.gba"
     waterfall_third = output / "waterfall-third-pattern.gba"
+    stage_priority = output / "stage-priority-routing.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -719,7 +721,9 @@ def main() -> int:
         "--manifest", output / "result-pose-routing.json")
     run("build_waterfall_third_pattern.py", result_pose, args.gba, args.wsc10, args.wsc15, waterfall_third,
         "--manifest", output / "waterfall-third-pattern.json")
-    run("build_stage_priority_routing.py", waterfall_third, args.gba, args.wsc10, args.wsc15, candidate,
+    run("build_stage_priority_routing.py", waterfall_third, args.gba, args.wsc10, args.wsc15, stage_priority,
+        "--manifest", output / "stage-priority-routing.json")
+    run("build_shoot_initializer_prefix.py", stage_priority, args.gba, args.wsc10, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1060,8 +1064,10 @@ def main() -> int:
          "C399601AA969E290F9C61A345CDE035374235BFE0D40B1A6E68E01E7293FFB08"),
         ("verify_waterfall_third_pattern.py", result_pose, waterfall_third, [args.gba, args.wsc10, args.wsc15],
          "0F30817BB70154F582B6E2FED3A286C440CBF84F97F7E2C1952962CAB9F1B4A1"),
-        ("verify_stage_priority_routing.py", waterfall_third, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_stage_priority_routing.py", waterfall_third, stage_priority, [args.gba, args.wsc10, args.wsc15],
          "0D922956162CB291190290EE0B1FA5083FA2826D49619A1AD061880BBD6465B3"),
+        ("verify_shoot_initializer_prefix.py", stage_priority, candidate, [args.gba, args.wsc10, args.wsc15],
+         "58B559ADDB89ED4279A000447E276FDAAE68F0C90EBB4A6D5345E3B6C7F05BEB"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
@@ -1190,6 +1196,7 @@ def main() -> int:
             "two result-pose byte-pair views preserve the source win/lose events for all fifteen fighters; "
             "the third Waterfall pattern binds its source mode3 constructor and shared continuations, with corrected successor-row clearing; "
             "two manager lookups prioritize dedicated logical stage11 over temporary character routes; "
+            "a disconnected source-ordered initializer prefix covers preparation through the stage manager, with no scene caller; "
             "complete outer initializer, scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
