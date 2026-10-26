@@ -1,0 +1,14 @@
+{
+  "kind": "Observed timeout control-flow failure, not a source behavior oracle",
+  "rom_sha256": "389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1",
+  "probe_sha256": "22A2F2D822688D1E2E7239C987F303AA2F6AA8FEE6AD0A5EBADA4437D16C9937",
+  "pc": "E28DD00C",
+  "lr": "08353FF0",
+  "r4": "02011710",
+  "r5": "02011828",
+  "r8": "0836EBA8",
+  "r9": "E28DD00C",
+  "initial_pattern_index": 2,
+  "waterfall_phase_mode_hex": "02000301",
+  "scope": "No exit breakpoint hit; invalid PC at bounded timeout. Actual failing table consumer remains under investigation."
+}

@@ -1,67 +1,34 @@
-# Digimon Battle Spirit Ver. 1.5 GBA port survey
+# gba-dbs1.5-porting
 
-This workspace records a clean-room feasibility survey for extending the USA
-GBA release of *Digimon: Battle Spirit* with content from the WonderSwan Color
-release *Digimon Tamers: Battle Spirit Ver. 1.5*.
+*Digimon Tamers: Battle Spirit Ver. 1.5*의 콘텐츠와 동작을 USA GBA 엔진으로 옮기는 개발 저장소입니다. 완성본은 아직 아닙니다.
 
-Original and patched ROM images are intentionally kept out of version control.
-Tools accept ROM paths at runtime and identify inputs by strong hashes.
+## 현재 상태
 
-The user-supplied WonderSwan save is registered separately in
-[`records/final-qa.md`](records/final-qa.md). It is intentionally not loaded or
-inspected until the complete content port has passed static integration checks.
+재현 가능한 최신 체크포인트는 **v62 / `bdc4389`**입니다. 원본에서 새로 만든 두 빌드의 **240개 파일 경로와 SHA-256이 모두 일치**했습니다.
 
-## Current scope
+- ID14 선택 목록의 상태 덮어쓰기, VS 이름 범위 초과와 여러 추가 캐릭터 행동·피격·결과 포즈 표를 수정했습니다.
+- 폭포의 세 번째 패턴 누락을 복원하고 실제 초기화 실행을 창 없이 확인했습니다.
+- 별도 230초 전투는 컨티뉴에 도달했지만, 후속 경로에서 충돌 종류 `E5`가 잘못된 실행 주소로 이어지는 문제를 발견해 추적 중입니다.
+- 옵션과 타이틀의 네 언어는 기존 체크포인트에 포함되어 있습니다. 전체 언어 지원과 Shoot 전체 초기화·전환, 나머지 콘텐츠 및 최종 QA는 미완료입니다.
 
-- Fix the exact source revisions.
-- Identify code, compression, graphics, audio, and data boundaries.
-- Decide which 1.5 features can reuse the GBA engine and which require new code.
-- Reproduce the added fighters/evolutions, arenas and their mechanics, the
-  alternate final-boss path, Digimon Shoot, progression/tag state, and opening
-  changes in one reproducible GBA patch build.
+**작업 순서: 1.5 원본 기능과 실행 안정성 완성 → 추가 언어 통합.** 새 결과 화면 언어 초안은 현재 포팅 경로에서 분리합니다. 승리·무승부는 일본어판 원본 `WIN`·`DRAW` 그래픽을 재사용합니다. 이미지로 된 글자의 한글화는 픽셀 제작 전문가와 별도 QA 에이전트가 검토합니다.
 
-Internal integration builds are not distribution artifacts. Emulator and
-supplied-save validation are intentionally reserved for the fully integrated
-release candidate, and only the resulting patch—not a ROM image—will be placed
-in `outputs/`.
+## 재개와 작업 기록
 
-The recovery audit, actual-runtime matrix, and corrected progress baseline are
-tracked in [`PORT_AUDIT.md`](PORT_AUDIT.md). The earlier implementation notes
-and remaining release gates are retained in [`STATUS.md`](STATUS.md).
-Implementation resumed on 2026-10-13. v51 adds resident Shoot rule, palette
-and initializer components; the complete normal-play entry remains unconnected.
-Start with [`RESUME.md`](RESUME.md) for the current implementation boundary.
-A model-specific continuation package and copy-ready prompt are in
-[`ASTRA_HANDOFF.md`](ASTRA_HANDOFF.md). The recommended setting for this
-reverse-engineering milestone is GPT-6 Astra with `max` reasoning effort.
-Reverse-engineering evidence is kept locally because
-it contains source-derived captures and dumps; the committed tools regenerate
-that evidence from user-supplied, hash-identified inputs.
+- [현재 작업 인계](ASTRA_HANDOFF.md)
+- [재개 지점](RESUME.md)
+- [검증 범위와 미완료 항목](PORT_AUDIT.md)
+- [작업 기록](WORK_LOG.md)
+- [실행 오류와 검증 증거](records/runtime-repair-20261023.md)
 
-The current static internal composite is **v51**, built from the three
-hash-identified originals through twenty-two checked ROM layers. Its exact
-image and manifest hashes, historical layers, and remaining gates are recorded
-in [`PORT_AUDIT.md`](PORT_AUDIT.md#reproducibility-audit).
-Each builder refuses an unexpected input SHA-256, so a layer change must
-deliberately advance the downstream hashes before a new composite can be
-produced. Exact v32, SHA-256
-`1FB2449A5994FCB3E5343074BE96F4A3B6614CBA0A7ECDDC462F919191022291`,
-remains the last runtime-evidenced candidate and passes the non-displaying
-`BOOT -> TITLE -> MAIN MENU -> CHARACTER SELECT` runtime milestones; roster
-correctness remains unverified. Retail character ID 0 also reaches the first
-baseline battle and consumes one Right input through the retail player path,
-but broader battle behavior remains unverified.
+실행 검사는 창을 표시하지 않고 진행합니다. 제공된 WonderSwan 세이브에는 접근하지 않습니다. 원본 ROM·생성 ROM·세이브·메모리 덤프·캡처·로컬 의존성은 GitHub에 올리지 않습니다. 이 저장소는 소스, 검증 도구, 해시와 작업 기록을 관리합니다.
 
-The single clean-build entry point is:
+## 로컬 빌드
+
+검증된 체크포인트를 체크아웃한 뒤, Pillow와 필요한 로컬 의존성이 있는 Python으로 실행합니다. 입력 파일과 폰트의 지정 해시는 인계서 및 빌더에서 확인할 수 있습니다.
 
 ```powershell
-py -3 tools/build_current_candidate.py "<USA-GBA-original>" "<WSC-1.0-original>" "<WSC-1.5-original>" "<new-output-directory>"
+python tools/build_current_candidate.py "<USA-GBA-original>" "<WSC-1.0-original>" "<WSC-1.5-original>" "<new-output-directory>" --font "<Galmuri11-Condensed.bdf>" --font-license "<LICENSE.txt>"
 ```
 
-It regenerates the commercial WSC-to-GBA comparison corpora, every currently
-consumed character/evolution/VS/stage/boss/opening asset, and all twenty-two ROM
-layers. It fails on any unexpected source, intermediate, asset, or layer
-SHA-256 and refuses populated output directories. Two independent empty-directory
-runs reproduced exact v51, including all 131 output files, byte-for-byte. This is a
-reproducibility result for the current incomplete candidate, not a complete
-Ver. 1.5 port or a distributable ROM.
+빌더는 입력·중간 결과·최종 해시가 다르면 중단하며, 이미 파일이 있는 출력 폴더를 덮어쓰지 않습니다. 새 체크포인트는 두 개의 빈 출력 폴더에서 전체 빌드를 완료하고 모든 상대 경로와 해시를 비교한 뒤 기록합니다. 개발 중 작업 트리에는 아직 검증되지 않은 변경이 있을 수 있습니다.
