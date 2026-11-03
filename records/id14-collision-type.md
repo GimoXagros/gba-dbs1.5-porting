@@ -152,3 +152,211 @@ requires watching that entry's `+4`, rather than changing the P1 converter.
 
 The unresolved gate is the first actual E5 producer/overwrite. No corrective
 ROM change is justified by the current evidence alone.
+
+## Bounded capacity comparison, 2026-10-26
+
+The native collision-list capacity matches WSC1.5. This is not another
+twelve-character table that needs fifteen rows: these rows represent active
+collision entries, not selectable character IDs.
+
+| List | WSC1.5 DS=`0C00`, near offsets | Native start/end, exclusive | Entries |
+|---|---|---|---:|
+| Command B / attack | `3A5E..3B06` | `030048C8..030049B8` | 12 |
+| Event B / receiver | `3B06..3BAE` | `030049B8..03004AA8` | 12 |
+| Other/world collision | `3BB0..3CD6` | `03004AA8..03004C4C` | 21 |
+
+These extents follow the actual adjacent list/count owners. No symbol table
+or allocation declaration is present in the ROM. The first two source
+spans are `A8=12*14`; the third is `126=21*14`. The native counterparts are
+`F0=12*20` and `1A4=21*20`.
+
+The source element is fourteen bytes: actor near pointer `+0`, type `+2`,
+rectangle X/Y/width/height `+4/+6/+8/+A`, and A near pointer `+C`. The
+native element is twenty bytes: actor pointer `+0`, type `+4`, rectangle
+`+6/+8/+A/+C`, two alignment bytes at `+E`, and A pointer `+10`. The world
+producer does not populate the A field. Both traversal loops consume their
+platform's respective stride; a native loop has not retained source stride14.
+
+Count initialization and iteration are explicit:
+
+- WSC1.5 reset `7424C6..7424D5` clears bytes `3BAE`, `3BAF`, and `3CD6`.
+  For example, input callbacks call it at `741079` and `7410E6`.
+- Native reset `08353B48..08353B64` clears `03004C4D`, `03004C4E`, and
+  `03004C4C`. Its four aligned native BL callers are `08374E7C`,
+  `08374F0C`, `08374FBC`, and `0837504C`. It clears counts, not list bytes.
+- Native `08353F00` returns when either attack/receiver count is zero.
+  Otherwise it traverses the full byte counts, advances by20 at
+  `08353FF0/08354000`, and decrements the loop counts at
+  `08353FF4/08354004`. Source `7426B0..74273A` performs the same nested
+  count traversal with stride14 at `74272F/742735`. Neither caps the
+  count at12, and neither resets it at its terminal return.
+- The world consumer checks count zero at `083541B0..083541BC`, reloads
+  the count at `08354390/394`, advances by20 at `083547D4`, and terminates
+  its decrementing loop at `083547DC/E0`. Its native reset is the shared
+  count reset above.
+
+There is **no append-time capacity check** in the examined native or source
+producers. The source event/command append ranges `742530..74257C` and
+`742598..7425E3` multiply an unsigned byte count by14, write one record,
+and increment the byte. Native `08353BF4..08353C84` and
+`08353CA8..08353D34` do the same with20. World append
+`742655..74269A` / `08353E58..08353ED8` and the separate producer
+`745549..74558A` / `0837767C..083776F4` likewise have no count limit.
+The branch conditions before appending test actor/presentation flags or
+null B pointers, not available list slots.
+
+A general actor pass appends at most one event record and one command
+record. Additional P1 events or commands do not themselves add multiple
+records in that pass: the producer consumes only the current event B and
+current command B. Multiple simultaneous actors still contribute separate
+entries. Therefore the source/native list geometry and per-pass asset
+contract agree, but the static resource population does not prove a maximum
+of twelve simultaneous participating actors for every added-content path.
+That aggregate concurrency limit remains unproved.
+
+The following available RAM snapshots were inspected without an emulator
+or supplied-save access:
+
+| Snapshot | Attack / event / world counts |
+|---|---|
+| seed-watch `event-1-iwram.bin` | `0 / 2 / 0` |
+| seed-watch timeout `iwram.bin` | `0 / 0 / 0` |
+| dispatch-filter `-a` timeout `iwram.bin` | `0 / 0 / 0` |
+| dispatch-filter `-b` timeout `iwram.bin` | `0 / 0 / 0` |
+
+These are the `build/runtime-collision-*-20261026-*` probes named above.
+They are isolated observations, not maximum-per-frame telemetry. No list
+capacity violation is present in those snapshots. The `-b` timeout is
+`PC=00000074`, mode9, with eight valid dispatches skipped; the captured
+BIOS address alone is not classified as a game fault.
+
+The number `E5` alone is insufficient to identify a coordinate. Native
+type and coordinate fields have distinct offsets, and all three native
+list bases differ by whole multiples of20. Simply crossing an adjacent
+list boundary preserves the type column; it does not shift a coordinate
+halfword into `+4`. A different overwrite or malformed record would need
+its own observed writer. Thus the supplied evidence neither demonstrates
+aggregate overflow nor supports attributing E5 to coordinate229.
+
+## Separate type15 producer and index domain
+
+The ordinary record used by `08377630` has a direct source/retail lineage:
+
+| Version | Producer raw/native | Pointer table | Sole pointer target |
+|---|---|---|---|
+| WSC1.0, CS base `390700` | `3947CD` | raw `394854`, word `4156` | raw `394856` |
+| WSC1.5, CS base `740900` | `745513` | raw `74559A`, word `4C9C` | raw `74559C` |
+| Retail/current GBA | `08377630` | `08377700`, word `08377704` | `08377704` |
+
+All three B10 targets contain the exact same ten bytes:
+`0F 00 00 00 00 00 00 01 C0 07`. The type is15, with rectangle fields
+`0,0,0100,07C0`. The source pointer table ends where that record begins,
+after one two-byte pointer; native ends after one four-byte pointer.
+The next source functions begin immediately after the B10 record at
+`394860` and `7455A6`. There is no additional WSC1.5 table row here.
+
+The index is an ordinal, not a byte displacement. Source `3947F8..394803`
+and `74553E..745549` read actor `+8A`, multiply by2, and load a near
+pointer. Native `08377670..08377678` reads actor `+A0`, multiplies by4,
+and loads the translated pointer. Those widths match their tables.
+
+The dedicated actor is obtained through native global `03004DF8`,
+corresponding to source `1000:06A0` in1.0 and `1000:071C` in1.5.
+Native constructor `083775B0` is called at `080D19F0`, creates the actor
+with flags `0029` and callback `08377630`, and writes its A metadata
+pointer at actor `+D4`. Its initial `4000` participation bit is off.
+The collision callback returns immediately while that bit is off.
+
+The identified activation path explicitly selects row0 before enabling it:
+
+- WSC1.0 `3AEF17..3AEF22`: zero AX, store actor `+8A`, set flags `4000`.
+- WSC1.5 `769DC5..769DD0`: the identical sequence.
+- Native `080168D0..080168E4`: zero r0, store actor `+A0`, then set
+  actor flags `4000` at `080168E0`.
+
+All direct encoded references to native global `03004DF8` resolve to the
+constructor and four native reader sites: `08016544`, `080166CC`,
+`08016718`, and `080168BC`. These respectively process hit/disable state,
+update Y, disable participation, and activate at index0. The first three
+do not write `+A0`. The corresponding source readers are visible at
+`769B6F`, `769C81`, `769CC5`, and `769DB3`.
+
+The initial seed snapshot identifies this actor as `02010130`, callback
+`08377630`, flags `0029`, index0. It is distinct from ID14 at `02011710`.
+The three timeout snapshots also retain index0 for that global's actor;
+their later callback lifetime is not treated as a live-combat observation.
+
+Byte comparison confirms the relevant current native ranges are unchanged
+from retail: `0801653C..08016A4C`, `083775B0..08377734`, and the shared
+list code `08353B48..08354030`. Assertions check source pointer resolution
+and exact three-way B10 equality. These findings exclude a missing
+WSC1.5 row or a source/native pointer-width mismatch in this ordinary
+producer path. They do not prove the absence of unrelated indirect alias
+writes or establish the selector value in the original failing run.
+
+## GDB observer-artifact audit, 2026-11-03
+
+This read-only audit tests two specific alternative explanations for the
+original failure: breakpoint instruction replacement and register-packet
+misinterpretation. It does not establish the first E5 producer or repair
+the game. No emulator was launched and no supplied save was accessed.
+
+The original `runtime-waterfall-third-exit-20261023-a/probe.json` still
+matches the fixture's SHA-256
+`22A2F2D822688D1E2E7239C987F303AA2F6AA8FEE6AD0A5EBADA4437D16C9937`.
+Its configured ROM independently hashes to the recorded `389F56FF...ABD7F1`
+candidate. The report and the historical `bdc4389` version of
+`tools/probe_physics_consumers.py` identify this sequence:
+
+1. Arm `Z0,836d348,4`; observe one `S05k` breakpoint at `0836D348`.
+2. Read registers/memory, remove that breakpoint, and issue one `s`.
+   The recorded step response is `S05`.
+3. Arm `Z0,8585310,4`, continue, and reach a bounded `S02` timeout.
+   The second breakpoint was not observed.
+
+Disassembly of that exact candidate shows the stepped instruction is
+`0836D348: strh r3,[r8]`. The captured operands are `r3=2` and
+`r8=03004CF8`; that store neither targets collision scratch `03004D20`
+nor changes r1/r9. The unhit `08585310` instruction pushes LR. Neither
+instruction is the `E28DD00C` word observed as the invalid target.
+
+The recorded emulator path names mGBA commit
+`fa977ccbc815efc93aefad9acddc9af0577d7827`. Its
+[GDB breakpoint handler](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/debugger/gdb-stub.c#L574-L592)
+maps both `Z0` and `Z1` to `BREAKPOINT_HARDWARE`. The corresponding
+[ARM breakpoint implementation](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/arm/debugger/debugger.c#L206-L246)
+compares the execution address; insertion/removal manage breakpoint
+records. This path does not replace ROM instructions, so a patched-opcode
+alias or an incorrectly restored original opcode is not supported by this
+implementation. Software-breakpoint replacement is a separate path.
+
+The same source's
+[register response](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/debugger/gdb-stub.c#L358-L382)
+emits r0..r14, adjusted PC, and CPSR as seventeen little-endian words.
+Thus the harness's `<17I` decoding matches the actual 68-byte fixture.
+PC is adjusted by four in ARM mode, but this does not change r1 or r9.
+The independently decoded tuple is `r1=1BA`, `r8=0836EBA8`,
+`r9=PC=E28DD00C`, `LR=08353FF0`, `CPSR=40000010`. Assertions verify that
+`r8+r1*2=0836EF1C` and that the exact candidate word there equals r9.
+This coherence survives the documented PC convention; it is not explained
+by treating instruction bytes as a misnumbered register.
+
+The GDB
+[single-step handler](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/debugger/gdb-stub.c#L242-L263)
+calls the core step function. The
+[GBA implementation](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/gba/core.c#L816-L818)
+uses the ordinary ARM instruction runner. The
+[ARM runner](https://github.com/mgba-emu/mgba/blob/fa977ccbc815efc93aefad9acddc9af0577d7827/src/arm/arm.c#L213-L225)
+processes scheduled events around one instruction. No direct register
+replacement is present in this step path.
+
+Limits remain explicit. The executable's reported hash is preserved, but
+this audit has not independently proved its binary-to-source identity.
+The original report has no failure-time RAM pair, full GDB packet log, or
+post-step register snapshot. Its controller timers run in host wall time
+while debugger stops consume wall time, so an otherwise similar
+frame-indexed BizHawk run is not an identical replay. A different input
+trajectory, emulator-core defect, or broader observer effect remains
+possible. A no-hit run cannot negate the original coherent register state.
+The specific patch-alias and register-decoding hypotheses lack supporting
+evidence; the actual collision producer/overwrite remains unresolved.
