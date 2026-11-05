@@ -1,0 +1,25 @@
+{
+  "schema": 2,
+  "status": "approved-native-result-component",
+  "native_scope": "Existing mode8 four events only; native twelve digits and separate mode12 retained",
+  "shared_headings": "Exact Japanese-source WIN/DRAW for Japanese, Korean and Digicode; English retains native WINS/DRAW.",
+  "approved_art_sha256": "875700A7C5C0281E46651AF09E31E30BB846D1C44675172391D323D3450B03B3",
+  "last_chance_part_counts": [
+    28,
+    26,
+    27
+  ],
+  "last_chance": {
+    "japanese": "ラストチャンス！",
+    "korean": "마지막 기회!",
+    "digicode_source_reading": "ラストチャンス",
+    "digicode_render_reading": "ラストチヤンス",
+    "alias": "Only source ャ uses existing ヤ identity; strict encoder/catalog unchanged",
+    "punctuation": "Exact65source palette-index pixels at42..50,-8..6"
+  },
+  "excluded_source_event": {
+    "event": 4,
+    "text": "LOSE",
+    "reason": "No matching native consumer enabled"
+  }
+}

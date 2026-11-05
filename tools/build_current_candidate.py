@@ -216,7 +216,9 @@ EXPECTED_LAYERS = {
     "shoot-initializer-front.gba": "CB926019A7289762D5B5539A7994B522AD8A3B73D12A70A92337D47761FB58C7",
     "shoot-initializer-storage.gba": "66DA1AC3CC4FED2DF12C6A2C85430E735AA99C4934C967950B058D5D22F5ADFF",
     "shoot-initializer-tail-chain.gba": "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46",
-    "current-candidate.gba": "428B1CF6B459E077972BD621A2C4C689DFE9E36FB1372BB2EB82DA5B3075F281",
+    "shoot-scene.gba": "428B1CF6B459E077972BD621A2C4C689DFE9E36FB1372BB2EB82DA5B3075F281",
+    "title-background.gba": "494D14A2D4661FEA5DF36A9D12D57D31B2204924702CAB95DB3CE12A857F58B6",
+    "current-candidate.gba": "A4CB752A8E0CFA3D639E645531B5AFCCB0CE25DD3BF202F62FE132E97385328F",
 }
 
 
@@ -516,6 +518,9 @@ def main() -> int:
     initializer_storage = output / "shoot-initializer-storage.gba"
     initializer_tail = output / "shoot-initializer-tail-chain.gba"
     scene_dependencies = intermediate / "shoot-scene-dependencies.json"
+    shoot_scene = output / "shoot-scene.gba"
+    title_background = output / "title-background.gba"
+    result_art = intermediate / "result-approved-art.json"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -750,7 +755,15 @@ def main() -> int:
                         "sha256": "8FEDEC3D4115A92339E37D1F78CAC2A1DE4A435A074CF641339FF22EC90B5F13"},
     }, indent=2) + "\n", encoding="utf-8")
     run("build_shoot_scene_transition.py", initializer_tail, args.gba, args.wsc10, args.wsc15,
-        scene_dependencies, candidate, "--manifest", output / "current-candidate.json")
+        scene_dependencies, shoot_scene, "--manifest", output / "shoot-scene.json")
+    run("build_title_background.py", shoot_scene, args.wsc15, title_background,
+        "--manifest", output / "title-background.json")
+    run("build_result_pixel_art.py", "--generate-data", args.gba, args.wsc15,
+        ROOT / "localization/digicode-reference.json", result_art)
+    require_hash(result_art, "8BFC3960335EDD29ECEBFA2DB7A673FDE586C6B5B79B0FDB47622BC601083074",
+                 "approved native result pixels regenerated from original inputs")
+    run("build_result_language.py", title_background, args.gba, args.wsc15, result_art, candidate,
+        "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1107,10 +1120,19 @@ def main() -> int:
         run(tool, before, after, *sources, report)
         require_hash(report, expected, tool)
     scene_review = intermediate / "shoot-scene-verification.json"
-    run("verify_shoot_scene_transition.py", initializer_tail, candidate, args.gba, args.wsc10, args.wsc15,
+    run("verify_shoot_scene_transition.py", initializer_tail, shoot_scene, args.gba, args.wsc10, args.wsc15,
         scene_dependencies, "--output", scene_review)
     require_hash(scene_review, "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
                  "independent resident Shoot scene verification")
+    title_background_review = intermediate / "title-background-verification.json"
+    run("verify_title_background.py", shoot_scene, title_background, args.gba, args.wsc15, title_background_review)
+    require_hash(title_background_review, "1D2AF8B349E42701DD85BA59B1111E1ED3C88E5AF7C7AB3B3F0DEC289800C665",
+                 "independent source 1.5 title background verification")
+    result_review = intermediate / "result-language-verification.json"
+    run("verify_result_language.py", title_background, candidate, args.gba, args.wsc10, args.wsc15,
+        result_art, output / "current-candidate.json", result_review)
+    require_hash(result_review, "50351DA73917A2884CAAC4AFDAC40FFB6E1F42E8EE5B30D34B5B9EF064C5775F",
+                 "independent four-language result resource and population verification")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1245,6 +1267,12 @@ def main() -> int:
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
+        "title_and_result": {
+            "result_verification_sha256": "50351DA73917A2884CAAC4AFDAC40FFB6E1F42E8EE5B30D34B5B9EF064C5775F",
+            "title_background_verification_sha256": "1D2AF8B349E42701DD85BA59B1111E1ED3C88E5AF7C7AB3B3F0DEC289800C665",
+            "result_art_sha256": "8BFC3960335EDD29ECEBFA2DB7A673FDE586C6B5B79B0FDB47622BC601083074",
+            "scope": "Source 1.5 title BG and existing mode8 four-language result labels; additional menu tree and whole-game localization remain open",
+        },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
             "initializer_entry": "08629800", "phase_12C6_entry": "085C9B00",

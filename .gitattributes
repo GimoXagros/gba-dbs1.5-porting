@@ -11,3 +11,6 @@ tools/verify_shoot_palette_transition.py text eol=crlf
 # Preserve observer source hashes across Windows checkouts.
 tools/*.lua text eol=lf
 tools/bizhawk_probe_gba_collision.lua text eol=crlf
+
+# Preserve the result policy input digest in independent reports.
+localization/result-labels.json text eol=lf
