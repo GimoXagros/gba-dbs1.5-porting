@@ -213,7 +213,9 @@ EXPECTED_LAYERS = {
     "stage-priority-routing.gba": "389F56FF566EDB139729DCC51AEED56A807C502A3FBEEDC037A218041EABD7F1",
     "shoot-initializer-prefix.gba": "4BA39E7EBBBE3AA41AEFFC2FFAA3B5BB038694301B58F0F5FE45714485B4C7FC",
     "shoot-initializer-player-chain.gba": "2C9C96129EBECF30FCB915E077899CE91FBA979F4AC44C027EE39F4C9A8C4BC7",
-    "current-candidate.gba": "CB926019A7289762D5B5539A7994B522AD8A3B73D12A70A92337D47761FB58C7",
+    "shoot-initializer-front.gba": "CB926019A7289762D5B5539A7994B522AD8A3B73D12A70A92337D47761FB58C7",
+    "shoot-initializer-storage.gba": "66DA1AC3CC4FED2DF12C6A2C85430E735AA99C4934C967950B058D5D22F5ADFF",
+    "current-candidate.gba": "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46",
 }
 
 
@@ -509,6 +511,8 @@ def main() -> int:
     stage_priority = output / "stage-priority-routing.gba"
     initializer_prefix = output / "shoot-initializer-prefix.gba"
     initializer_player_chain = output / "shoot-initializer-player-chain.gba"
+    initializer_front = output / "shoot-initializer-front.gba"
+    initializer_storage = output / "shoot-initializer-storage.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -731,7 +735,11 @@ def main() -> int:
         "--manifest", output / "shoot-initializer-prefix.json")
     run("build_shoot_initializer_player_chain.py", initializer_prefix, args.gba, args.wsc10, args.wsc15, initializer_player_chain,
         "--manifest", output / "shoot-initializer-player-chain.json")
-    run("build_shoot_initializer_front.py", initializer_player_chain, args.gba, args.wsc10, args.wsc15, candidate,
+    run("build_shoot_initializer_front.py", initializer_player_chain, args.gba, args.wsc10, args.wsc15, initializer_front,
+        "--manifest", output / "shoot-initializer-front.json")
+    run("build_shoot_initializer_storage.py", initializer_front, args.gba, args.wsc10, args.wsc15, initializer_storage,
+        "--manifest", output / "shoot-initializer-storage.json")
+    run("build_shoot_initializer_tail_chain.py", initializer_storage, args.gba, args.wsc10, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1078,8 +1086,12 @@ def main() -> int:
          "58B559ADDB89ED4279A000447E276FDAAE68F0C90EBB4A6D5345E3B6C7F05BEB"),
         ("verify_shoot_initializer_player_chain.py", initializer_prefix, initializer_player_chain, [args.gba, args.wsc10, args.wsc15],
          "3AF4894852EFFEC04F66F4D65F1D85BC14C2034E869FA26AE85D57827AA118F7"),
-        ("verify_shoot_initializer_front.py", initializer_player_chain, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_shoot_initializer_front.py", initializer_player_chain, initializer_front, [args.gba, args.wsc10, args.wsc15],
          "471C31326FEE5FDCD2BD7841FB227082EE38D8CAB782AD6EA967C27C7C9C881F"),
+        ("verify_shoot_initializer_storage.py", initializer_front, initializer_storage, [args.gba, args.wsc10, args.wsc15],
+         "BC75F6EACF9E9320463CC8436A731E7405F4DE15959882CA59B71DC32C90333E"),
+        ("verify_shoot_initializer_tail_chain.py", initializer_storage, candidate, [args.gba, args.wsc10, args.wsc15],
+         "9C530F9BB055BAEB5CE52B279110721E063C07973297EBBE0FDB0A182937BC50"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
@@ -1209,8 +1221,11 @@ def main() -> int:
             "the third Waterfall pattern binds its source mode3 constructor and shared continuations, with corrected successor-row clearing; "
             "two manager lookups prioritize dedicated logical stage11 over temporary character routes; "
             "a disconnected initializer chain covers preparation, stage manager, player phase, slot5 palette and the owned0660 clear in source phase order; "
-            "the following distinct SRAM stores and external scene caller remain unresolved; "
-            "complete outer initializer, scene/menu entry, "
+            "two ordered source SRAM halfword clears use native EEPROM block25 with separate read-modify-write operations, "
+            "preserving the other six API-buffer bytes per write under the initialized functional-backend contract; "
+            "existing other-player, HUD/scroll and selective palette phases then run in source order through7534; "
+            "the earlier snapshot and exclusive palette ownership remain caller preconditions, and source observers remain unresolved; "
+            "external initializer/scene/menu entry, "
             "external controller 9908/9A1B connection, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
