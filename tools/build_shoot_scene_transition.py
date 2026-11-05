@@ -23,11 +23,13 @@ from shoot_resource_conversion import parse_shoot_p1, verify_commercial_p1
 
 BASE = 0x08000000
 V51_SHA256 = "726DA3D80AD498232F043B659A8268D312B2368FF542B497BFD16C12EE2B7284"
+INPUT_SHA256 = "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46"
 START, END = 0x5C8000, 0x5CA000
 PHASES = {
     0xEEA: 0x5C8000, 0xF67: 0x5C8100, 0xFC3: 0x5C8200,
     0x1043: 0x5C8300, 0x10DD: 0x5C8400, 0x11F7: 0x5C8500,
-    0x1267: 0x5C8600, 0x12C6: 0x5C8700, 0x1331: 0x5C8800,
+    # Preserve the pre-existing branch-like targets inside the former 5C8700 slot.
+    0x1267: 0x5C8600, 0x12C6: 0x5C9B00, 0x1331: 0x5C8800,
     0x139C: 0x5C8900, 0x13F4: 0x5C8A00, 0x1434: 0x5C8B00,
     0x1486: 0x5C8C00, 0x1540: 0x5C8D00,
 }
@@ -35,6 +37,8 @@ SPAWN, INITIAL, HOMING = 0x5C8E00, 0x5C9000, 0x5C9100
 TO_WHITE, CAPTURE_BLACK, DRAW_ICONS, POSITIONS = 0x5C9300, 0x5C9500, 0x5C9600, 0x5C9700
 AUDIO_PRELUDE = 0x5C9800
 CURRENT_TASK = 0x0300133C
+INITIALIZER = {"entry": 0x08629800, "bytes": 140,
+               "sha256": "8FEDEC3D4115A92339E37D1F78CAC2A1DE4A435A074CF641339FF22EC90B5F13"}
 FIRST_PLAYER, SECOND_PLAYER = 0x0300489C, 0x030048A0
 FLAGS, SECOND_FLAGS, SHOOT_FLAGS = 0x03004506, 0x03004508, 0x0300450A
 BLINK, OBJECT_COUNT, OBJECT_LIST = 0x03004529, 0x0300475E, 0x03004760
@@ -676,7 +680,11 @@ def make_rows(dependencies: dict) -> list[tuple[int, bytes, int, str]]:
 def validate_dependencies(before: bytes, dependencies: dict) -> None:
     if set(dependencies) != {"input_sha256", "initializer"}:
         raise ValueError("scene requires the real full initializer dependency")
+    if dependencies["input_sha256"] != INPUT_SHA256:
+        raise ValueError("scene requires the verified v65 predecessor")
     require_hash(before, dependencies["input_sha256"], "exact scene predecessor")
+    if dependencies["initializer"] != INITIALIZER:
+        raise ValueError("scene requires the verified source-ordered v65 initializer")
     for name in ("initializer",):
         item = dependencies[name]
         address, count = item["entry"], item["bytes"]
@@ -694,18 +702,24 @@ def build(before: bytes, sources: dict[str, bytes], dependencies: dict) -> tuple
     for key, start, end, expected in SOURCE_GUARDS:
         require_hash(sources[key][start:end], expected, f"{key} scene source/consumer {start:X}")
     validate_dependencies(before, dependencies)
-    if len(before) != 0x800000 or before[START:END] != b"\xff" * (END - START):
-        raise ValueError("scene expansion is not wholly free in this predecessor")
+    rows = make_rows(dependencies)
+    spans = [(start, start + len(blob)) for start, blob, _, _ in rows]
+    if len(before) != 0x800000 or any(before[a:z] != b"\xff" * (z - a) for a, z in spans):
+        raise ValueError("scene placements are not wholly free in this predecessor")
+    preserved_candidates = []
     for site in range(0, len(before) - 3, 4):
         word = struct.unpack_from("<I", before, site)[0]
-        if BASE + START <= word < BASE + END:
-            raise ValueError(f"existing pointer reaches scene reservation at {site:X}")
+        if any(BASE + a <= (word & ~1) < BASE + z for a, z in spans):
+            raise ValueError(f"existing pointer reaches scene placement at {site:X}")
         if word & 0x0E000000 == 0x0A000000:
             delta = word & 0xFFFFFF
             if delta & 0x800000:
                 delta -= 0x1000000
-            if START <= site + 8 + delta * 4 < END:
-                raise ValueError(f"existing ARM branch reaches scene reservation at {site:X}")
+            target = site + 8 + delta * 4
+            if any(a <= target < z for a, z in spans):
+                raise ValueError(f"existing ARM branch reaches scene placement at {site:X}")
+            if START <= target < END:
+                preserved_candidates.append({"site": site, "target": target})
     resources = presentation_resources(sources["wsc15"], sources["wsc10"], sources["gba"])
     if sources["wsc15"][0x7734A9:0x7734C9] != b"".join(struct.pack("<2H", *p) for p in POINTS):
         raise ValueError("source spawn positions changed")
@@ -715,7 +729,6 @@ def build(before: bytes, sources: dict[str, bytes], dependencies: dict) -> tuple
                        (0x1565C, 0x15810), (0x158C8, 0x158CC)):
         if before[start:end] != sources["gba"][start:end]:
             raise ValueError(f"retail scene dependency changed at {start:X}")
-    rows = make_rows(dependencies)
     entries = {BASE + row[0] for row in rows if row[2]}
     external = ({0x0801201C, 0x08012008, 0x08012030, 0x083524C4, 0x08352374,
                 0x080127E4, 0x08012874, 0x08012560, 0x0801233C, 0x08012348,
@@ -737,6 +750,7 @@ def build(before: bytes, sources: dict[str, bytes], dependencies: dict) -> tuple
               "input_sha256": sha256(before), "output_sha256": sha256(output),
               "output_bytes": len(output), "expected_writes": plan,
               "generated_code": machines, "dependencies": dependencies,
+              "preserved_gap_branch_candidates": preserved_candidates,
               "resources": resources, "actual_changed_bytes": len(changed),
               "external_hook_installed": False, "new_scene_allocations": 0,
               "new_ram_globals": [], "native_scene_data_bytes": 0x100,
@@ -753,6 +767,9 @@ def main() -> int:
         parser.add_argument(name, type=pathlib.Path)
     parser.add_argument("--manifest", type=pathlib.Path)
     args = parser.parse_args()
+    for path in (args.output, args.manifest):
+        if path is not None and path.exists():
+            parser.error(f"refusing to overwrite existing output: {path}")
     sources = {key: getattr(args, key).read_bytes() for key in ("gba", "wsc10", "wsc15")}
     output, report = build(args.input.read_bytes(), sources, json.loads(args.dependencies.read_text(encoding="utf-8")))
     args.output.parent.mkdir(parents=True, exist_ok=True)

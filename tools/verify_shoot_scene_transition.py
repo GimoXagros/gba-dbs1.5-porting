@@ -20,6 +20,11 @@ from capstone import CS_ARCH_ARM, CS_ARCH_X86, CS_MODE_ARM, CS_MODE_16, Cs
 from keystone import KS_ARCH_ARM, KS_MODE_ARM, Ks
 
 BASE, START, END = 0x08000000, 0x5C8000, 0x5CA000
+PREDECESSOR = "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46"
+INITIALIZER = {"entry": 0x08629800, "bytes": 140,
+               "sha256": "8FEDEC3D4115A92339E37D1F78CAC2A1DE4A435A074CF641339FF22EC90B5F13"}
+PRESERVED_BRANCHES = ((0x60C730, 0x5C872C), (0x60C770, 0x5C86EC),
+                      (0x60C7B0, 0x5C8734), (0x60C7F0, 0x5C87F4))
 INPUTS = {
     "gba": "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED",
     "wsc10": "58220B9C050C3BF29B4953885C9576BE103EA8E00A7BCB96CCA18607E19E9735",
@@ -33,9 +38,9 @@ PROFILES = (
     (0x5C8200,152,132,"CE73ACC6BB363A34843C5DDF81E607F26CC5230E2C80E95E72B5882D6AF19759"),
     (0x5C8300,180,152,"3BBBF7026929487760B5E5DC1CC23F3AE008767D64B9B55B56C4A5EF09B6E154"),
     (0x5C8400,164,140,"757C06D0B0C2A21EB23EEE6500FA1D3E939695E311D05862C33989DA82EE8084"),
-    (0x5C8500,104,88,"5AD77BF0BD7A7547AA8ACAD60547278FC0F1A75EFF94BE5D27783C68DCFA178F"),
-    (0x5C8600,76,64,"50C980B05082B107E5738AE8AB3C1D339FB77E937E454EF18D9E335C6D7DD718"),
-    (0x5C8700,96,84,"8DF4642497AE74D3EDAC506BA0D52E6BAF7411E358F3323F179180811369FEB9"),
+    (0x5C8500,104,88,"C01EB9B80A813C601B40FC650551166BA7810FC34BBECBA7D845BE9CF5FB40FC"),
+    (0x5C8600,76,64,"8F3A632AA505F2E5104ABD58F0DFFD80CF81B5EC6359FF17F1F7F9BBDA49698A"),
+    (0x5C9B00,96,84,"421971347853F677DC66701F29EC7DC31E37DD00435A65460704977784E44531"),
     (0x5C8800,92,76,"F7C84B452EED7896EC81FCA32744F3EACE97F2E9ABD0D39FC69EA8931EF802A4"),
     (0x5C8900,124,100,"0F939FB0CB1A5A4FF912FD1553DFC093D88513BEF50DF54744C92DC6784FFCE2"),
     (0x5C8A00,80,64,"830BBEAADD2785DF7959D1855785D75B607BFFF406B222CD21B8863DBDEAED5E"),
@@ -54,7 +59,7 @@ PROFILES = (
 EXTERNALS = {0x0801201C,0x08012008,0x08012030,0x083524C4,0x08352374,
              0x080127E4,0x08012874,0x08012560,0x0801233C,0x08012348,
              0x080D15C0,0x085C1900,0x085C1D00,0x085C1F00,0x0801565C,
-             0x080158C8,0x085C7800}
+             0x080158C8,0x08629800}
 
 
 def digest(data: bytes) -> str:
@@ -168,10 +173,10 @@ def semantic_contract(data: bytes) -> dict:
                          "bl #0x85c9800","mov r0, #0x20","strh r0, [r4, #0x50]"])
     at(data,0x5C8510,["ldrh r0, [r4, #0x50]","bl #0x85c9300","ldrh r0, [r4, #0x50]",
                          "subs r0, r0, #1","strh r0, [r4, #0x50]","bne #0x85c8550"])
-    at(data,0x5C8538,["bl #0x801565c","bl #0x85c7800","mov r0, #0x20","strh r0, [r4, #0x50]"])
+    at(data,0x5C8538,["bl #0x801565c","bl #0x8629800","mov r0, #0x20","strh r0, [r4, #0x50]"])
     at(data,0x5C8610,["ldrh r0, [r4, #0x50]","bl #0x85c1d00"])
-    at(data,0x5C8710,["ldrh r0, [r4, #0x50]","subs r0, r0, #1","strh r0, [r4, #0x50]",
-                         "beq #0x85c873c","cmp r0, #0x82","bne #0x85c874c",
+    at(data,0x5C9B10,["ldrh r0, [r4, #0x50]","subs r0, r0, #1","strh r0, [r4, #0x50]",
+                         "beq #0x85c9b3c","cmp r0, #0x82","bne #0x85c9b4c",
                          "mov r8, #0x5c","mov sb, #2","mov sl, #0","bl #0x80d15c0"])
     at(data,0x5C8810,["ldrh r0, [r4, #0x50]","bl #0x85c1f00"])
     at(data,0x5C8928,["ldrh r2, [r5, #6]","tst r2, #0x800","beq #0x85c895c",
@@ -196,14 +201,17 @@ def semantic_contract(data: bytes) -> dict:
     at(data,0x5C9174,["ldrsh r0, [r1, #0x34]","sub r0, r0, #0x100","lsl r0, r0, #0x10",
                          "asr r0, r0, #0x10","ldrsh r2, [r4, #0x34]","cmp r0, r2","bgt #0x85c91f4"])
     at(data,0x5C932C,["cmp r5, #0","moveq r5, #3","addne r5, r5, #2","cmp r5, #0x1f","movhi r5, #0x1f"])
-    at(data,0x5C9508,["mov r0, #0","strh r0, [r1]","bl #0x85c1900"])
+    at(data,0x5C9508,["mov r0, #0","strh r0, [r1]","bl #0x85c1900",
+                         "mov r1, #0x5000000","mov r2, #0x80","strh r0, [r1], #2"])
+    need(literal(data,0x5C8630)==0x085C9B00,"relocated hold callback assignment differs")
+    need(literal(data,0x5C9B44)==0x085C8800,"hold callback must restore via1331")
     need(literal(data,0x5C9504)==0x0203F000,"source03E8 counter binding differs")
     at(data,0x5C9618,["mov r7, #0xb","mov r6, #0x14"])
     need(literal(data,0x5C9620)==0x67FC,"native HUD tile/palette differs")
     at(data,0x5C9804,["mov fp, #0","mov r6, #0","mov r7, #0x20"])
     at(data,0x5C984C,["add r6, r6, #1","cmp r6, #4","bne #0x85c9810"])
     return {"semantic_instruction_blocks":29,"native_entry":0x085C8000,
-            "full_initializer_call":0x085C7800,"all_scene_callbacks_preserve":"r0-r12,LR,SP",
+            "full_initializer_call":0x08629800,"all_scene_callbacks_preserve":"r0-r12,LR,SP",
             "root_allocations_added":0,"new_ram_globals":0}
 
 
@@ -303,10 +311,13 @@ def negative_contract(after: bytes, wsc: bytes) -> list[str]:
     semantic_contract(after)
     source_contract(wsc)
     mutations=[
+        (0x5C853C,0xEB0184AF,0xEBFFFCAF,"initializer redirected to absent old entry"),
+        (0x5C8648,0x085C9B00,0x085C8700,"hold callback uses preserved old slot"),
+        (0x5C9510,0xEBFFE0FA,0xE1A00000,"earlier palette snapshot omitted"),
         (0x5C8264,0xE1C505B2,0xE1C505B0,"FC3 player timer52 changed to50"),
         (0x5C8234,0xAA000010,0xCA000010,"FC3 upper equality no longer moves"),
         (0x5C8428,0xE1D405F0,0xE1D405B0,"signed spawn counter becomes unsigned"),
-        (0x5C8720,0xE3500082,0xE3500081,"D2 event130 becomes129"),
+        (0x5C9B20,0xE3500082,0xE3500081,"D2 event130 becomes129"),
         (0x5C8C60,0x8A000008,0xCA000008,"HP unsigned comparison becomes signed"),
         (0x5C8E24,0xE3A08C01,0xE3A08C41,"source010B gains unrelated4000 flag"),
         (0x5C8F18,0xE3A08005,0xE3A08000,"presentation event5 becomes0"),
@@ -331,25 +342,69 @@ def negative_contract(after: bytes, wsc: bytes) -> list[str]:
     return caught
 
 
+def ownership_contract(before: bytes, after: bytes) -> list:
+    spans=[(a,a+n) for a,n,_,_ in PROFILES]
+    need(all(before[a:z]==b"\xff"*(z-a) for a,z in spans),"scene placement is not owned")
+    for site,target in PRESERVED_BRANCHES:
+        need(after[site:site+4]==before[site:site+4],"existing branch-like encoding changed")
+        need(after[target:target+4]==before[target:target+4],"existing branch-like destination changed")
+    preserved=[]
+    for site in range(0,len(before)-3,4):
+        value=struct.unpack_from("<I",before,site)[0]
+        need(not any(BASE+a<=(value&~1)<BASE+z for a,z in spans),"predecessor pointer reaches installed scene bytes")
+        if value&0x0E000000==0x0A000000:
+            delta=value&0xFFFFFF
+            if delta&0x800000:delta-=0x1000000
+            target=site+8+delta*4
+            need(not any(a<=target<z for a,z in spans),"predecessor branch reaches installed scene bytes")
+            if START<=target<END:preserved.append((site,target))
+    need(tuple(preserved)==PRESERVED_BRANCHES,"preserved branch-candidate population changed")
+    return preserved
+
+
+def ownership_negatives(before: bytes, after: bytes) -> list[str]:
+    caught=[]
+    for site,target in PRESERVED_BRANCHES:
+        changed=bytearray(after);changed[target]^=1
+        try:ownership_contract(before,changed)
+        except ValueError:caught.append(f"changed preserved destination {target:06X}")
+        else:raise ValueError("preserved destination mutation survived")
+    for label,word in (("literal enters relocated hold",0x085C9B00),
+                       ("branch enters relocated hold",0xEA000000|((0x5C9B00-0x108)//4))):
+        changed=bytearray(before);struct.pack_into("<I",changed,0x100,word)
+        try:ownership_contract(changed,after)
+        except ValueError:caught.append(label)
+        else:raise ValueError("new incoming reference mutation survived")
+    return caught
+
+
+def relocation_contract(after: bytes) -> None:
+    # Reverse only the reviewed entry/call relocations into the original profiles.
+    def original_bl(site,target):
+        return 0xEB000000|(((target-(BASE+site+8))//4)&0xFFFFFF)
+    old=bytearray(after[0x5C8500:0x5C8568])
+    struct.pack_into("<I",old,0x3C,original_bl(0x5C853C,0x085C7800))
+    need(digest(old)=="5AD77BF0BD7A7547AA8ACAD60547278FC0F1A75EFF94BE5D27783C68DCFA178F","initializer call is the sole11F7 change")
+    old=bytearray(after[0x5C8600:0x5C864C])
+    struct.pack_into("<I",old,0x48,0x085C8700)
+    need(digest(old)=="50C980B05082B107E5738AE8AB3C1D339FB77E937E454EF18D9E335C6D7DD718","callback literal is the sole1267 change")
+    old=bytearray(after[0x5C9B00:0x5C9B60])
+    for offset,target in ((8,0x0801201C),(0x34,0x080D15C0),(0x48,0x08012008)):
+        struct.pack_into("<I",old,offset,original_bl(0x5C8700+offset,target))
+    need(digest(old)=="8DF4642497AE74D3EDAC506BA0D52E6BAF7411E358F3323F179180811369FEB9","relocated12C6 retains complete old behavior")
+
+
 def verify(before: bytes, after: bytes, sources: dict, dependencies: dict) -> dict:
     for key,expected in INPUTS.items():need(digest(sources[key])==expected,f"wrong source {key}")
     need(len(before)==len(after)==0x800000,"candidate size differs")
     need(set(dependencies)=={"input_sha256","initializer"},"dependency schema differs")
-    need(digest(before)==dependencies["input_sha256"],"exact predecessor differs")
+    need(digest(before)==dependencies["input_sha256"]==PREDECESSOR,"exact predecessor differs")
     init=dependencies["initializer"]
-    need(init["entry"]==0x085C7800 and init["bytes"]>=8,"real initializer boundary differs")
-    need(digest(before[0x5C7800:0x5C7800+init["bytes"]])==init["sha256"],"initializer bytes differ")
-    need(before[0x5C7800:0x5C7804] not in (b"\xff"*4,bytes.fromhex("1EFF2FE1")),"initializer is still a placeholder")
-    need(before[START:END]==b"\xff"*(END-START),"scene window is not owned")
-    inbound=[]
-    for site in range(0,len(before)-3,4):
-        value=struct.unpack_from("<I",before,site)[0]
-        if BASE+START<=value<BASE+END:inbound.append(site)
-        if value&0x0E000000==0x0A000000:
-            delta=value&0xFFFFFF
-            if delta&0x800000:delta-=0x1000000
-            if START<=site+8+delta*4<END:inbound.append(site)
-    need(not inbound,"predecessor reaches scene window")
+    need(init==INITIALIZER,"real initializer boundary differs")
+    need(digest(before[0x629800:0x62988C])==init["sha256"],"initializer bytes differ")
+    need(before[0x5C7800:0x5C8000]==after[0x5C7800:0x5C8000]==b"\xff"*0x800,"old initializer slot changed")
+    preserved=ownership_contract(before,after)
+    relocation_contract(after)
     source=source_contract(sources["wsc15"])
     native=semantic_contract(after)
     resources=resource_contract(sources["wsc15"],sources["wsc10"],sources["gba"])
@@ -384,17 +439,23 @@ def verify(before: bytes, after: bytes, sources: dict, dependencies: dict) -> di
     need(changed and changed<=allowed,"external hook or unexplained bytes changed")
     expected_changed={i for i in allowed if after[i]!=255}
     need(changed==expected_changed,"Expected Write population differs")
+    inverse=bytearray(after)
+    for start,total,_,_ in PROFILES:inverse[start:start+total]=b"\xff"*total
+    need(inverse==before,"complete scene inverse differs")
     for a,z in ((0x350248,0x352268),(0x127E4,0x12DB8),(0x1233C,0x126F8),
                 (0x352374,0x352AC8),(0x12008,0x12058),(0xD15C0,0xD15F0),
                 (0x370124,0x37016C),(0x1565C,0x15810),(0x158C8,0x158CC)):
         need(after[a:z]==sources["gba"][a:z],f"native service/resource changed at {a:X}")
     negatives=negative_contract(after,sources["wsc15"])
+    structural_negatives=ownership_negatives(before,after)
     return {"schema":1,"status":"PASS","kind":"independent-shoot-scene-static-verification",
             "before_sha256":digest(before),"after_sha256":digest(after),
             "source_contract":source,"native_contract":native,"resources":resources,"algebra":algebra,
             "complete_profiles":len(PROFILES),"ARM_instructions":decoded,"branch_edges":branches,
             "expected_write_bytes":len(allowed),"changed_bytes":len(changed),"semantic_negatives":negatives,
             "initializer_dependency":init,"no_external_hook":True,"no_game_execution":True,
+            "preserved_gap_branch_candidates":preserved,"original_profile_relocations_reversed":True,
+            "ownership_negatives":structural_negatives,"complete_inverse":True,
             "limitation":"unhooked resident scene; real entry invariants and complete downstream rules remain integration gates; retail channel fade backend is a no-op"}
 
 
@@ -404,6 +465,7 @@ def main() -> int:
         parser.add_argument(name,type=pathlib.Path)
     parser.add_argument("--output",required=True,type=pathlib.Path)
     args=parser.parse_args()
+    if args.output.exists():parser.error(f"refusing to overwrite existing output: {args.output}")
     sources={key:getattr(args,key).read_bytes() for key in INPUTS}
     report=verify(args.before.read_bytes(),args.after.read_bytes(),sources,
                   json.loads(args.dependencies.read_text(encoding="utf-8")))

@@ -14,11 +14,13 @@ import pathlib
 import struct
 
 from build_shoot_player_binding import assemble, require_hash, sha256
-from build_shoot_scene_transition import pack_code
+from build_shoot_scene_transition import INITIALIZER as INITIALIZER_CONTRACT, pack_code
 
 BASE = 0x08000000
 SELECTOR, PROGRESS = 0x5C9900, 0x5C9A00
-SCENE, INITIALIZER = 0x085C8000, 0x085C7800
+SCENE, INITIALIZER = 0x085C8000, 0x08629800
+# Pin only after the controller, pursuit, terminal-camera and IRQ lifetime proofs close.
+INPUT_SHA256: str | None = None
 HOOKS = ((0x33FD04, 0xE59F80A8, SELECTOR), (0x0B9E68, 0xE59F10C0, PROGRESS))
 HASHES = {
     "gba": "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED",
@@ -99,6 +101,8 @@ def dependencies(before: bytes, spec: dict) -> dict:
     if set(spec) != {"input_sha256", "scene", "initializer"}:
         raise ValueError("route dependency manifest fields")
     require_hash(before, spec["input_sha256"], "route exact predecessor")
+    if spec["initializer"] != INITIALIZER_CONTRACT:
+        raise ValueError("route requires the verified source-ordered v65 initializer")
     bound = {}
     for name, expected_entry, maximum in (("scene", SCENE, 0x100), ("initializer", INITIALIZER, 0x800)):
         row = spec[name]
@@ -117,6 +121,9 @@ def dependencies(before: bytes, spec: dict) -> dict:
 
 
 def build(before: bytes, originals: dict[str, bytes], spec: dict) -> tuple[bytes, dict]:
+    if INPUT_SHA256 is None:
+        raise ValueError("external Shoot route remains gated on controller, pursuit, terminal-camera and IRQ lifetime")
+    require_hash(before, INPUT_SHA256, "verified complete route predecessor")
     for name, expected in HASHES.items():
         require_hash(originals[name], expected, name)
     for name, a, z, expected in SOURCE_GUARDS:

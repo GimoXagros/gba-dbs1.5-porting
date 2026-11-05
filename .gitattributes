@@ -7,3 +7,7 @@ tools/mgba_headless_gdb_capture.py text eol=crlf
 tools/probe_physics_consumers.py text eol=crlf
 tools/verify_native_capture_invariants.py text eol=crlf
 tools/verify_shoot_palette_transition.py text eol=crlf
+
+# Preserve observer source hashes across Windows checkouts.
+tools/*.lua text eol=lf
+tools/bizhawk_probe_gba_collision.lua text eol=crlf

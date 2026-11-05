@@ -215,7 +215,8 @@ EXPECTED_LAYERS = {
     "shoot-initializer-player-chain.gba": "2C9C96129EBECF30FCB915E077899CE91FBA979F4AC44C027EE39F4C9A8C4BC7",
     "shoot-initializer-front.gba": "CB926019A7289762D5B5539A7994B522AD8A3B73D12A70A92337D47761FB58C7",
     "shoot-initializer-storage.gba": "66DA1AC3CC4FED2DF12C6A2C85430E735AA99C4934C967950B058D5D22F5ADFF",
-    "current-candidate.gba": "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46",
+    "shoot-initializer-tail-chain.gba": "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46",
+    "current-candidate.gba": "428B1CF6B459E077972BD621A2C4C689DFE9E36FB1372BB2EB82DA5B3075F281",
 }
 
 
@@ -513,6 +514,8 @@ def main() -> int:
     initializer_player_chain = output / "shoot-initializer-player-chain.gba"
     initializer_front = output / "shoot-initializer-front.gba"
     initializer_storage = output / "shoot-initializer-storage.gba"
+    initializer_tail = output / "shoot-initializer-tail-chain.gba"
+    scene_dependencies = intermediate / "shoot-scene-dependencies.json"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -739,8 +742,15 @@ def main() -> int:
         "--manifest", output / "shoot-initializer-front.json")
     run("build_shoot_initializer_storage.py", initializer_front, args.gba, args.wsc10, args.wsc15, initializer_storage,
         "--manifest", output / "shoot-initializer-storage.json")
-    run("build_shoot_initializer_tail_chain.py", initializer_storage, args.gba, args.wsc10, args.wsc15, candidate,
-        "--manifest", output / "current-candidate.json")
+    run("build_shoot_initializer_tail_chain.py", initializer_storage, args.gba, args.wsc10, args.wsc15, initializer_tail,
+        "--manifest", output / "shoot-initializer-tail-chain.json")
+    scene_dependencies.write_text(json.dumps({
+        "input_sha256": EXPECTED_LAYERS["shoot-initializer-tail-chain.gba"],
+        "initializer": {"entry": 0x08629800, "bytes": 140,
+                        "sha256": "8FEDEC3D4115A92339E37D1F78CAC2A1DE4A435A074CF641339FF22EC90B5F13"},
+    }, indent=2) + "\n", encoding="utf-8")
+    run("build_shoot_scene_transition.py", initializer_tail, args.gba, args.wsc10, args.wsc15,
+        scene_dependencies, candidate, "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1090,12 +1100,17 @@ def main() -> int:
          "471C31326FEE5FDCD2BD7841FB227082EE38D8CAB782AD6EA967C27C7C9C881F"),
         ("verify_shoot_initializer_storage.py", initializer_front, initializer_storage, [args.gba, args.wsc10, args.wsc15],
          "BC75F6EACF9E9320463CC8436A731E7405F4DE15959882CA59B71DC32C90333E"),
-        ("verify_shoot_initializer_tail_chain.py", initializer_storage, candidate, [args.gba, args.wsc10, args.wsc15],
+        ("verify_shoot_initializer_tail_chain.py", initializer_storage, initializer_tail, [args.gba, args.wsc10, args.wsc15],
          "9C530F9BB055BAEB5CE52B279110721E063C07973297EBBE0FDB0A182937BC50"),
     ):
         report = intermediate / (tool.removeprefix("verify_").removesuffix(".py").replace("_", "-") + "-verification.json")
         run(tool, before, after, *sources, report)
         require_hash(report, expected, tool)
+    scene_review = intermediate / "shoot-scene-verification.json"
+    run("verify_shoot_scene_transition.py", initializer_tail, candidate, args.gba, args.wsc10, args.wsc15,
+        scene_dependencies, "--output", scene_review)
+    require_hash(scene_review, "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
+                 "independent resident Shoot scene verification")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1230,6 +1245,12 @@ def main() -> int:
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
+        "resident_scene": {
+            "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
+            "initializer_entry": "08629800", "phase_12C6_entry": "085C9B00",
+            "external_route_installed": False, "controller_boundary_connected": False,
+            "scope": "22 source-ordered resident scene placements; live palette/IRQ/camera and controller domains remain gates",
+        },
         "sources": {
             "gba_usa_sha256": GBA_SHA256,
             "wsc_10_sha256": WSC10_SHA256,

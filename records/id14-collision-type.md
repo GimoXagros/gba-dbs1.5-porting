@@ -360,3 +360,130 @@ trajectory, emulator-core defect, or broader observer effect remains
 possible. A no-hit run cannot negate the original coherent register state.
 The specific patch-alias and register-decoding hypotheses lack supporting
 evidence; the actual collision producer/overwrite remains unresolved.
+
+## Discriminating producer observation, prepared 2026-11-05
+
+The exact v65 ordinary trajectory already completed twice without E5:
+84 overlap callbacks, 79 dispatches, and sampled command/event/world
+maxima `3/4/4`. Repeating that input is not the next causal test.
+`tools/bizhawk_probe_gba_collision_producer.lua` wraps the existing
+consumer observer and supplies a different ordinary combat trajectory.
+It changes no game bytes and performs no guest-memory writes.
+
+The wrapper adds these distinct observations:
+
+- Pre-store hooks at `08353C70`, `08353D24`, and `083776E4` record the
+  actual B pointer, loaded source type, destination, computed list index,
+  current count, and actor pointer read from the already-written record.
+  Actor `+A0` and presentation event/index/count/base/current/A/B/P1
+  fields accompany each origin. The native instructions at these three
+  hooks are all `strh r0,[r1,#4]` on v65.
+- Twenty-four direct type-field write watches retain raw callback address,
+  value, flags, old type, and exposed PC. A separate write watch observes
+  scratch `03004D20`. Write callback values can be unsupported/zero in
+  BizHawk, so they are evidence, not independently classified as new types.
+- The overlap hook relates the actual type to that slot's latest producer
+  in the same frame. The `0836EB58` hook reads the actual scratch halfword
+  before the dispatch load. Invalid producer/overlap/scratch types, a
+  changed same-frame list type, or out-of-capacity/inconsistent append
+  geometry preserve the first anomaly.
+
+Telemetry is bounded to a 128-event ring and the latest origin per
+destination. Ordinary execution performs no per-event disk writes.
+`producer-trace.txt` receives the ring at the first anomaly or normal exit,
+with totals on exit. The first anomaly additionally writes complete
+`producer-failure-iwram.bin` and `producer-failure-ewram.bin` before the
+observed instruction executes. The original observer still independently
+captures invalid overlap/dispatch and writes its usual outputs.
+
+The proposed parent-owned invisible experiment uses the pinned v65 ROM,
+the existing isolated launcher/configuration, and these changed arguments:
+
+```text
+--lua=W:/tools/bizhawk_probe_gba_collision_producer.lua
+--userdata=output:W:/build/<new-run>;frames:18000;start_frame:2970;combat_profile:approach-jump
+```
+
+The menu sequence remains unchanged. From relative frame5550, in battle
+mode7 only, the actual input becomes A for7/97 frames, B for7/29,
+Up for9/181, Right until6150 and then for300/720, and Left for
+relative phases360..659 of each720-frame period. The wrapper mutates the
+same input table before the existing observer logs it, so its input trace
+records the actual submitted state. All eleven buttons are explicitly
+released before exit. `combat_profile:baseline` provides the old trajectory
+with the new telemetry if a later controlled comparison becomes useful.
+
+The first run is bounded to18,000 advances and a480-second host deadline
+because producer/write callbacks add work. Its runner must retain exact
+ROM/executable/isolation/completion checks, pin both Lua scripts, and omit
+the old trajectory's exact84/79/30,000 assertions. A timeout remains an
+incomplete observation. No runtime is claimed by preparation of this tool.
+
+The new mock self-check executes the actual wrapper through the bundled
+Lua5.4 library. Valid source/unsupported zero write-values, invalid source
+E5, index12 overflow, post-producer type change, and invalid actual scratch
+are checked separately; it also verifies the24+1 write hooks, the128-entry
+ring, single capture, RAM snapshots, and final controller release.
+`tools/verify_bizhawk_probe_gba_collision_producer.py` passes. This validates
+observer logic against mocks, not actual core write-hook delivery.
+
+Limits: the direct slot watches do not claim to catch every possible
+overlapping/interior alias write. The ring can discard an older writer;
+exposed callback PC must be interpreted using the core's PC convention.
+The first anomalous source pointer must still be resolved against its
+declared event/command resource before selecting a repair. There is no
+E5 causal fix or new game-code change in this observer preparation.
+
+### Parent-owned producer experiment outcome
+
+`build/bizhawk-producer-v65-20261105-a` completed18000 advances with
+`combat_profile:approach-jump` on exact v65. Its launch manifest records
+invisible private-desktop execution, no guest-memory writes, no physical
+background input, exact complete loaded-ROM equality, and unchanged script.
+The wrapper and baseline Lua hashes are respectively
+`82EFDCC01099271CE75E6CF3D2FAFB05A4A6F04AE61907AA6AE50B091DE864E2`
+and `7BE2872543FC4F3AA7980FB0C7A9EC0563A73743185D082957A4A7159C79FCE9`.
+
+The terminal result is bounded-no-hit at core18001:44960 producer visits,
+44984 direct list-type writes,51 scratch writes,50 overlaps,42 scratch
+consumer reads, and `captured=false`. Consumer trace independently reports
+50 valid overlap callbacks and42 valid dispatches. Sampled command/event/
+world maxima are`3/3/5`. The first94 of the planned128 final journal records include live ID14
+actor`02011710`, P1`086184A0`, valid source B pointers and event/command
+fields, rather than inferring the actor from the dispatcher registers.
+
+Actual core callbacks delivered pre-store exposed PC`hook+4` and
+write-callback PC`hook+8`. The retained v65 tail has zero write values and flags`2000` for
+zero-type records; this alone does not prove unsupported callback values.
+The complete later v66 journal also observes value8 at actual type8 writes.
+Classification still uses actual scratch reads and producer register/source
+reads rather than assuming every callback backend supplies reliable values. All list writes/producer totals are bounded
+observations; unmatched write totals can include initialization and are
+not themselves classified as corruption.
+
+`producer-trace.txt` SHA-256 is
+`BEC310ACCC7F1933F5A2252DEC1CFF163650D165159D601619BD31193E9F5B05`;
+the consumer trace is
+`9929C743C6C4977837E61AA5BA3B69EB81F6DBFE74119EA98A8EF87F3B018D38`.
+No anomaly RAM pair was expected because no anomaly was observed. This
+different ordinary trajectory does not solve or invalidate the original
+E5 failure. A replay of the original host-timed GDB stop/step/input
+interaction remains a possible next discriminator; no such rerun or
+repair is claimed here.
+
+### Completion ordering repair and v66 regression
+
+Root found that the baseline observer closed `done.txt` before the wrapper
+finished writing its final ring. The first v65 run retained94/128 final ring
+records; this cannot be treated as a complete128-record journal. The existing
+RAM/screen artifacts and earlier summary counts were already complete.
+
+The wrapper now writes `producer-done.txt` only after closing every final ring
+line. Its host-Lua check verifies this marker before the mocked exit. Root's
+runner waits for both completion markers. A new exact-v66 hidden18,000-frame
+run in `build/bizhawk-producer-v66-20261105-b` retains all128 records, the same
+44,960 producer visits and all six memory/screen artifacts as v65/v66-a.
+All ordinary input/event lines agree in order, and register dictionaries agree
+after sorting their enumeration order. No E5 occurred and no gameplay repair
+was inferred. Full evidence and current tool hashes are recorded in
+[v66 integration](shoot-scene-integration-v66.md).
