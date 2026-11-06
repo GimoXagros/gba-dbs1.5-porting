@@ -218,7 +218,8 @@ EXPECTED_LAYERS = {
     "shoot-initializer-tail-chain.gba": "5C625010E5D08C7E5B4AE07997D649EA37154D76AA2C01AD3286DBB9EA7C8B46",
     "shoot-scene.gba": "428B1CF6B459E077972BD621A2C4C689DFE9E36FB1372BB2EB82DA5B3075F281",
     "title-background.gba": "494D14A2D4661FEA5DF36A9D12D57D31B2204924702CAB95DB3CE12A857F58B6",
-    "current-candidate.gba": "A4CB752A8E0CFA3D639E645531B5AFCCB0CE25DD3BF202F62FE132E97385328F",
+    "result-language.gba": "A4CB752A8E0CFA3D639E645531B5AFCCB0CE25DD3BF202F62FE132E97385328F",
+    "current-candidate.gba": "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738",
 }
 
 
@@ -521,6 +522,7 @@ def main() -> int:
     shoot_scene = output / "shoot-scene.gba"
     title_background = output / "title-background.gba"
     result_art = intermediate / "result-approved-art.json"
+    result_language = output / "result-language.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -762,7 +764,9 @@ def main() -> int:
         ROOT / "localization/digicode-reference.json", result_art)
     require_hash(result_art, "8BFC3960335EDD29ECEBFA2DB7A673FDE586C6B5B79B0FDB47622BC601083074",
                  "approved native result pixels regenerated from original inputs")
-    run("build_result_language.py", title_background, args.gba, args.wsc15, result_art, candidate,
+    run("build_result_language.py", title_background, args.gba, args.wsc15, result_art, result_language,
+        "--manifest", output / "result-language.json")
+    run("build_shoot_caller_resident.py", result_language, args.gba, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1129,10 +1133,15 @@ def main() -> int:
     require_hash(title_background_review, "1D2AF8B349E42701DD85BA59B1111E1ED3C88E5AF7C7AB3B3F0DEC289800C665",
                  "independent source 1.5 title background verification")
     result_review = intermediate / "result-language-verification.json"
-    run("verify_result_language.py", title_background, candidate, args.gba, args.wsc10, args.wsc15,
-        result_art, output / "current-candidate.json", result_review)
+    run("verify_result_language.py", title_background, result_language, args.gba, args.wsc10, args.wsc15,
+        result_art, output / "result-language.json", result_review)
     require_hash(result_review, "50351DA73917A2884CAAC4AFDAC40FFB6E1F42E8EE5B30D34B5B9EF064C5775F",
                  "independent four-language result resource and population verification")
+    caller_review = intermediate / "shoot-caller-resident-verification.json"
+    run("verify_shoot_caller_resident.py", result_language, candidate, args.gba, args.wsc15,
+        output / "current-candidate.json", "--output", caller_review)
+    require_hash(caller_review, "B079E66FA7DE910679E6D83539F8EAABF2BD1642A4B65D98F7140D10B67062F5",
+                 "independent synchronous Shoot caller and terminal-router verification")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1272,6 +1281,13 @@ def main() -> int:
             "title_background_verification_sha256": "1D2AF8B349E42701DD85BA59B1111E1ED3C88E5AF7C7AB3B3F0DEC289800C665",
             "result_art_sha256": "8BFC3960335EDD29ECEBFA2DB7A673FDE586C6B5B79B0FDB47622BC601083074",
             "scope": "Source 1.5 title BG and existing mode8 four-language result labels; additional menu tree and whole-game localization remain open",
+        },
+        "resident_callers": {
+            "verification_sha256": "B079E66FA7DE910679E6D83539F8EAABF2BD1642A4B65D98F7140D10B67062F5",
+            "controller_entry": "085C6500", "exit_router_entry": "086FC300",
+            "declared_bytes": 96, "changed_bytes": 90,
+            "external_hooks_changed": False,
+            "scope": "Synchronous SELECT/APPLY and exact stage11 terminal routing; external route remains closed pending reached lifetime contracts",
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

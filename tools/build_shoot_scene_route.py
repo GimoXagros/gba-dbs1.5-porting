@@ -19,6 +19,9 @@ from build_shoot_scene_transition import INITIALIZER as INITIALIZER_CONTRACT, pa
 BASE = 0x08000000
 SELECTOR, PROGRESS = 0x5C9900, 0x5C9A00
 SCENE, INITIALIZER = 0x085C8000, 0x08629800
+TERMINAL_ROUTER = {"entry": 0x086FC300, "bytes": 52,
+                   "sha256": "3B528805D97B87A3C35CE298E929AE3B46BCE2BDF8009A165A04BFB4EB175474"}
+DRAFT_INPUT_SHA256 = "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738"
 # Pin only after the controller, pursuit, terminal-camera and IRQ lifetime proofs close.
 INPUT_SHA256: str | None = None
 HOOKS = ((0x33FD04, 0xE59F80A8, SELECTOR), (0x0B9E68, 0xE59F10C0, PROGRESS))
@@ -40,7 +43,7 @@ def code() -> dict[int, tuple[bytes, int]]:
     selector = """
         push {r0, r1, r12, lr}
         mrs r12, cpsr
-        ldr r8, =0x0834059C
+        ldr r8, =0x086FC300
         ldr r0, =0x0300231E
         ldrb r1, [r0]
         cmp r1, #11
@@ -98,13 +101,16 @@ def inbound(data: bytes, spans: list[tuple[int, int]]) -> None:
 
 
 def dependencies(before: bytes, spec: dict) -> dict:
-    if set(spec) != {"input_sha256", "scene", "initializer"}:
+    if set(spec) != {"input_sha256", "scene", "initializer", "terminal_router"}:
         raise ValueError("route dependency manifest fields")
     require_hash(before, spec["input_sha256"], "route exact predecessor")
     if spec["initializer"] != INITIALIZER_CONTRACT:
         raise ValueError("route requires the verified source-ordered v65 initializer")
+    if spec["terminal_router"] != TERMINAL_ROUTER:
+        raise ValueError("route requires the verified source0653 stage11 terminal router")
     bound = {}
-    for name, expected_entry, maximum in (("scene", SCENE, 0x100), ("initializer", INITIALIZER, 0x800)):
+    for name, expected_entry, maximum in (("scene", SCENE, 0x100), ("initializer", INITIALIZER, 0x800),
+                                         ("terminal_router", TERMINAL_ROUTER["entry"], 52)):
         row = spec[name]
         if set(row) != {"entry", "bytes", "sha256"} or row["entry"] != expected_entry:
             raise ValueError(f"route {name} entry contract")
@@ -118,6 +124,41 @@ def dependencies(before: bytes, spec: dict) -> dict:
             raise ValueError(f"route {name} cannot be an absent function or return stub")
         bound[name] = dict(row)
     return bound
+
+
+def draft_proof(before: bytes, originals: dict[str, bytes], spec: dict) -> dict:
+    """Validate and serialize candidate code only; never construct a patched ROM."""
+    if INPUT_SHA256 is not None:
+        raise ValueError("draft-only contract requires the external route gate closed")
+    # Exercise the actual emission gate, not just its constant.
+    try:
+        build(b"", {}, {})
+    except ValueError as error:
+        if "external Shoot route remains gated" not in str(error):
+            raise
+    else:
+        raise ValueError("external emission gate did not reject")
+    require_hash(before, DRAFT_INPUT_SHA256, "resident-caller draft predecessor")
+    for name, expected in HASHES.items():
+        require_hash(originals[name], expected, name)
+    for name, a, z, expected in SOURCE_GUARDS:
+        require_hash(originals[name][a:z], expected, f"{name} route guard {a:X}")
+    bound = dependencies(before, spec)
+    placements = code()
+    spans = [(at, at + len(blob)) for at, (blob, _) in placements.items()]
+    for at, end in spans:
+        if before[at:end] != b"\xff" * (end - at):
+            raise ValueError("draft code placement is not FF")
+    inbound(before, spans)
+    for at, expected, _ in HOOKS:
+        if struct.unpack_from("<I", before, at)[0] != expected:
+            raise ValueError("draft predecessor external hook changed")
+    return {"schema": 1, "kind": "shoot-case5-route-draft", "input_sha256": sha256(before),
+            "dependencies": {"input_sha256": sha256(before), **bound},
+            "placements": [{"offset": at, "bytes": len(blob), "code_bytes": count,
+                            "hex": blob.hex().upper(), "sha256": sha256(blob)}
+                           for at, (blob, count) in placements.items()],
+            "gate_rejection_checked": True, "ROM_emitted": False, "hooks_changed": False}
 
 
 def build(before: bytes, originals: dict[str, bytes], spec: dict) -> tuple[bytes, dict]:
@@ -168,10 +209,26 @@ def build(before: bytes, originals: dict[str, bytes], spec: dict) -> tuple[bytes
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    for name in ("before", "gba", "wsc10", "wsc15", "dependencies", "output"):
+    for name in ("before", "gba", "wsc10", "wsc15", "dependencies"):
         parser.add_argument(name, type=pathlib.Path)
+    parser.add_argument("output", type=pathlib.Path, nargs="?")
     parser.add_argument("--manifest", required=True, type=pathlib.Path)
+    parser.add_argument("--draft-proof", action="store_true")
     args = parser.parse_args()
+    if args.manifest.exists() or args.output is not None and args.output.exists():
+        raise ValueError("fresh output paths required")
+    if args.draft_proof:
+        if args.output is not None:
+            raise ValueError("draft proof cannot take a ROM output path")
+        report = draft_proof(args.before.read_bytes(),
+                             {name: getattr(args, name).read_bytes() for name in HASHES},
+                             json.loads(args.dependencies.read_text(encoding="utf-8")))
+        args.manifest.parent.mkdir(parents=True, exist_ok=True)
+        args.manifest.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
+        print("[shoot-case5-route] draft proof only; external gate closed; no ROM emitted")
+        return 0
+    if args.output is None:
+        raise ValueError("output path required")
     output, report = build(args.before.read_bytes(), {name: getattr(args, name).read_bytes() for name in HASHES},
                            json.loads(args.dependencies.read_text(encoding="utf-8")))
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -21,6 +21,10 @@ HASHES = {"gba": "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618
 PROFILE = ((0x5C9900, 80, 104, "4DA88F37392E04BF28407CCF0E1A25A96A01FF8A412A2F974B6F89BF927C6A4C"),
            (0x5C9A00, 64, 84, "8CFDEB79A40E7FA23B90C6513C239C09A47D7D9075EAD8EE145D2BBC76848D76"))
 HOOKS = ((0x33FD04, 0xE59F80A8, 0x5C9900), (0xB9E68, 0xE59F10C0, 0x5C9A00))
+INITIALIZER = {"entry": 0x08629800, "bytes": 140,
+               "sha256": "8FEDEC3D4115A92339E37D1F78CAC2A1DE4A435A074CF641339FF22EC90B5F13"}
+TERMINAL_ROUTER = {"entry": 0x086FC300, "bytes": 52,
+                   "sha256": "3B528805D97B87A3C35CE298E929AE3B46BCE2BDF8009A165A04BFB4EB175474"}
 
 
 def digest(blob):
@@ -55,6 +59,7 @@ def source_contract(gba, old, new):
                         "test word ptr es:[0x68], 0x400", "je 0x771fcd"])
     x86(new, 0x771FE3, ["push 0xff0", "push 0x71f0", "push 0xeea", "lcall 0x4fff, 0x980"])
     x86(new, 0x771FB9, ["push 0xff0", "push 0x71f0", "push 0x653", "lcall 0x4fff, 0x980"])
+    x86(new, 0x772564, ["cmp ax, 0xb", "jne 0x77256f", "lcall 0x71f0, 0x1750", "retf"])
     x86(old, 0x3C157E, ["cmp byte ptr es:[0x5c], 7", "jne 0x3c158d",
                         "or word ptr es:[0x68], 0x200", "mov bx, 0x4e", "mov ax, 0x1000",
                         "mov es, ax", "xor ax, ax", "mov word ptr es:[bx + 0x21], ax"])
@@ -77,7 +82,9 @@ def source_contract(gba, old, new):
     need(literal(gba, 0x33FD04) == 0x0834059C, "original case5 callback")
     return {"source_progress": "1000:0068", "native_progress": 0x0300232A,
             "native_stage": 0x0300231E, "native_difficulty": 0x0300231F,
-            "single_allocation": 0x0833FD18, "source_callback": "71F0:0EEA", "native_callback": 0x085C8000}
+            "single_allocation": 0x0833FD18, "source_callback": "71F0:0EEA", "native_callback": 0x085C8000,
+            "default_source_callback": "71F0:0653", "default_native_callback": 0x086FC300,
+            "terminal_dispatch": "stage11 ->71F0:1750 / native085CD000; other stages ->retail0834059C"}
 
 
 def semantic_contract(data):
@@ -89,7 +96,7 @@ def semantic_contract(data):
         "ldr r8, [pc, #0x1c]", "msr apsr_nzcvq, ip", "pop {r0, r1, ip, lr}", "b #0x833fd08"],
         "native case5 complete condition/ABI")
     need([literal(data, p) for p in (0x5C9908, 0x5C990C, 0x5C9930, 0x5C9940)] ==
-         [0x0834059C, 0x0300231E, 0x0300232A, 0x085C8000], "case5 actual literal consumers")
+         [0x086FC300, 0x0300231E, 0x0300232A, 0x085C8000], "case5 actual literal consumers")
     need(arm(data, 0x5C9A00, 0x5C9A40) == [
         "push {r0, r8, sb, ip, lr}", "mrs ip, apsr", "ldr r8, [pc, #0x38]", "ldrb sb, [r8]",
         "cmp sb, #7", "beq #0x85c9a30", "cmp sb, #0xb", "beq #0x85c9a30",
@@ -139,25 +146,46 @@ def algebra_contract():
             "all_noncase5_paths_unchanged": True}
 
 
-def verify(before, after, originals, spec):
-    for name, expected in HASHES.items():
-        need(digest(originals[name]) == expected, f"original {name}")
-    source = source_contract(originals["gba"], originals["wsc10"], originals["wsc15"])
-    need(len(before) == len(after) == 0x800000, "ROM extent")
-    need(set(spec) == {"input_sha256", "scene", "initializer"} and digest(before) == spec["input_sha256"], "exact route predecessor")
-    for name, entry, maximum in (("scene", 0x085C8000, 0x100), ("initializer", 0x085C7800, 0x800)):
+def dependency_contract(before, spec):
+    need(set(spec) == {"input_sha256", "scene", "initializer", "terminal_router"} and
+         digest(before) == spec["input_sha256"], "exact route predecessor")
+    need(spec["initializer"] == INITIALIZER, "exact real initializer dependency")
+    need(spec["terminal_router"] == TERMINAL_ROUTER, "exact source0653 terminal router dependency")
+    for name, entry, maximum in (("scene", 0x085C8000, 0x100), ("initializer", 0x08629800, 140),
+                                 ("terminal_router", 0x086FC300, 52)):
         row = spec[name]
         need(set(row) == {"entry", "bytes", "sha256"} and row["entry"] == entry, "dependency entry")
         size = row["bytes"]
         need(isinstance(size, int) and 40 <= size <= maximum and size % 4 == 0, "dependency span")
         payload = before[entry - BASE:entry - BASE + size]
-        need(digest(payload) == row["sha256"] and payload[:4] not in (b"\xff" * 4, b"\x1e\xff\x2f\xe1"), "real hash-bound dependency")
+        need(digest(payload) == row["sha256"] and payload[:4] not in (b"\xff" * 4, b"\x1e\xff\x2f\xe1"),
+             "real hash-bound dependency")
+    need(arm(before, 0x6FC300, 0x6FC330) == [
+        "push {r0, ip, lr}", "mrs ip, apsr", "ldr r0, [pc, #0x20]", "ldrb r0, [r0]",
+        "cmp r0, #0xb", "beq #0x86fc324", "msr apsr_nzcvq, ip", "pop {r0, ip, lr}",
+        "b #0x834059c", "msr apsr_nzcvq, ip", "pop {r0, ip, lr}", "b #0x85cd000"],
+         "real terminal router consumer and both return/stack paths")
+    need(literal(before, 0x6FC308) == 0x0300231E, "terminal stage byte owner")
+
+
+def verify(before, after, originals, spec, draft=False):
+    for name, expected in HASHES.items():
+        need(digest(originals[name]) == expected, f"original {name}")
+    source = source_contract(originals["gba"], originals["wsc10"], originals["wsc15"])
+    need(len(before) == len(after) == 0x800000, "ROM extent")
+    dependency_contract(before, spec)
     semantic_contract(after)
     allowed = set()
     spans = []
     for offset, code_size, size, expected in PROFILE:
         need(before[offset:offset + size] == b"\xff" * size, "route ownership FF")
-        need(digest(after[offset:offset + size]) == expected, "complete route profile")
+        profile = bytearray(after[offset:offset + size])
+        if offset == 0x5C9900:
+            # Independently invert the sole default-callback literal change to
+            # the earlier completely reviewed profile, without builder imports.
+            need(struct.unpack_from("<I", profile, 0x58)[0] == 0x086FC300, "default callback relocation")
+            struct.pack_into("<I", profile, 0x58, 0x0834059C)
+        need(digest(profile) == expected, "complete previous route profile inverse")
         need(len(arm(after, offset, offset + code_size)) == code_size // 4, "ARM instruction population")
         allowed.update(range(offset, offset + size))
         spans.append((offset, offset + size))
@@ -171,8 +199,11 @@ def verify(before, after, originals, spec):
             need(not any(a <= target < z for a, z in spans), "prior ARM branch references route")
     for site, original, target in HOOKS:
         need(struct.unpack_from("<I", before, site)[0] == original, "original hook word")
-        need(arm(after, site, site + 4) == [f"b #{BASE + target:#x}"], "one-word hook target")
-        allowed.update(range(site, site + 4))
+        if draft:
+            need(after[site:site + 4] == before[site:site + 4], "draft keeps external hook unchanged")
+        else:
+            need(arm(after, site, site + 4) == [f"b #{BASE + target:#x}"], "one-word hook target")
+            allowed.update(range(site, site + 4))
     for a, z in ((0x33FCCC, 0x33FDC0), (0xB9E48, 0xB9E78)):
         restored = bytearray(after[a:z])
         for site, word, _ in HOOKS:
@@ -187,7 +218,8 @@ def verify(before, after, originals, spec):
                             (0x5C9938, 0xE3110C02, "0400 predicate changed"),
                             (0x5C9A28, 0xE3899C02, "0400 producer changed"),
                             (0x5C9A2C, 0xE5889000, "halfword write widened"),
-                            (0x5C9944, 0xE1A00000, "CPSR restoration omitted")):
+                            (0x5C9944, 0xE1A00000, "CPSR restoration omitted"),
+                            (0x5C9958, 0x0834059C, "missing source0653 terminal branch")):
         bad = bytearray(after); struct.pack_into("<I", bad, at, word)
         try:
             semantic_contract(bad)
@@ -195,9 +227,29 @@ def verify(before, after, originals, spec):
             negatives.append(label)
         else:
             raise ValueError(f"ineffective semantic negative {label}")
+    for field, replacement in (("terminal_router", {**TERMINAL_ROUTER, "entry": 0x0834059C}),
+                                ("initializer", {**INITIALIZER, "entry": 0x085C7800})):
+        try:
+            dependency_contract(before, {**spec, field: replacement})
+        except ValueError:
+            negatives.append("rejected obsolete " + field)
+        else:
+            raise ValueError("accepted obsolete dependency " + field)
+    for label, site in (("source terminal stage", 0x772565),
+                        ("source terminal target", 0x77256A),
+                        ("source terminal return", 0x77256E)):
+        bad_source = bytearray(originals["wsc15"])
+        bad_source[site] ^= 1
+        try:
+            source_contract(originals["gba"], originals["wsc10"], bad_source)
+        except ValueError:
+            negatives.append(label)
+        else:
+            raise ValueError("accepted source semantic mutation " + label)
     return {"result": "PASS", "kind": "independent-shoot-case5-route", "input_sha256": digest(before),
             "output_sha256": digest(after), "source_native_consumer": source, "algebra": algebra_contract(),
             "ARM_instructions": 36, "changed_bytes": len(changed), "semantic_negatives": negatives,
+            "draft_only": draft, "hooks_changed": not draft, "ROM_emitted_by_verifier": False,
             "runtime_executed": False, "arbitrary_foreign_task_entry_proven": False}
 
 
@@ -206,10 +258,30 @@ def main():
     for name in ("before", "after", "gba", "wsc10", "wsc15", "dependencies"):
         parser.add_argument(name, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
+    parser.add_argument("--draft-proof", action="store_true", help="after is the builder's JSON code draft, not a ROM")
     args = parser.parse_args()
-    report = verify(args.before.read_bytes(), args.after.read_bytes(),
+    need(not args.output.exists(), "fresh verification output required")
+    before = args.before.read_bytes()
+    spec = json.loads(args.dependencies.read_text(encoding="utf-8"))
+    if args.draft_proof:
+        draft = json.loads(args.after.read_text(encoding="utf-8"))
+        need(draft["kind"] == "shoot-case5-route-draft" and draft["ROM_emitted"] is False and
+             draft["hooks_changed"] is False and draft["gate_rejection_checked"] is True,
+             "draft-only evidence flags")
+        need(draft["dependencies"] == spec and draft["input_sha256"] == digest(before) ==
+             "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738", "draft predecessor")
+        need(len(draft["placements"]) == 2, "complete draft placement population")
+        after = bytearray(before)
+        for row, (at, count, size, _) in zip(draft["placements"], PROFILE, strict=True):
+            blob = bytes.fromhex(row["hex"])
+            need(row["offset"] == at and row["code_bytes"] == count and row["bytes"] == size == len(blob) and
+                 row["sha256"] == digest(blob), "exact draft code record")
+            after[at:at + size] = blob
+    else:
+        after = args.after.read_bytes()
+    report = verify(before, after,
                     {name: getattr(args, name).read_bytes() for name in HASHES},
-                    json.loads(args.dependencies.read_text(encoding="utf-8")))
+                    spec, draft=args.draft_proof)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"[shoot-case5-route] independent PASS: {digest(args.output.read_bytes())}")

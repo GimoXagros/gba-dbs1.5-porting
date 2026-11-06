@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only audit of completed ordinary-input v67 result captures; never opens saves."""
+"""Read-only audit of completed ordinary-input result captures; never opens saves."""
 import argparse
 import hashlib
 import json
@@ -145,7 +145,14 @@ def selfchecks(retail):
 
 
 def audit(directory, rom, retail, observer):
-    need(sha(rom) == PINS['after'] and sha(retail) == PINS['gba'], 'immutable final and retail ROMs')
+    result_predecessor = rom
+    if sha(rom) == '9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738':
+        restored = bytearray(rom)
+        for start, end in ((0x5C6500, 0x5C652C), (0x6FC300, 0x6FC334)):
+            restored[start:end] = b'\xff' * (end - start)
+        result_predecessor = bytes(restored)
+    need(sha(result_predecessor) == PINS['after'] and sha(retail) == PINS['gba'],
+         'immutable result ROM or exact whole-ROM inverse of reviewed resident callers')
     need(sha(observer) == SCRIPT, 'reviewed frozen ordinary-input observer')
     need(not re.search(rb'(memory\.write|emu\.setregister|savestate\.|loadstate)', observer), 'no guest state-write APIs')
     launch = json.loads(read(directory / 'launch.json'))
