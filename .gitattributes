@@ -9,6 +9,7 @@ tools/verify_native_capture_invariants.py text eol=crlf
 tools/verify_shoot_palette_transition.py text eol=crlf
 tools/build_shoot_attack_dispatch.py text eol=crlf
 tools/verify_shoot_spatial_subset.py text eol=crlf
+tools/verify_wsc_wall_escape_edges.py text eol=crlf
 
 # Preserve observer source hashes across Windows checkouts.
 tools/*.lua text eol=lf

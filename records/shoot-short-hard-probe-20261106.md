@@ -37,3 +37,29 @@ W:/build/NEW/probe.wsc
 The self-check report is `build/shoot-short-hard-20261106/mock-b.json`, SHA256 `A13034C95FA2586A2274DD15DBD7C269AE7F9F2B9E3D6DAFB45F3886BCD2597C`. Verifier SHA256 is `2479D74DFA73F84E85EBECE0F047171F7401E9448B254DAE1D223EEC7AF3DE83`. `terminal_path` independently reviews this observer before root launch. No emulator/core was launched by the author or the mock verifier.
 
 Final independent review passed the E382 wrapper and2479 verifier. Its fresh `build/shoot-short-hard-qa-20261106/mock-independent.json` is byte-identical to A13034C9. The review's single-clear and collector-overridden-release findings are both closed with regression cases. Root owns the subsequent fresh run; this preparation record makes no runtime result claim.
+
+## Independent audit of the deliberately stopped run
+
+The preceding unlaunched description is preparation history. Original-source capture `build/bizhawk-wsc-short-hard-20261106-a` was subsequently launched by root and deliberately stopped after repeated stage1 losses. It is **partial**, with no `done.txt`, no final snapshot, no completed summary and no execution of the observer's end-of-run calibration assertions. Its last logged input is relative77148/core77149; that is the last logged update, not a claim that process termination occurred on exactly that update.
+
+The final launch SHA256 is `4E243BABFF0E66AFC3B15580B750C5A1E4DB811DCF60E756B13DF513345837A7`. Independent audit `build/shoot-short-hard-capture-qa-20261106/audit.json` is **F85A85F37E82F64D2A22F28A81AA6EA4FA3D7D2C1D6E2E79A7328D940E3DD1F0**; its rerunnable audit script is beside it. All26 launch-inventoried files match their hashes, and the launch itself makes27 hashed files. A recursive file inventory confirms that there are no additional files hidden in the isolated data directories. Full8MB `loaded-rom.bin` and `probe.wsc` are byte-identical to the original C415 source ROM. The actual executable and all three frozen scripts match launch pins. Configuration paths are isolated to this run; background input, auto-loads and automatic save-RAM persistence are disabled. The reviewer launched no emulator, read no save-file contents and wrote no guest state or ROM. Captured SRAM-domain `.bin` snapshots are evidence, not provided save files.
+
+Natural UI events are positive: difficulty3 at relative4381, timer selector0 at4501, and verified battle entry at5387. The complete captured fields independently show Options difficulty1/timer1 initially, difficulty3/timer1 after the difficulty inputs, and difficulty3/timer0 on row0 after the timer input. The first battle snapshot is stage8/mode7 with timer6750, corresponding to90 seconds at the source75Hz rate. **The immediate `options-short-hard.png` still visibly shows120**, because snapshot4501 precedes the menu repaint. The RAM selector0 and battle6750 establish the90-second selection; this capture does not establish visible90 text in that Options screenshot.
+
+The4791-line trace contains131 state samples,240 added telemetry samples and240 actor samples. Only stages0,8 and1 are logged. Stage8 reaches mode8 result samples at12600/12900 with P1 score15 versus P2 score9; progress becomes0100 and stage1 begins at13099. This positively establishes the stage8 win and subsequent progression.
+
+Stage1 then has seven sampled completed losing rounds:
+
+| First mode8 result sample | P1 score | P2 score |
+|---:|---:|---:|
+| 20700 | 4 | 8 |
+| 28800 | 9 | 15 |
+| 36900 | 6 | 9 |
+| 45300 | 4 | 15 |
+| 53400 | 3 | 23 |
+| 61500 | 6 | 19 |
+| 69900 | 6 | 11 |
+
+The sampled movement supports a policy stall, not an emulator hang. At18600 and18900 P1 remains `02E0,1100` with left held (`0008`), while P2 is at X0060 and much smaller Y. At34800/35100/35400 P1 remains `009C,0E80` while P2 Y changes `06FE→0467→02F0`; both scores stay6/9. These are equal-position samples spanning300 and600 updates, respectively, not proof of continuous immobility between samples. Later frames and inputs continue. At77100 the next stage1 battle is still mode7, timer570, HP8/8 and score2/16. The last state sample is76800 with progress0400 and zero recorded watched accesses.
+
+No stage11/Shoot state, Shoot entry capture, row-clear completion, early-stop line or final IRQ/lifetime completion is recorded. This run does not establish Shoot reachability or absence of future watched accesses. No campaign completion, terminal lifetime closure, emulator defect or guest-state repair is inferred from the stalled input policy. The proposed replacement input policy is separate work.
