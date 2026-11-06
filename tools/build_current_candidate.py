@@ -220,7 +220,9 @@ EXPECTED_LAYERS = {
     "title-background.gba": "494D14A2D4661FEA5DF36A9D12D57D31B2204924702CAB95DB3CE12A857F58B6",
     "result-language.gba": "A4CB752A8E0CFA3D639E645531B5AFCCB0CE25DD3BF202F62FE132E97385328F",
     "shoot-caller.gba": "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738",
-    "current-candidate.gba": "72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC",
+    "controller-bridge.gba": "72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC",
+    "shoot-attack.gba": "B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B",
+    "current-candidate.gba": "8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717",
 }
 
 
@@ -526,6 +528,8 @@ def main() -> int:
     result_language = output / "result-language.gba"
     shoot_caller = output / "shoot-caller.gba"
     controller_domain = intermediate / "shoot-controller-domain.json"
+    controller_bridge = output / "controller-bridge.gba"
+    shoot_attack = output / "shoot-attack.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -774,7 +778,11 @@ def main() -> int:
     run("analyze_shoot_controller_domain.py", args.wsc15, shoot_caller, "--output", controller_domain)
     require_hash(controller_domain, "5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46",
                  "source controller obligations; coupled coordinate domain remains open")
-    run("build_shoot_controller_adapter.py", shoot_caller, candidate,
+    run("build_shoot_controller_adapter.py", shoot_caller, controller_bridge,
+        "--manifest", output / "controller-bridge.json")
+    run("build_shoot_attack_dispatch.py", controller_bridge, args.gba, args.wsc10, args.wsc15, shoot_attack,
+        "--manifest", output / "shoot-attack.json")
+    run("build_shoot_spatial_subset.py", shoot_attack, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1151,11 +1159,21 @@ def main() -> int:
     require_hash(caller_review, "B079E66FA7DE910679E6D83539F8EAABF2BD1642A4B65D98F7140D10B67062F5",
                  "independent synchronous Shoot caller and terminal-router verification")
     controller_review = intermediate / "shoot-controller-bridge-verification.json"
-    run("verify_shoot_controller_adapter.py", shoot_caller, candidate, "--production",
-        "--gba", args.gba, "--wsc15", args.wsc15, "--manifest", output / "current-candidate.json",
+    run("verify_shoot_controller_adapter.py", shoot_caller, controller_bridge, "--production",
+        "--gba", args.gba, "--wsc15", args.wsc15, "--manifest", output / "controller-bridge.json",
         "--domain-proof", controller_domain, "--output", controller_review)
     require_hash(controller_review, "ACCAA6312E68606199B35F5588BEE28C860F0AF6CD9C051636A02A61C4053525",
                  "independent internal controller bridge and unchanged external route")
+    attack_review = intermediate / "shoot-attack-dispatch-verification.json"
+    run("verify_shoot_attack_dispatch.py", controller_bridge, shoot_attack, args.gba, args.wsc10, args.wsc15,
+        output / "shoot-attack.json", "--output", attack_review)
+    require_hash(attack_review, "02E7819CC861561CC8E747683420294B7CB0F9A691AE2BEF4A355261F29368FD",
+                 "independent Shoot type1A/1B consumers and preserved legacy dispatch")
+    spatial_review = intermediate / "shoot-spatial-subset-verification.json"
+    run("verify_shoot_spatial_subset.py", shoot_attack, candidate, args.wsc15,
+        "--manifest", output / "current-candidate.json", "--output", spatial_review)
+    require_hash(spatial_review, "4F5A9EDA33FF91BE70A94DB5240814ADA94EAEBD2CE2F7E6B1FCF00E729543B9",
+                 "independent complete source-normal pattern subset and actual ARM semantics")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1285,6 +1303,10 @@ def main() -> int:
             "preserving the other six API-buffer bytes per write under the initialized functional-backend contract; "
             "existing other-player, HUD/scroll and selective palette phases then run in source order through7534; "
             "the earlier snapshot and exclusive palette ownership remain caller preconditions, and source observers remain unresolved; "
+            "all source-defined normal8EF3pattern selections are represented, including exhaustedXtable paths, "
+            "while unrelated source control transfers remain unresolved; "
+            "source Shoot attack types1A/1B now have native typed consumers, no-freeze reaction constructors "
+            "and the retained HP/orb helper without changing old dispatch destinations; "
             "external initializer/scene/menu entry, "
             "reachable controller gameplay, unresolved player spatial lifetimes, audible timbre parity, "
             "playback and runtime validation, "
@@ -1309,6 +1331,22 @@ def main() -> int:
             "producer_domain_sha256": "5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46",
             "producer_domain_closed": False, "external_scene_route_installed": False,
             "scope": "Internal call chain only; actual Shoot entry and coupled player X/Y lifetime remain unproved",
+        },
+        "shoot_attack_dispatch": {
+            "types": ["1A", "1B"], "entry": "086FD000", "hook": "0836EB9C",
+            "verification_sha256": "02E7819CC861561CC8E747683420294B7CB0F9A691AE2BEF4A355261F29368FD",
+            "declared_bytes": 1828, "changed_bytes": 1375, "new_RAM_bytes": 0,
+            "legacy_dispatch_preserved": True, "native_HP_orb_helper": "08341034",
+            "external_scene_route_installed": False, "historical_E5_cause_resolved": False,
+            "scope": "Source new attack reactions use existing native services and converted records; actual Shoot reachability remains open",
+        },
+        "shoot_spatial_subset": {
+            "verification_sha256": "4F5A9EDA33FF91BE70A94DB5240814ADA94EAEBD2CE2F7E6B1FCF00E729543B9",
+            "declared_bytes": 28, "changed_bytes": 27,
+            "source_normal_pattern_pairs": 2568421376, "newly_accepted_pairs": 963404288,
+            "nonpattern_pairs_unresolved": 1726545920,
+            "complete_controller_input_domain": False, "external_scene_route_installed": False,
+            "scope": "All source-defined normal patterns now represented; source unrelated control transfers and producer reachability remain open",
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

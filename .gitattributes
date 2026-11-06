@@ -1,12 +1,14 @@
 # Independent verifiers pin Python source bytes across Windows checkouts.
 tools/*.py text eol=lf
-# Preserve the six existing CRLF files used by the frozen build/runtime.
+# Preserve CRLF source bytes used by the frozen build/runtime.
 tools/build_current_candidate.py text eol=crlf
 tools/encode_digicode_reading.py text eol=crlf
 tools/mgba_headless_gdb_capture.py text eol=crlf
 tools/probe_physics_consumers.py text eol=crlf
 tools/verify_native_capture_invariants.py text eol=crlf
 tools/verify_shoot_palette_transition.py text eol=crlf
+tools/build_shoot_attack_dispatch.py text eol=crlf
+tools/verify_shoot_spatial_subset.py text eol=crlf
 
 # Preserve observer source hashes across Windows checkouts.
 tools/*.lua text eol=lf

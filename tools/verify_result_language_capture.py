@@ -146,6 +146,20 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717':
+        restored = bytearray(result_predecessor)
+        restored[0x5CC0F0:0x5CC0F4] = bytes.fromhex('320000AA')
+        restored[0x6FE000:0x6FE018] = b'\xff' * 24
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == 'B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B',
+             'whole source-normal spatial extension inverse to exact attack repair')
+    if sha(result_predecessor) == 'B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B':
+        restored = bytearray(result_predecessor)
+        restored[0x36EB9C:0x36EBA0] = bytes.fromhex('04808FE2')
+        restored[0x6FD000:0x6FD720] = b'\xff' * 0x720
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC',
+             'whole Shoot attack extension inverse to exact controller bridge')
     if sha(result_predecessor) == '72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC':
         restored = bytearray(result_predecessor)
         need(restored[0x5C0A00:0x5C0A04] == bytes.fromhex('BE1600EA'), 'reviewed controller bridge')

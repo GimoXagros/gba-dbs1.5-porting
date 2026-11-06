@@ -1,0 +1,13 @@
+# Shoot grab call domain — 2026-11-06
+
+The actual source normal-input callback `4090:07FA` calls the generic grab routine during unpaused Shoot input. There is no opponent-kind exclusion on this caller path. This finding does **not** establish a reachable grab or an original-game defect.
+
+`741197..7411BA` computes the current P1/P2 coordinate differences into both actors' `+3E/+40`. Mode2 dispatch `74120D` selects table word `099D` at `74121D`, reaching `74129D`; it skips opponent AI input, not the grab routine. Without pause flags or Start edges, `7412D5` branches directly to `741305`, which pushes upper P2 and P1 and calls `743001` at `74130F`. The pause continuation also reaches this call whenever its pause flags become zero. No actor-kind field is read along those call paths.
+
+The callee still requires exact equal feet Y and both `+6:1` clear. P1 must satisfy its input/state/facing/range gates, and P2 must have `+8:4002` clear and `+5F=0`. The established zero-opponent-input contract excludes P2 grabbing P1; it does not exclude P1 grabbing P2. The mode2 common-player Shoot helper `747E72..747F41` handles scoring, timers and freeze/palette effects and supplies no direct grab-immunity or range assignment.
+
+If the P1-grabs-P2 branch is admitted, `743118` biases both pointers by `+96`, then selects P1 event52 and victim event48 through `4FFF:24CB`. The latter consumer reads the presentation's table base and adds `event*8` directly (`7524D4..752502`) with no event-count guard. The ordinary upper presentation at `3CF410` has six declared events. Its literal event48-index bytes decode as words `[0,424,65283,4]`; these are outside the declared event table, not an ordinary upper victim rectangle. Consequently the ordinary B1CC halfextent112 proof cannot silently cover a generic grab continuation.
+
+The next unresolved contract is a simultaneous reachable state: equal nonairborne feet Y, within grab distance, with victim immunity flags clear. The ordinary-route simulation has positive-Y positions that intersect support rows, but that alone is not an input witness. Grounded P1 feet are not necessarily multiples of128: landing can retain the integrated low bits. Neither a modulo128 test nor sampled route endpoints excludes the interaction.
+
+Validation: `tools/analyze_shoot_grab_call_domain.py` checks exact caller, victim gate, presentation recipient and unchecked indexing instructions directly against the original WSC. Six direct mutations are rejected. Fresh output: `build/shoot-grab-call-domain-20261106/evidence-a.json`. No frozen v69 dependencies, ROM, runtime, save or guest memory were changed.
