@@ -1,0 +1,13 @@
+# Ground-accepting recovery v4 independent review
+
+The amended v4 wrapper SHA-256 `70B73AB398EAEEC83B117EEF06DD5FFFCEF9B7FACDA107C656B5E140F1D08C91` passes independent review for a bounded ordinary-input observation. The previous fixed-age2ECB version remains withdrawn: its age4 edge could occur during an airborne callback and be ignored.
+
+The amendment changes only the frozen v2 recovery body and resets its new per-recovery `jump_age` field at recovery start. At ages4..48 it samples the first player's callback, segment, identity and flags. A single pulse begins only for identity0 in668E:115D idle or668E:11C9 walk, airborne bit clear, form100 clear, and down not held. It then holds A for twelve samples and suppresses B throughout the existing sixty-sample recovery. Age48 is the last possible start, so all twelve samples fit; age49 never starts a clipped pulse. While waiting, A is explicitly released, producing a fresh edge when the acceptance state appears. No velocity-zero or approximate landing inference is used.
+
+Independent direct source decoding confirms both callbacks poll224,36D,175, then1D6 before ordinary movement. With B and down absent the earlier helpers do not take those actions. Source1D6 at766AB6 checks fresh edge40 and installs jump startup16E8/event4 when form100 is clear. The previously checked default base/evolved startup needs at most nine uninterrupted held samples. An external hit or pause between the sampled state and callback can still prevent acceptance; this review does not claim guaranteed navigation.
+
+Independent rerun of the actual nested Lua harness passed22 full routes plus17 acceptance scenarios and rejected eight mutations. Tests cover landing immediately, atage13, at48, too late at49, never landing, each acceptance guard, base/evolved walking, repeated recoveries, cooldown and reset cancellation. Fresh report `build/shoot-jump-hold-qa-20261106/v4-ground-independent.json` is byte-identical to the author's `57E9E06FE2255C545FCFE3A1F93D16CD285B7A5E8DFA276F8F38FF8C3367FF57`. Verifier SHA-256 is `A550927476A9DA3871565BA04E2ADE47E69F875E039EF92F840AC5F59E3DB284`.
+
+The wrapper leaves menu, normal chase, collection, pre-recovery controls, recovery direction/duration, cooldown, capture cap, reset guards and positive Shoot completion rules intact. The frozen original-setter final release bypasses every policy layer, including an active delayed pulse. Launcher remains reviewed `75B0C4F84E6181547C9596B3245F8FB882220A24FC7C3F2F8143C69EF230FFE7` and requires this exact final wrapper hash.
+
+No emulator, guest write, save or ROM modification was performed. Root owns the subsequent run and its observed outcome.
