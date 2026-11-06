@@ -219,7 +219,8 @@ EXPECTED_LAYERS = {
     "shoot-scene.gba": "428B1CF6B459E077972BD621A2C4C689DFE9E36FB1372BB2EB82DA5B3075F281",
     "title-background.gba": "494D14A2D4661FEA5DF36A9D12D57D31B2204924702CAB95DB3CE12A857F58B6",
     "result-language.gba": "A4CB752A8E0CFA3D639E645531B5AFCCB0CE25DD3BF202F62FE132E97385328F",
-    "current-candidate.gba": "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738",
+    "shoot-caller.gba": "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738",
+    "current-candidate.gba": "72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC",
 }
 
 
@@ -523,6 +524,8 @@ def main() -> int:
     title_background = output / "title-background.gba"
     result_art = intermediate / "result-approved-art.json"
     result_language = output / "result-language.gba"
+    shoot_caller = output / "shoot-caller.gba"
+    controller_domain = intermediate / "shoot-controller-domain.json"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -766,7 +769,12 @@ def main() -> int:
                  "approved native result pixels regenerated from original inputs")
     run("build_result_language.py", title_background, args.gba, args.wsc15, result_art, result_language,
         "--manifest", output / "result-language.json")
-    run("build_shoot_caller_resident.py", result_language, args.gba, args.wsc15, candidate,
+    run("build_shoot_caller_resident.py", result_language, args.gba, args.wsc15, shoot_caller,
+        "--manifest", output / "shoot-caller.json")
+    run("analyze_shoot_controller_domain.py", args.wsc15, shoot_caller, "--output", controller_domain)
+    require_hash(controller_domain, "5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46",
+                 "source controller obligations; coupled coordinate domain remains open")
+    run("build_shoot_controller_adapter.py", shoot_caller, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1138,10 +1146,16 @@ def main() -> int:
     require_hash(result_review, "50351DA73917A2884CAAC4AFDAC40FFB6E1F42E8EE5B30D34B5B9EF064C5775F",
                  "independent four-language result resource and population verification")
     caller_review = intermediate / "shoot-caller-resident-verification.json"
-    run("verify_shoot_caller_resident.py", result_language, candidate, args.gba, args.wsc15,
-        output / "current-candidate.json", "--output", caller_review)
+    run("verify_shoot_caller_resident.py", result_language, shoot_caller, args.gba, args.wsc15,
+        output / "shoot-caller.json", "--output", caller_review)
     require_hash(caller_review, "B079E66FA7DE910679E6D83539F8EAABF2BD1642A4B65D98F7140D10B67062F5",
                  "independent synchronous Shoot caller and terminal-router verification")
+    controller_review = intermediate / "shoot-controller-bridge-verification.json"
+    run("verify_shoot_controller_adapter.py", shoot_caller, candidate, "--production",
+        "--gba", args.gba, "--wsc15", args.wsc15, "--manifest", output / "current-candidate.json",
+        "--domain-proof", controller_domain, "--output", controller_review)
+    require_hash(controller_review, "ACCAA6312E68606199B35F5588BEE28C860F0AF6CD9C051636A02A61C4053525",
+                 "independent internal controller bridge and unchanged external route")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1191,8 +1205,8 @@ def main() -> int:
             "to native GBA slot 0x03004D3C and installed Shoot rule resources; the "
             "resident 26-entry upper-state population translates 2320 source code bytes, "
             "its fourth P2 record, intro palette table, target table, native RNG role, "
-            "and internal state transitions, while deliberately terminating both 9908 "
-            "calls at an unimplemented boundary; a final dependent layer corrects inverted "
+            "and internal state transitions; the final resident boundary layer connects both 9908 "
+            "calls to same-update SELECT/APPLY while the external scene route remains closed; a dependent layer corrects inverted "
             "P1/P2 constructor arguments in the child and auxiliary components and inverted "
             "auxiliary player links, then installs source 71D1..7394 player binding with "
             "a fifteen-entry HP table and allocation-free reuse of the existing auxiliary body; "
@@ -1272,7 +1286,7 @@ def main() -> int:
             "existing other-player, HUD/scroll and selective palette phases then run in source order through7534; "
             "the earlier snapshot and exclusive palette ownership remain caller preconditions, and source observers remain unresolved; "
             "external initializer/scene/menu entry, "
-            "external controller 9908/9A1B connection, audible timbre parity, "
+            "reachable controller gameplay, unresolved player spatial lifetimes, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
@@ -1289,10 +1303,17 @@ def main() -> int:
             "external_hooks_changed": False,
             "scope": "Synchronous SELECT/APPLY and exact stage11 terminal routing; external route remains closed pending reached lifetime contracts",
         },
+        "resident_controller_bridge": {
+            "boundary": "085C0A00", "target": "085C6500", "declared_bytes": 4,
+            "verification_sha256": "ACCAA6312E68606199B35F5588BEE28C860F0AF6CD9C051636A02A61C4053525",
+            "producer_domain_sha256": "5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46",
+            "producer_domain_closed": False, "external_scene_route_installed": False,
+            "scope": "Internal call chain only; actual Shoot entry and coupled player X/Y lifetime remain unproved",
+        },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
             "initializer_entry": "08629800", "phase_12C6_entry": "085C9B00",
-            "external_route_installed": False, "controller_boundary_connected": False,
+            "external_route_installed": False, "controller_boundary_connected": True,
             "scope": "22 source-ordered resident scene placements; live palette/IRQ/camera and controller domains remain gates",
         },
         "sources": {

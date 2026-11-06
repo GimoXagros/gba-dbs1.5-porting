@@ -146,8 +146,15 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
-    if sha(rom) == '9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738':
-        restored = bytearray(rom)
+    if sha(result_predecessor) == '72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC':
+        restored = bytearray(result_predecessor)
+        need(restored[0x5C0A00:0x5C0A04] == bytes.fromhex('BE1600EA'), 'reviewed controller bridge')
+        restored[0x5C0A00:0x5C0A04] = bytes.fromhex('1EFF2FE1')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738',
+             'exact whole-ROM inverse of controller bridge')
+    if sha(result_predecessor) == '9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738':
+        restored = bytearray(result_predecessor)
         for start, end in ((0x5C6500, 0x5C652C), (0x6FC300, 0x6FC334)):
             restored[start:end] = b'\xff' * (end - start)
         result_predecessor = bytes(restored)

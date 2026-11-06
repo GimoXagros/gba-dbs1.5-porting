@@ -1,0 +1,24 @@
+# Controller bridge independent QA — 2026-11-06
+
+The actual isolated controller component passes independent verification. It connects only the internal boundary085C0A00 to the existing44-byte adapter085C6500 and preserves the historical draft interface. External scene entry stays closed. This is resident implementation groundwork, not actual Shoot gameplay acceptance or a completed player-domain certificate.
+
+The independently derived encoding is `EA0016BE`, replacing `E12FFF1E`. Applying only this word to the exact9E22 predecessor yields SHA-256 `72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC`. QA read the actual `build/shoot-controller-bridge-20261106-a/controller.gba` and its component manifest, and emitted only JSON evidence.
+
+The new checks independently verify complete-ROM inverse outside that single word, the retained adapter and its SELECT/APPLY dependencies, the actual upper callers at085C0274 and085C0870, and their following RNG continuations. Forty composed execution cases enter through each real caller BL, traverse the new tail branch and existing adapter, and return to BL+4 with the same registers, stack, memory writes and RNG count as direct adapter execution. The CPU interpreter and semantic controller oracle are reused from the frozen resident verifier SHA-256 `7CDD6E52B069FD50C8607E0FAD3DBF2A51835338429668CF7343BC5E9977DE5D`; its full historical case campaign was not repeated.
+
+Five structural mutations are rejected: wrong target, BL instead of B, an outside-byte edit, dependency corruption and caller corruption. Two additional direct execution mutations bypass hashes, inverse and instruction checks: a BL that overwrites the caller return, and an interior target that skips the saved-register frame. Both fail the actual composed execution. The unchanged draft CLI passed on its original223C predecessor. Three direct route checks also reject changed case5/progress hooks or installed selector bytes.
+
+Frozen verifier SHA-256: `94211705E818C3C6C4124E5502E3A827CDA27C6BD015CE8651102E0CBA70353D`.
+Actual production evidence `build/shoot-controller-bridge-qa-20261106/actual-production.json` SHA-256: `ACCAA6312E68606199B35F5588BEE28C860F0AF6CD9C051636A02A61C4053525`.
+
+External closure is checked against the original retail image: case5 allocation33FCCC..33FDBF, callback34059C..3407F3 and progress neighborhood0B9E48..0B9E77 remain identical. The selector/progress reservation5C9900..5C9AFF remains FF. The frozen conservative reference scanner covers all pointer alignments, ROM mirrors, ARM branches/literals/ADR and Thumb branches/literals/ADR. For the existing router/adapter spans it finds no previous incoming reference from outside those spans; the output adds exactly the declared internal branch at5C0A00. Internal self-references remain unchanged. This plus whole-ROM inversion rules out any additional external activation in this change; it is not a new whole-program reachability proof.
+
+The production CLI requires reviewed `shoot-controller-domain.json`, SHA-256 `5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46`. Its status is OPEN_DOMAIN, with both `complete_controller_input_domain` and `external_scene_entry_authorized` false. Source and baseline identities are exact. Review confirmed that pursuit remains conditional and the horizontal counterstates are not relabeled as a positive reachability certificate.
+
+The horizontal-domain investigation found counterstates to simple all-Y bounds. Source phase guards can produce `7009 → 7136 → 7137 → 7264 → 7265 → 7392` while sampling solid cells. These are instruction-level counterstates, not evidence that normal player inputs reach the starting state. `tools/analyze_shoot_outer_x.py` records them with statusOPEN_DOMAIN and explicitly never issues a producer-domain certificate. The negative-feet path alone preserves96..7071 across1,778,880 cases; that fact does not close the combined trajectory. Actual player reachability or a coupled XY invariant remains required before external scene activation.
+
+Independent action review also found the base14 airborne cycle `22 → 18 → 20 → 19 → 22`: endtype2's nonlanding branch781904 reaches ordinary hit/key transitions. Row19 accepts edge80 through781759; row22 needs a fresh hit/block because entry clears old hit flags. Row23 is landing-locked. A universal two-launch ascent bound is therefore not established. The combined OPEN_DOMAIN report records this distinction. Actual hit-target geometry, special continuations and terminal ownership remain open.
+
+CLI: `verify_shoot_controller_adapter.py BEFORE AFTER --production --gba RETAIL --wsc15 SOURCE --manifest controller.json --domain-proof shoot-controller-domain.json --output QA.json`.
+
+No emulator, save or guest-memory access occurred. The internal production bridge passes; external scene entry remains closed and no runtime acceptance is claimed.

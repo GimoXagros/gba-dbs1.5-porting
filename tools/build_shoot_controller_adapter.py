@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Draft the same-update SELECT/APPLY adapter; gate installation on initializer.
+"""Connect the resident SELECT/APPLY chain while external scene entry stays closed.
 
-Until INPUT_SHA256 is pinned to the verified full-initializer predecessor,
-only --draft-proof is permitted. It never emits or changes a ROM boundary.
+The historical --draft-proof path still emits no ROM. Production preserves
+the v68 external-route gate; it does not certify unresolved player domains.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from capstone import CS_ARCH_ARM, CS_MODE_ARM, Cs
 from keystone import KS_ARCH_ARM, KS_MODE_ARM, Ks
 
 BASE, ADAPTER, BOUNDARY = 0x08000000, 0x5C6500, 0x5C0A00
-INPUT_SHA256: str | None = None
+INPUT_SHA256 = "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738"
 DRAFT_INPUT_SHA256 = "223C64C6D19ACE7610CC7FE7D276DC24CE47748C424894D2A589220F48B21C6E"
 CONTRACTS = (
     (0x5C6000, 0xB4, "50B090CE223B5B5321F88FD96456B0EFAD263B114E4ED12F7AB77CBFDD4830CF"),
@@ -81,7 +81,6 @@ def main() -> int:
     p.add_argument("--draft-proof", action="store_true")
     args = p.parse_args()
     if not args.draft_proof:
-        demand(INPUT_SHA256 is not None, "full initializer/object lifetime prerequisite is not yet pinned; no boundary change emitted")
         demand(args.output is not None, "output path required")
     before = args.input.read_bytes()
     expected = DRAFT_INPUT_SHA256 if args.draft_proof else INPUT_SHA256
@@ -89,7 +88,9 @@ def main() -> int:
     for site, size, fingerprint in CONTRACTS:
         demand(sha(before[site:site + size]) == fingerprint, "resident SELECT/APPLY/lower callback dependency")
     blob = adapter()
-    demand(len(blob) == 44 and before[ADAPTER:ADAPTER + len(blob)] == b"\xff" * len(blob), "adapter Expected Write")
+    demand(len(blob) == 44, "adapter size")
+    expected_adapter = b"\xff" * len(blob) if args.draft_proof else blob
+    demand(before[ADAPTER:ADAPTER + len(blob)] == expected_adapter, "exact adapter predecessor bytes")
     demand(before[BOUNDARY:BOUNDARY + 4] == bytes.fromhex("1EFF2FE1"), "exact existing BX LR boundary")
     references = inbound(before, ADAPTER, len(blob))
     demand(not references, "inbound reference reaches actual adapter bytes")
@@ -102,17 +103,22 @@ def main() -> int:
               "adapter_hex": blob.hex().upper(), "adapter_sha256": sha(blob),
               "dependency_contracts": CONTRACTS, "incoming_actual_interval": references,
               "boundary_changed": not args.draft_proof,
-              "scope": "same-update SELECT then APPLY with real resident callbacks; no scene/menu hook"}
+              "scope": "resident SELECT/APPLY connection only; external scene/menu entry remains closed and player spatial/terminal lifetimes remain unproved"}
     if not args.draft_proof:
         patch, _ = Ks(KS_ARCH_ARM, KS_MODE_ARM).asm(f"b 0x{BASE + ADAPTER:X}", BASE + BOUNDARY)
         result = bytearray(before)
-        result[ADAPTER:ADAPTER + len(blob)] = blob
         result[BOUNDARY:BOUNDARY + 4] = bytes(patch)
         changes = [i for i, (a, b) in enumerate(zip(before, result, strict=True)) if a != b]
-        demand(all(ADAPTER <= i < ADAPTER + 44 or BOUNDARY <= i < BOUNDARY + 4 for i in changes), "controller diff containment")
+        demand(changes and all(BOUNDARY <= i < BOUNDARY + 4 for i in changes), "four-byte controller boundary containment")
+        restored = bytearray(result)
+        restored[BOUNDARY:BOUNDARY + 4] = before[BOUNDARY:BOUNDARY + 4]
+        demand(restored == before, "whole-ROM boundary inverse")
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_bytes(result)
-        report.update(output_sha256=sha(result), changed_bytes=len(changes), boundary_patch=bytes(patch).hex().upper())
+        report.update(output_sha256=sha(result), changed_bytes=len(changes), boundary_patch=bytes(patch).hex().upper(),
+                      expected_writes=[{"offset": BOUNDARY, "size": 4,
+                                        "before": before[BOUNDARY:BOUNDARY + 4].hex().upper(),
+                                        "after": bytes(patch).hex().upper()}])
     if args.manifest:
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
         args.manifest.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
