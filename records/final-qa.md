@@ -1,5 +1,9 @@
 # Final QA gate
 
+## 2026-11-09 additional score-only cheat authorization
+
+The user explicitly permits fixing D Spirit at999 when ordinary play cannot reach stage7. New original-reference runs may write only the verified P1 D Spirit score word, with an address/value/timing ledger. This narrowly supersedes the guest-write prohibition below; it does not authorize changing HP, stage, progression, registers, the source save, or the final GBA candidate. Runs remain hidden and use isolated save copies. Cheat-assisted observations must be identified separately from ordinary play and final port QA. Stage7 requires an HP victory, so a score cheat alone does not prove Shoot entry.
+
 ## 2026-11-09 explicit development observation authorization
 
 The user now permits a **copy of the supplied WSC save** for hidden, original-game-only development observation. This supersedes the earlier prohibition on reading, hashing, copying or loading that input within this scope. It does not authorize modifying the user's original file, injecting guest memory/registers, or treating development observations as completed port/final QA.
