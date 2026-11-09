@@ -6,6 +6,8 @@ The user now permits a **copy of the supplied WSC save** for hidden, original-ga
 
 The protected source and the new ignored copy at `build/wsc-user-save-copy-20261109/supplied-copy.sav` both hash `051055F0542503C63D77815C2B11F33A3DF420E6DD93D02D92779A430B02E51F` (32,768 bytes). `copy.json` records the authorization and equality check. Each emulator run uses another isolated copy. Earlier invalidated observations remain invalidated; this permission applies to new work. All final-port completion requirements below remain open.
 
+The new original title/menu observation completed with ordinary Start input and independently passed audit `E28DD2E2878ECB0F03A8B193CB657DCBC870A4891B75E49DA5AB305F64A1C169`. The entire live cartridge SRAM matches the copy after two exact source startup stores; no arbitrary fields were ignored. [The observation record](wsc-authorized-save-menu-qa-20261109.md) preserves the initial comparison failure and separate prelaunch Windows-path failure. This establishes neither Shoot entry nor final GBA compatibility.
+
 ## Deferred reference input
 
 | ID | Platform | Supplied filename | Size | SHA-1 | SHA-256 | State |
