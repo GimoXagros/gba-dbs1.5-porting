@@ -1,6 +1,7 @@
 # Independent bounded native entry observer QA
 
-**PASS for the frozen Lua composition and authorized-write boundary.** This permits
+**PASS for the tested frozen Lua composition and authorized-write boundary.** The
+checkpoint failure edge below qualifies the successful-save fixture. This permits
 the root-owned bounded development observation of experimental ROM
 `D0A01A7FD0EE768A22BA4A1CC197FCB7B132E38BB52D1810093B571F4AE9DE7C`.
 It does not establish actual native Shoot arrival, resolve E5, or approve a final ROM.
@@ -88,6 +89,16 @@ Reproduce from repository root, supplying a fresh output filename:
 ~~~powershell
 & 'C:/Users/김기호/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' -X utf8 tools/verify_gba_shoot_entry_observer.py --output build/gba-shoot-entry-observer-qa-20261109/new-report.json
 ~~~
+
+Subsequent independent actual-Lua injection found a checkpoint error edge in the
+frozen E620 module: healthy outcome is assigned before the savestate API returns.
+A false return propagates to the driver's failure handler, whose existing-outcome
+guard then retains the healthy outcome. The success fixture above assumed a true
+save return. Root retained the ongoing run unchanged; its capture auditor must
+require the actual nonempty checkpoint and healthy snapshot independently of the
+done marker. A minimal correction and explicit false/throw API checks are pending
+after the immutable observation completes. No new runtime is justified solely by
+that observer correction if the original checkpoint is independently validated.
 
 No actual GBA execution, scene arrival, first real E5 cause, terminal bot, full
 campaign or final gameplay QA was performed. A core stall may prevent bulk
