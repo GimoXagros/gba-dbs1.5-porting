@@ -10,6 +10,7 @@ local pending,seen,ring,last,write_ledger={}, {}, {}, {}, {}
 local serial,captures,score_writes,boss_writes=0,0,0,0
 local consumed={}
 local outcome,scene,root5,restored,activation,hit_pre,hit
+local boss_checkpoint=false
 local function read(a,n)
  local d,o
  if a>=0x02000000 and a+n<=0x02040000 then d,o="EWRAM",a-0x02000000
@@ -38,9 +39,16 @@ local function pair(boss)
   or read(p+0x14,4)~=p or read(q+0x14,4)~=q
   or read(p+0x18,4)~=q or byte(q+0x10)~=1 or read(q+0x18,4)~=p then return end
  if boss then
+  local stage=byte(0x0300231E)
+  local kind,qp1,qp0,ap1,ap0
+  if stage==7 then kind,qp1,qp0,ap1,ap0=3,0x0834DFE0,0x0834E27C,0x08341C00,0x08341E70
+  elseif stage==11 then kind,qp1,qp0,ap1,ap0=6,0x085D0000,0x085D1000,0x085D029C,0x085D1100
+  else return end
   local a=read(0x03004D3C,4)
   if word(q+4)%16~=3 or byte(q+0x11)~=15 or not active(a) or a==p or a==q
-   or word(a+4)%16~=6 or read(q+0x28,4)~=a or read(a+0x28,4)~=q or read(a+0x18,4)~=p then return end
+   or word(a+4)%16~=kind or read(q+0x28,4)~=a or read(a+0x28,4)~=q or read(a+0x18,4)~=p
+   or read(q+0xF0,4)~=qp1 or read(q+0xF4,4)~=qp0
+   or read(a+0xF0,4)~=ap1 or read(a+0xF4,4)~=ap0 then return end
  end
  return p,q
 end
@@ -215,29 +223,45 @@ local function capture(e)
  end
  client.screenshot(out.."/"..name..".png")
 end
+local function checkpoint(name)
+ local ok,saved=pcall(savestate.save,out.."/"..name..".State",true)
+ if not ok or saved~=true then fail("checkpoint-save-failed",name..":"..tostring(saved));return false end
+ local f=assert(io.open(out.."/"..name..".txt","w"))
+ f:write(string.format("core=%d input_relative=%d stage7_consumed=%s %s\n",emu.framecount(),emu.framecount()-initial,tostring(consumed[7]==true),state()));f:close()
+ return true
+end
 local function flush()
  for _,entry in ipairs(write_ledger)do
   local f=assert(io.open(out.."/shoot-entry-writes.txt","a"));f:write(entry.."\n");f:close()
  end;write_ledger={}
+ if boss_writes==1 and not boss_checkpoint and not outcome then
+  boss_checkpoint=true
+  local p,q=pair(true)
+  if p and byte(0x0300231E)==7 and live() and positive(word(p+0x64)) and word(q+0x64)==1 then
+   if checkpoint("stage7-hp1") then queue("stage7-checkpoint",state())end
+  else fail("stage7-checkpoint-contract",state())end
+ end
  if activation and not outcome then
   local p,q=pair(true)
   if scene and not active(scene.owner) and p and root5 and restored and positive(scene.hp)
    and root5.hp==scene.hp and restored.hp==scene.hp and restored.owner==scene.owner
    and activation.owner==scene.owner and p==scene.first and p==root5.first
    and word(scene.owner+0x54)==scene.hp and word(p+0x64)==scene.hp and live()
-   and byte(0x0300231E)==11 and word(0x0300450A)&4~=0 then outcome="healthy-native-shoot-activation"
+   and byte(0x0300231E)==11 and word(0x0300450A)&4~=0 then
+   if checkpoint("healthy-activation") then outcome="healthy-native-shoot-activation";queue("healthy-activation",state())end
   else fail("activation-contract",state())end
-  if outcome=="healthy-native-shoot-activation" then
-   queue("healthy-activation",state())
-   assert(savestate.save(out.."/healthy-activation.State",true)==true,"genuine healthy activation state save failed")
-  end
  end
  for _,e in ipairs(pending)do capture(e)end;pending={}
 end
 local function finish()
  flush()
+ local failure_saved=false
+ if outcome and outcome:match("^failure:") then
+  local ok,saved=pcall(checkpoint,"failure-observed");failure_saved=ok and saved==true
+ end
  for n=math.max(1,serial-255),serial do log(ring[(n-1)%256+1])end
  outcome=outcome or "bounded-no-activation"
+ log("failure_checkpoint_saved="..tostring(failure_saved))
  log(string.format("summary outcome=%s score_writes=%d boss_writes=%d stage7_consumed=%s stage11_writes=0 initial_core=%d final_core=%d %s",outcome,score_writes,boss_writes,tostring(consumed[7]==true),initial,emu.framecount(),state()))
  local f=assert(io.open(out.."/shoot-entry-done.txt","w"));f:write(outcome);f:close()
  return outcome
