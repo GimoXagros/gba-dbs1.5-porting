@@ -146,6 +146,20 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7':
+        restored = bytearray(result_predecessor)
+        restored[0x36E5EC:0x36E5F0] = bytes.fromhex('0500A0E1')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '18BBA3DF3A2634828A80033F6BA5E788C58CD1C78B169F502C99663BE514EBD1',
+             'whole fatal-callback hook inverse to reviewed transition layer')
+    if sha(result_predecessor) == '18BBA3DF3A2634828A80033F6BA5E788C58CD1C78B169F502C99663BE514EBD1':
+        restored = bytearray(result_predecessor)
+        restored[0xD0BE8:0xD0BEC] = bytes.fromhex('DA1AFDEB')
+        for start, size in ((0x6FF600, 288), (0x6FF9C0, 1092), (0x6FFE10, 192)):
+            restored[start:start + size] = b'\xff' * size
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA',
+             'whole guarded transition inverse to exact v72')
     if sha(result_predecessor) == '025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA':
         restored = bytearray(result_predecessor)
         restored[0x6FF240:0x6FF28C] = b'\xff' * 76

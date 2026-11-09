@@ -17,3 +17,6 @@ tools/bizhawk_probe_gba_collision.lua text eol=crlf
 
 # Preserve the result policy input digest in independent reports.
 localization/result-labels.json text eol=lf
+
+# The native layout ledger is a byte-pinned build input.
+records/shoot-guarded-transition-layout-20261109.json text eol=lf

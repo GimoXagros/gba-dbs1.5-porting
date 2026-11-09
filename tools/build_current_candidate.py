@@ -224,7 +224,9 @@ EXPECTED_LAYERS = {
     "shoot-attack.gba": "B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B",
     "shoot-spatial-subset.gba": "8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717",
     "shoot-static-companion-clear.gba": "35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A",
-    "current-candidate.gba": "025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA",
+    "shoot-projectile-clear.gba": "025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA",
+    "shoot-guarded-transition.gba": "18BBA3DF3A2634828A80033F6BA5E788C58CD1C78B169F502C99663BE514EBD1",
+    "current-candidate.gba": "6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7",
 }
 
 
@@ -534,6 +536,8 @@ def main() -> int:
     shoot_attack = output / "shoot-attack.gba"
     shoot_spatial_subset = output / "shoot-spatial-subset.gba"
     shoot_companion_clear = output / "shoot-static-companion-clear.gba"
+    shoot_projectile_clear = output / "shoot-projectile-clear.gba"
+    shoot_guarded_transition = output / "shoot-guarded-transition.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -798,8 +802,12 @@ def main() -> int:
     run("analyze_shoot_p2_reload_eligibility.py", args.wsc15, reload_proof, "--lower-graph", lower_graph)
     require_hash(reload_proof, "2E96EEEBA7E42ECCB464F6E7AB8FFE80A7CC6D5BF490A39EF16591A7C84C8990",
                  "bounded source side1 reload ownership; external domain remains open")
-    run("build_shoot_projectile_clear.py", shoot_companion_clear, args.wsc15, candidate,
+    run("build_shoot_projectile_clear.py", shoot_companion_clear, args.wsc15, shoot_projectile_clear,
         "--reload-proof", reload_proof, "--lower-graph", lower_graph,
+        "--manifest", output / "shoot-projectile-clear.json")
+    run("build_shoot_guarded_transition_irq.py", shoot_projectile_clear, args.gba, args.wsc15,
+        shoot_guarded_transition, "--manifest", output / "shoot-guarded-transition.json")
+    run("build_shoot_fatal_callback_route.py", shoot_guarded_transition, args.gba, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1196,10 +1204,21 @@ def main() -> int:
     require_hash(companion_review, "DF06DEBA3B9BF1B405F6BFE81DE3188DC6002F935723491DEB45A0AB999422CC",
                  "independent actual static-companion clear, native renderer and preload lifetime")
     projectile_review = intermediate / "shoot-projectile-clear-verification.json"
-    run("verify_shoot_projectile_clear.py", shoot_companion_clear, candidate, args.wsc15, projectile_review,
+    run("verify_shoot_projectile_clear.py", shoot_companion_clear, shoot_projectile_clear, args.wsc15, projectile_review,
         "--source-proof", reload_proof, "--lower-graph", lower_graph)
     require_hash(projectile_review, "95458CCEBEBDBCD5BE5D2CE703D32490F106629BE58DDEAAC280203DA0830C38",
                  "independent bounded93E7 clear and complete native renderer execution")
+    guarded_review = intermediate / "shoot-guarded-transition-verification.json"
+    run("verify_shoot_guarded_transition_irq.py", shoot_guarded_transition, shoot_projectile_clear,
+        args.gba, args.wsc15, "--manifest", output / "shoot-guarded-transition.json",
+        "--layout", ROOT / "records/shoot-guarded-transition-layout-20261109.json", "--output", guarded_review)
+    require_hash(guarded_review, "555554FDADF48C80F74DE2A9700B7ECD6FC798F859C151B6A4AC440A9C6925FB",
+                 "independent stationary-family native queue and transition IRQ")
+    fatal_review = intermediate / "shoot-fatal-callback-verification.json"
+    run("verify_shoot_fatal_callback_route.py", candidate, shoot_guarded_transition, args.gba, args.wsc15,
+        "--manifest", output / "current-candidate.json", "--output", fatal_review)
+    require_hash(fatal_review, "61656691CD4126193003FB2E43B851F3CAA57A8C6C78A147ED602B181F2F2FD4",
+                 "independent stage11 fatal callback selection and retained native HP handling")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1280,12 +1299,13 @@ def main() -> int:
             "the Shoot palette/tile bank offset and installs all twelve maps with original "
             "two-by-three geometry in the existing native background consumers; "
             "the source 0E0B main stage update is connected with its original state owner, "
-            "and source-corrected normal display/IRQ are connected only for flag-0400-clear, "
-            "preserving the existing terminal fallback exactly; seventeen terminal phases, "
-            "native result-resource consumers, fatal/nonfatal adapters and four upper-state "
-            "same-update repairs are resident with external damage hooks closed; SRAM observer "
-            "analysis remains explicitly UNRESOLVED_OBSERVER; terminal interrupted-DI and "
-            "camera-domain contracts remain unfulfilled; "
+            "source-corrected normal display/IRQ preserve the flag-0400-clear path; a late prepared-queue "
+            "guard connects the stationary base0 terminal family to the source transition IRQ, "
+            "retaining prior queued callbacks on rejection; seventeen terminal phases, native result "
+            "consumers and four upper-state same-update repairs are resident; the stage11 fatal "
+            "callback selector is connected while the nonfatal hook and external scene entry remain closed; "
+            "SRAM observer analysis remains explicitly UNRESOLVED_OBSERVER; general terminal "
+            "interrupted-DI and moving-player camera domains remain unfulfilled; "
             "the final repair binds both Shoot backgrounds to the complete source collision grid "
             "and executes terminal 197A in the successful 193B invocation; "
             "the next repair follows the actual noncontiguous source physics pointer table "
@@ -1390,6 +1410,23 @@ def main() -> int:
             "complete_terminal_clear": False, "external_scene_route_installed": False,
             "full_post_clear_reload_exclusion_approved": False,
             "scope": "Static93E7 tiles under the retained normal callback graph; side1 companions, other owners, IRQ and entry remain open",
+        },
+        "shoot_guarded_transition": {
+            "verification_sha256": "555554FDADF48C80F74DE2A9700B7ECD6FC798F859C151B6A4AC440A9C6925FB",
+            "layout_ledger_sha256": "89EAB41CBDD9E8812C52D75029D4904B9C1FEBB2D1A981209E8389D4A0699B33",
+            "declared_bytes": 1576, "changed_bytes": 1550, "new_RAM_bytes": 0,
+            "queue_copy_hook": "080D0BE8", "transition_IRQ": "086FFE10",
+            "source_DI_value_emulated": False, "low_Y_moving_family_closed": False,
+            "external_scene_route_installed": False,
+            "scope": "Late copied-queue selection for the stationary base0 terminal family, current blank rows across all160 native lines and a mode7 callback guard; other families retain their prior queue",
+        },
+        "shoot_fatal_callback_route": {
+            "verification_sha256": "61656691CD4126193003FB2E43B851F3CAA57A8C6C78A147ED602B181F2F2FD4",
+            "hook": "0836E5EC", "existing_adapter": "085CD960",
+            "declared_bytes": 4, "changed_bytes": 4, "new_code_bytes": 0, "new_RAM_bytes": 0,
+            "non11_retail_behavior_retained": True, "nonfatal_hook_installed": False,
+            "external_scene_route_installed": False, "historical_E5_cause_resolved": False,
+            "scope": "Stage11 lethal kind3 damage selects the resident upper and linked-auxiliary callbacks; native HP arithmetic and common continuation are preserved",
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
