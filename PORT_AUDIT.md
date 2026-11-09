@@ -7,7 +7,7 @@ the final state is Continue, P1 HP0 / boss HP42, with zero Shoot/terminal/DI obs
 exited1 during cleanup; its initial report is preserved and explicit postchecks were recovered separately.
 This is not a successful whole-port run. Original save and v72 GBA remain unchanged. See
 [current resume](RESUME.md), [score contract](records/shoot-source-score999-20261109.md) and
-[cleanup fix](records/private-desktop-cleanup-race-20261109.md). Additional boss-HP modification is unapproved.
+[cleanup fix](records/private-desktop-cleanup-race-20261109.md). The user subsequently approved one original-only boss HP reduction to1 after its intro, followed by an actual attack. This new observation must preserve natural victory dispatch and remain separate from the completed score-only run.
 
 ## 2026-11-09 v72 — Shoot 탄환 그림의 종료 타일 처리
 

@@ -1,5 +1,9 @@
 # Final QA gate
 
+## 2026-11-09 additional boss-HP1 authorization
+
+After the score999 run reached stage7 but ended at Continue, the user explicitly authorized setting the boss's HP to1 and landing one actual attack to continue the original-reference test. The approved implementation reduces the active boss HP word once after its intro; it never writes0, repeatedly holds1, changes P1 HP, or forces progression. A later real damaging hit must cause the original victory/Shoot route. This is a new hidden development observation on a save copy, not a final GBA cheat or completion claim.
+
 ## 2026-11-09 additional score-only cheat authorization
 
 The user explicitly permits fixing D Spirit at999 when ordinary play cannot reach stage7. New original-reference runs may write only the verified P1 D Spirit score word, with an address/value/timing ledger. This narrowly supersedes the guest-write prohibition below; it does not authorize changing HP, stage, progression, registers, the source save, or the final GBA candidate. Runs remain hidden and use isolated save copies. Cheat-assisted observations must be identified separately from ordinary play and final port QA. Stage7 requires an HP victory, so a score cheat alone does not prove Shoot entry.
