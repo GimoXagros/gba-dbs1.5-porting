@@ -18,9 +18,9 @@ INTRO = 0x76B4A0
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def composition(s):
+def composition(s, lower_graph=None):
     # Reuse the source-checked43-callback artifact instead of another graph walker.
-    path = ROOT/'build/shoot-rule-graph-v2.json'
+    path = ROOT/'build/shoot-rule-graph-v2.json' if lower_graph is None else Path(lower_graph)
     raw = path.read_bytes()
     need(hashlib.sha256(raw).hexdigest().upper() ==
          '37BAFE3EE49314F58024BD322DA1DEC33C8A7316DA0984242985FA4262DF5281',
@@ -149,7 +149,7 @@ def intro_graph(source, seed):
         current_task_self_free_76C237=0x76C237 in seen)
 
 
-def proof(s):
+def proof(s, lower_graph=None):
     control_contracts(s)
     exact(s, 0x74356F, ['test word ptr [si + 8], 0x4000', 'je 0x7435b0',
         'dec word ptr [si + 0x56]', 'jns 0x7435d4'])
@@ -201,7 +201,7 @@ def proof(s):
          alternate['current_task_self_free_76B8BA'], 'alternate normal introduction excludes reload')
     need(all((((high << 4) | 3) & 0x73FF & 0x43FF & 15) == 3
              for high in range(4096)), 'all high flag combinations preserve actor kind3')
-    composed = composition(s)
+    composed = composition(s, lower_graph)
     return dict(status='BOUNDED_P2_NO_RELOAD_COMPOSITION_PASS',
         game_mode=2, actor_kind=3, opponent_identity=15,
         generic_2AE0_runs_for_kind3=False,
@@ -219,11 +219,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('source', type=Path)
     p.add_argument('output', type=Path)
+    p.add_argument('--lower-graph', type=Path,
+                   default=ROOT/'build/shoot-rule-graph-v2.json',
+                   help='Source-checked lower graph produced for this build')
     a = p.parse_args()
     s = a.source.read_bytes()
     need(hashlib.sha256(s).hexdigest().upper() == SOURCE, 'exact original source')
     need(not a.output.exists(), 'fresh report required')
-    result = proof(s)
+    result = proof(s, a.lower_graph)
     rejected = []
     for name, at in [('kind3 construction', 0x740D7B), ('wrapper kind gate', 0x7421E0),
         ('Shoot kind mask', 0x747B39), ('normal introduction seed', 0x76B4F5),
@@ -233,7 +236,7 @@ def main():
         bad = bytearray(s)
         bad[at] ^= 1
         try:
-            proof(bad)
+            proof(bad, a.lower_graph)
         except (ValueError, AssertionError, SystemExit):
             rejected.append(name)
         else:

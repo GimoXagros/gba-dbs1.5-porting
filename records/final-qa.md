@@ -1,5 +1,11 @@
 # Final QA gate
 
+## 2026-11-09 explicit development observation authorization
+
+The user now permits a **copy of the supplied WSC save** for hidden, original-game-only development observation. This supersedes the earlier prohibition on reading, hashing, copying or loading that input within this scope. It does not authorize modifying the user's original file, injecting guest memory/registers, or treating development observations as completed port/final QA.
+
+The protected source and the new ignored copy at `build/wsc-user-save-copy-20261109/supplied-copy.sav` both hash `051055F0542503C63D77815C2B11F33A3DF420E6DD93D02D92779A430B02E51F` (32,768 bytes). `copy.json` records the authorization and equality check. Each emulator run uses another isolated copy. Earlier invalidated observations remain invalidated; this permission applies to new work. All final-port completion requirements below remain open.
+
 ## Deferred reference input
 
 | ID | Platform | Supplied filename | Size | SHA-1 | SHA-256 | State |

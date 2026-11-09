@@ -223,7 +223,8 @@ EXPECTED_LAYERS = {
     "controller-bridge.gba": "72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC",
     "shoot-attack.gba": "B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B",
     "shoot-spatial-subset.gba": "8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717",
-    "current-candidate.gba": "35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A",
+    "shoot-static-companion-clear.gba": "35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A",
+    "current-candidate.gba": "025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA",
 }
 
 
@@ -532,6 +533,7 @@ def main() -> int:
     controller_bridge = output / "controller-bridge.gba"
     shoot_attack = output / "shoot-attack.gba"
     shoot_spatial_subset = output / "shoot-spatial-subset.gba"
+    shoot_companion_clear = output / "shoot-static-companion-clear.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -786,7 +788,18 @@ def main() -> int:
         "--manifest", output / "shoot-attack.json")
     run("build_shoot_spatial_subset.py", shoot_attack, args.wsc15, shoot_spatial_subset,
         "--manifest", output / "shoot-spatial-subset.json")
-    run("build_shoot_static_companion_clear.py", shoot_spatial_subset, args.wsc15, candidate,
+    run("build_shoot_static_companion_clear.py", shoot_spatial_subset, args.wsc15, shoot_companion_clear,
+        "--manifest", output / "shoot-static-companion-clear.json")
+    lower_graph = intermediate / "shoot-rule-graph.json"
+    reload_proof = intermediate / "shoot-p2-reload-eligibility.json"
+    run("analyze_shoot_rule_callback_graph.py", args.wsc15, "--output", lower_graph)
+    require_hash(lower_graph, "37BAFE3EE49314F58024BD322DA1DEC33C8A7316DA0984242985FA4262DF5281",
+                 "source lower callback graph regenerated for this build")
+    run("analyze_shoot_p2_reload_eligibility.py", args.wsc15, reload_proof, "--lower-graph", lower_graph)
+    require_hash(reload_proof, "2E96EEEBA7E42ECCB464F6E7AB8FFE80A7CC6D5BF490A39EF16591A7C84C8990",
+                 "bounded source side1 reload ownership; external domain remains open")
+    run("build_shoot_projectile_clear.py", shoot_companion_clear, args.wsc15, candidate,
+        "--reload-proof", reload_proof, "--lower-graph", lower_graph,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1179,9 +1192,14 @@ def main() -> int:
     require_hash(spatial_review, "4F5A9EDA33FF91BE70A94DB5240814ADA94EAEBD2CE2F7E6B1FCF00E729543B9",
                  "independent complete source-normal pattern subset and actual ARM semantics")
     companion_review = intermediate / "shoot-static-companion-clear-verification.json"
-    run("verify_shoot_static_companion_clear.py", shoot_spatial_subset, candidate, args.gba, args.wsc15, companion_review)
+    run("verify_shoot_static_companion_clear.py", shoot_spatial_subset, shoot_companion_clear, args.gba, args.wsc15, companion_review)
     require_hash(companion_review, "DF06DEBA3B9BF1B405F6BFE81DE3188DC6002F935723491DEB45A0AB999422CC",
                  "independent actual static-companion clear, native renderer and preload lifetime")
+    projectile_review = intermediate / "shoot-projectile-clear-verification.json"
+    run("verify_shoot_projectile_clear.py", shoot_companion_clear, candidate, args.wsc15, projectile_review,
+        "--source-proof", reload_proof, "--lower-graph", lower_graph)
+    require_hash(projectile_review, "95458CCEBEBDBCD5BE5D2CE703D32490F106629BE58DDEAAC280203DA0830C38",
+                 "independent bounded93E7 clear and complete native renderer execution")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1363,6 +1381,15 @@ def main() -> int:
             "storage": "existing terminal payload+52",
             "complete_terminal_clear": False, "external_scene_route_installed": False,
             "scope": "Fixed-base49 static companion tiles and source preload expiration; primary parity, other owners, IRQ and entry remain open",
+        },
+        "shoot_projectile_clear": {
+            "verification_sha256": "95458CCEBEBDBCD5BE5D2CE703D32490F106629BE58DDEAAC280203DA0830C38",
+            "reload_proof_sha256": "2E96EEEBA7E42ECCB464F6E7AB8FFE80A7CC6D5BF490A39EF16591A7C84C8990",
+            "declared_bytes": 80, "changed_bytes": 73, "new_RAM_bytes": 0,
+            "source_resource": "93E7", "native_P0": "085DB300", "fixed_tile_base": 109,
+            "complete_terminal_clear": False, "external_scene_route_installed": False,
+            "full_post_clear_reload_exclusion_approved": False,
+            "scope": "Static93E7 tiles under the retained normal callback graph; side1 companions, other owners, IRQ and entry remain open",
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

@@ -146,6 +146,13 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA':
+        restored = bytearray(result_predecessor)
+        restored[0x6FF240:0x6FF28C] = b'\xff' * 76
+        struct.pack_into('<I', restored, 0x12C50, 0x086FEA00)
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A',
+             'whole bounded projectile clear inverse to exact v71')
     if sha(result_predecessor) == '35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A':
         restored = bytearray(result_predecessor)
         for start, size in ((0x6FE800, 136), (0x6FE900, 64), (0x6FEA00, 648), (0x6FEE00, 124)):
