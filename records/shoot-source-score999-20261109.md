@@ -125,3 +125,24 @@ The remaining numerical limitation is truncation, not signed campaign logic:
 231 and loses232..250. All251 natural opponent scores were checked against
 the source compare semantics. No module, driver, ROM, runtime or save was
 changed by this follow-up; only this record was appended.
+
+## Stage7 preparation: corrected form-resource scope
+
+The earlier tentative inference that actor+8 bit4000 makes neutral B deal zero
+boss damage is withdrawn. It incorrectly combined base Agumon's event92
+metadata with the evolved-form damage branch. Source evolution completion
+7674A5 sets4000 and767503 calls4090:2E74 with form1, replacing the P4/P1
+resources. Base ID0 uses P4=1DFCA0/P1=32D990; evolved ID30 instead uses
+P4=3D0820/P1=3ACAD0. Its neutral action5/event31 metadata at3AD4BC supplies
+damage3, and active rectangles use type9. The boss branch at76017C..185
+therefore halves3 to1 before subtracting HP, not zero. Evolved action1/event27
+(Up+B selection) supplies damage4 and halves to2; this is a source fact, not
+an observed corrective strategy or authorization for a new input policy.
+
+Common player construction743617 clears actor+8. Stage7 entry does not itself
+prove evolved bit4000. Root's captured ordinary stages8/1/9/6/10 have no4000
+in that field. Actor+8 form flags are distinct from actor+9E presentation-facing
+bit4000. No actual stage7 attack/collision capture has yet established a
+control failure. The stale-facing ordering observation above remains narrowly
+valid; no new bot, runtime hook, module, ROM or save change follows from this
+preparation. Further diagnosis waits for an actual boss capture.

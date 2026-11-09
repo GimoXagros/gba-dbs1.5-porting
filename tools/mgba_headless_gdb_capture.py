@@ -217,10 +217,14 @@ class PrivateDesktopProcess:
     def close(self) -> None:
         if getattr(self, "process", None):
             if self.process.hProcess:
+                terminate_error = None
                 if not self._terminate_process(self.process.hProcess, 0):
-                    if self._wait_process(self.process.hProcess, 0) != 0:
-                        raise ctypes.WinError(ctypes.get_last_error())
+                    # An already-exiting process can deny termination before its
+                    # handle is signaled. Preserve this error across the wait.
+                    terminate_error = ctypes.get_last_error()
                 if self._wait_process(self.process.hProcess, 5000) != 0:
+                    if terminate_error is not None:
+                        raise ctypes.WinError(terminate_error)
                     raise RuntimeError(f"mGBA PID {self.pid} did not exit before cleanup")
             if self.process.hThread:
                 self._close_handle(self.process.hThread)

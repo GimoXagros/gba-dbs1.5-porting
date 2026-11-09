@@ -1,5 +1,14 @@
 # Port recovery audit
 
+## 2026-11-09 original-only score999 observation
+
+The authorized copy/score-only run reached stage7 through ten ordinary battles. Lua completed120,000frames;
+the final state is Continue, P1 HP0 / boss HP42, with zero Shoot/terminal/DI observations. The host launcher
+exited1 during cleanup; its initial report is preserved and explicit postchecks were recovered separately.
+This is not a successful whole-port run. Original save and v72 GBA remain unchanged. See
+[current resume](RESUME.md), [score contract](records/shoot-source-score999-20261109.md) and
+[cleanup fix](records/private-desktop-cleanup-race-20261109.md). Additional boss-HP modification is unapproved.
+
 ## 2026-11-09 v72 — Shoot 탄환 그림의 종료 타일 처리
 
 - 기준 커밋: `3354a6fb4d3850d406d826e8178bda49d8cb570b`(v71).
