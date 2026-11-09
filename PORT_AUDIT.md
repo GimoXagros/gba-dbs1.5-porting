@@ -18,8 +18,11 @@ checkpoint97712 retains4 while temporary currentHP is1. Independent fullcapture 
 passed. The subsequent actual second-boss direct hit/root5 occurred at99458 with P1HP4, natural
 terminal at99459 and consumed0DEC pair at100569. Independent9989AD1B verified the full chain.
 Observed DI2214 aliases graphics RAM521E/F and consumed0, but this first read is offscreen line146
-(k117). Next: readonly genuine-state continuation through the visible remaining0400 range; neither
-DI2214 nor0 is a universal constant. GBA v72 is unchanged and E5 remains unresolved. Stage11 is mechanically the second boss; do not conflate this
+(k117). The readonly continuation now reaches mode8 at101035 after465 neutral frames. Independent
+8C5480CC verifies106 paired/full-snapshot potential-visible samples and26272 zero mapcells, with
+blank tile0 in all128 images. The first offscreen pre-calibration read is excluded; CPU write logging
+does not observe DMA. Neither DI2214 nor0 is universal. Next is a guarded native stationary-family
+transition IRQ; the valid low-Y moving caller remains separate. GBA v72 and E5 remain unchanged. Stage11 is mechanically the second boss; do not conflate this
 repository's Shoot label with the separate menu mode23. E5's first invalid writer remains unknown.
 See [corrected cause](records/shoot-actual-input-boundary-20261109.md) and
 [completed capture/replay QA](records/wsc-shoot-boundary-checkpoint-qa-20261109.md).
