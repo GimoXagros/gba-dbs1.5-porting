@@ -222,7 +222,8 @@ EXPECTED_LAYERS = {
     "shoot-caller.gba": "9E22BCAD6078BB5653FF62F12798E7365D7AB75B434298E9DA7F4BF4A72EF738",
     "controller-bridge.gba": "72A03EA9267A35E8B9CCECC110D2BA3F7E9DF99422480E3CCE08C18AE3B5F4BC",
     "shoot-attack.gba": "B64022D567EC2F023CB59DA8AC4D3FAE27EDD4278D3E522E872D5FF51FE8F84B",
-    "current-candidate.gba": "8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717",
+    "shoot-spatial-subset.gba": "8EC8C50755B16E1C6AF7D6984CF4A5510335CD07AA67E265CAE67CF7F8366717",
+    "current-candidate.gba": "35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A",
 }
 
 
@@ -530,6 +531,7 @@ def main() -> int:
     controller_domain = intermediate / "shoot-controller-domain.json"
     controller_bridge = output / "controller-bridge.gba"
     shoot_attack = output / "shoot-attack.gba"
+    shoot_spatial_subset = output / "shoot-spatial-subset.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -782,7 +784,9 @@ def main() -> int:
         "--manifest", output / "controller-bridge.json")
     run("build_shoot_attack_dispatch.py", controller_bridge, args.gba, args.wsc10, args.wsc15, shoot_attack,
         "--manifest", output / "shoot-attack.json")
-    run("build_shoot_spatial_subset.py", shoot_attack, args.wsc15, candidate,
+    run("build_shoot_spatial_subset.py", shoot_attack, args.wsc15, shoot_spatial_subset,
+        "--manifest", output / "shoot-spatial-subset.json")
+    run("build_shoot_static_companion_clear.py", shoot_spatial_subset, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1170,10 +1174,14 @@ def main() -> int:
     require_hash(attack_review, "02E7819CC861561CC8E747683420294B7CB0F9A691AE2BEF4A355261F29368FD",
                  "independent Shoot type1A/1B consumers and preserved legacy dispatch")
     spatial_review = intermediate / "shoot-spatial-subset-verification.json"
-    run("verify_shoot_spatial_subset.py", shoot_attack, candidate, args.wsc15,
-        "--manifest", output / "current-candidate.json", "--output", spatial_review)
+    run("verify_shoot_spatial_subset.py", shoot_attack, shoot_spatial_subset, args.wsc15,
+        "--manifest", output / "shoot-spatial-subset.json", "--output", spatial_review)
     require_hash(spatial_review, "4F5A9EDA33FF91BE70A94DB5240814ADA94EAEBD2CE2F7E6B1FCF00E729543B9",
                  "independent complete source-normal pattern subset and actual ARM semantics")
+    companion_review = intermediate / "shoot-static-companion-clear-verification.json"
+    run("verify_shoot_static_companion_clear.py", shoot_spatial_subset, candidate, args.gba, args.wsc15, companion_review)
+    require_hash(companion_review, "DF06DEBA3B9BF1B405F6BFE81DE3188DC6002F935723491DEB45A0AB999422CC",
+                 "independent actual static-companion clear, native renderer and preload lifetime")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1347,6 +1355,14 @@ def main() -> int:
             "nonpattern_pairs_unresolved": 1726545920,
             "complete_controller_input_domain": False, "external_scene_route_installed": False,
             "scope": "All source-defined normal patterns now represented; source unrelated control transfers and producer reachability remain open",
+        },
+        "shoot_static_companion_clear": {
+            "verification_sha256": "DF06DEBA3B9BF1B405F6BFE81DE3188DC6002F935723491DEB45A0AB999422CC",
+            "declared_bytes": 984, "changed_bytes": 964, "new_RAM_bytes": 0,
+            "camera_subset": [261, 288], "static_companion_resources": 30,
+            "storage": "existing terminal payload+52",
+            "complete_terminal_clear": False, "external_scene_route_installed": False,
+            "scope": "Fixed-base49 static companion tiles and source preload expiration; primary parity, other owners, IRQ and entry remain open",
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
