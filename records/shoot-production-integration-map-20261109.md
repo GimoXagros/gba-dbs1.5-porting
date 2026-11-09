@@ -1,0 +1,20 @@
+# Minimal production integration map
+
+Read-only map for the root-owned main builder after the separate actual runtime gate. Current main output is v73/6A. The new2C73 pure scene component reproduces6D from v73 plus original USA/WSC1.5 inputs and tracked code/ledger; independent composition QA is37812C30. Child rectangle1477 is a separate subsequent42-byte correction, independently checked by281C43DF, and needs its own production verifier that does not require actual captured data. The actual-capture rectangle verifier is diagnostic QA, not a production input dependency.
+
+| Caller or manifest | Required change |
+|---|---|
+| `tools/build_current_candidate.py` fatal build near810 | Preserve its current6A output as a named fatal intermediate and its existing manifest. Feed that intermediate and original source arguments into `build_shoot_native_scene_connection.py input gba source output --manifest PATH`; this pure API requires no ignored historical capture. Keep any later rectangle component a separately named stage before final output. |
+| `EXPECTED_LAYERS` near157..229 | Add the preserved6A fatal intermediate, then the explicitly chosen scene6D intermediate and eventual final component hash after runtime acceptance. The final hash must match the complete selected chain. |
+| Fatal verification near1218 | Continue passing the preserved6A intermediate and its manifest to the frozen old fatal verifier. Its61656691 report is path independent and remains valid for that layer; passing final6D/1477 directly would violate its four-byte inverse. |
+| New packaging verification | Invoke `verify_shoot_native_scene_connection.py --before FATAL --after SCENE --gba ORIGINAL --source ORIGINAL --manifest SCENE_JSON --report NEW_REPORT`. Bind report37812C30, verifier7DCD32B0 and author2C73 in the main report. All report inputs come from fresh build outputs/originals. |
+| `tools/verify_result_language_capture.py:audit` near149 | Prepend the exact selected final deltas' inverses: future rectangle1477→6D, then scene ten spans6D→6A. Assert each complete predecessor hash before entering the unchanged6A fatal→18BB guarded IRQ→v72 chain. Mutations outside those exact spans must fail. |
+| Main claim fields near1254,1423..1434 | Report final entry/HUD/nonfatal installation separately from historical layer scope. Existing `external_route_installed=False` and `nonfatal_hook_installed=False` describe6A, and need either explicit historical labels or accurate final values after promotion. Retain limitations on moving/low-Y families, historical E5, BIOS ABI and unobserved terminal behavior. |
+
+The smallest packaging addition is a named fatal ROM/manifest pair, a new scene manifest/report, and any explicitly chosen later rectangle pair/report. The main final filename can remain `current-candidate.gba`; historical D0 and84D ROMs need not be emitted because the pure builder reproduces and checks their identities in memory.
+
+Use frozen component code/constants and pure source contracts. Do not call the old experimental `build()` interfaces: the old entry/HUD builders depend on ignored manifests; the target builder loads historical RAM; the stage11 probe loads capture artifacts. The new pure scene API explicitly avoids those paths. Its independent verifier additionally denies those calls and historical reads.
+
+The entry reservation is6FF380..6FF400 (128 bytes), HUD6FF400..6FF410 (16 bytes), and inherited IRQ reservations are the complete6FF600..6FF800 and6FF9C0..6FFED0, including erased tails. Do not replace these reservations with merely the occupied instruction spans. The source-only ownership authority is the tracked1394-interval/70-layer ledger89EAB41C plus explicit inherited reservations/hook words.
+
+Reused historical semantic evidence may be referenced by its frozen report hash without reading ignored reports in production: entry6F242A0E, target3728B6B7, HUD23AF8303 and stage11CDD10F8D. Fresh production verifiers should check original sources, exact new ExpectedWrites, full inverses and tracked source identities. No broad old semantic rerun, full build, emulator, main edit or Git action was performed for this map.
