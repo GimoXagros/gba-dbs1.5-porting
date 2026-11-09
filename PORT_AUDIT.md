@@ -9,13 +9,17 @@ is withdrawn; a fresh jump cannot repair this captured entry. No3030 damage pair
 
 The restored complete native+managed core equals the genuine checkpoint. All2810 recorded FIRST/stage
 contexts and seven shared activation RAM/SRAM/PNG outputs match. Original save and GBA v72 are unchanged.
-Terminal/DI remain unobserved. Ordinary Continue now produced a genuine fresh stage7 checkpoint at
+The formerly unobserved terminal/DI chain is now observed below. Ordinary Continue now produced a genuine fresh stage7 checkpoint at
 core95931: P1HP8/bossHP44/pending damage0 and released controls. Independent capture audit E56B9C19
 verified the complete saved core and23files/sixpins, with no P1 HP or progression writes. Next: actual
 positive-P1-HP hit/root5 and healthy stage11 entry. This subsequent observation also passed: direct
 FIRST hit/root5 at97022 retained P1HP4; source saved4 at97023 into scene2114+46, and actual stage11
 checkpoint97712 retains4 while temporary currentHP is1. Independent fullcapture audit691A479B
-passed. Next is the actual second-boss defeat, terminal and consumed IRQ operand. Stage11 is mechanically the second boss; do not conflate this
+passed. The subsequent actual second-boss direct hit/root5 occurred at99458 with P1HP4, natural
+terminal at99459 and consumed0DEC pair at100569. Independent9989AD1B verified the full chain.
+Observed DI2214 aliases graphics RAM521E/F and consumed0, but this first read is offscreen line146
+(k117). Next: readonly genuine-state continuation through the visible remaining0400 range; neither
+DI2214 nor0 is a universal constant. GBA v72 is unchanged and E5 remains unresolved. Stage11 is mechanically the second boss; do not conflate this
 repository's Shoot label with the separate menu mode23. E5's first invalid writer remains unknown.
 See [corrected cause](records/shoot-actual-input-boundary-20261109.md) and
 [completed capture/replay QA](records/wsc-shoot-boundary-checkpoint-qa-20261109.md).
