@@ -1,5 +1,20 @@
 # Port recovery audit
 
+## 2026-11-09 approved boss HP1 observation — actual hit and Shoot entry
+
+The separate hidden original-reference run completed normally, including host cleanup. Exactly one
+approved active-boss HP write44→1 at core87975 was followed by a direct FIRST/P1 engine hit1→0 and
+native root5 victory at91708, then the original Shoot initializer at92374 and stage11 entry.
+Independent audit2D862A33 verified91 capture files,14 frozen pins and9 identical pre-boss baseline files.
+The hit-pair full RAM differs only in the boss HP low byte; SRAM is identical. The source save and
+v72 GBA remain unchanged. This is cheat-assisted original observation, not final GBA validation.
+
+Shoot lasted2810 frames before failure/return to stage7. Terminal hits and consumed-DI pairs are both0.
+The next target is the actual input-enable boundary and first P1 damage writer; a phase-gated fresh
+jump is only a source-backed proposal, not a tested fix. E5 and the complete port remain unresolved.
+See [independent capture QA](records/wsc-boss1-capture-qa-20261109.md) and
+[actual input boundary](records/shoot-actual-input-boundary-20261109.md).
+
 ## 2026-11-09 original-only score999 observation
 
 The authorized copy/score-only run reached stage7 through ten ordinary battles. Lua completed120,000frames;
