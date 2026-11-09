@@ -226,7 +226,9 @@ EXPECTED_LAYERS = {
     "shoot-static-companion-clear.gba": "35D46BB3901C8C564A452432A8B2B90F44485B176526226CE6B7DA54A0A36A8A",
     "shoot-projectile-clear.gba": "025C1C5EACC7E7A66873C06BA044EE8ECE8C2DBA2C14971365921F1C691732DA",
     "shoot-guarded-transition.gba": "18BBA3DF3A2634828A80033F6BA5E788C58CD1C78B169F502C99663BE514EBD1",
-    "current-candidate.gba": "6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7",
+    "shoot-fatal-callback.gba": "6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7",
+    "shoot-native-scene.gba": "6D883A52A1F13467477DC0733D6B349510703A66CA4D7AC74436ABB7E9D00331",
+    "current-candidate.gba": "1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC",
 }
 
 
@@ -538,6 +540,8 @@ def main() -> int:
     shoot_companion_clear = output / "shoot-static-companion-clear.gba"
     shoot_projectile_clear = output / "shoot-projectile-clear.gba"
     shoot_guarded_transition = output / "shoot-guarded-transition.gba"
+    shoot_fatal = output / "shoot-fatal-callback.gba"
+    shoot_native_scene = output / "shoot-native-scene.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -807,7 +811,11 @@ def main() -> int:
         "--manifest", output / "shoot-projectile-clear.json")
     run("build_shoot_guarded_transition_irq.py", shoot_projectile_clear, args.gba, args.wsc15,
         shoot_guarded_transition, "--manifest", output / "shoot-guarded-transition.json")
-    run("build_shoot_fatal_callback_route.py", shoot_guarded_transition, args.gba, args.wsc15, candidate,
+    run("build_shoot_fatal_callback_route.py", shoot_guarded_transition, args.gba, args.wsc15, shoot_fatal,
+        "--manifest", output / "shoot-fatal-callback.json")
+    run("build_shoot_native_scene_connection.py", shoot_fatal, args.gba, args.wsc15, shoot_native_scene,
+        "--manifest", output / "shoot-native-scene.json")
+    run("build_shoot_child_attack_rectangle.py", shoot_native_scene, args.gba, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1215,10 +1223,20 @@ def main() -> int:
     require_hash(guarded_review, "555554FDADF48C80F74DE2A9700B7ECD6FC798F859C151B6A4AC440A9C6925FB",
                  "independent stationary-family native queue and transition IRQ")
     fatal_review = intermediate / "shoot-fatal-callback-verification.json"
-    run("verify_shoot_fatal_callback_route.py", candidate, shoot_guarded_transition, args.gba, args.wsc15,
-        "--manifest", output / "current-candidate.json", "--output", fatal_review)
+    run("verify_shoot_fatal_callback_route.py", shoot_fatal, shoot_guarded_transition, args.gba, args.wsc15,
+        "--manifest", output / "shoot-fatal-callback.json", "--output", fatal_review)
     require_hash(fatal_review, "61656691CD4126193003FB2E43B851F3CAA57A8C6C78A147ED602B181F2F2FD4",
                  "independent stage11 fatal callback selection and retained native HP handling")
+    scene_review = intermediate / "shoot-native-scene-verification.json"
+    run("verify_shoot_native_scene_connection.py", "--before", shoot_fatal, "--after", shoot_native_scene,
+        "--gba", args.gba, "--source", args.wsc15, "--manifest", output / "shoot-native-scene.json", "--report", scene_review)
+    require_hash(scene_review, "37812C30D6A1EA005F48CB1E3298D38FBCD795008A614CEEA9339679B16B75B8",
+                 "source-only native entry, receiver lifetime, HUD and nonfatal composition")
+    rectangle_review = intermediate / "shoot-child-rectangle-verification.json"
+    run("verify_shoot_child_attack_rectangle_production.py", "--before", shoot_native_scene, "--after", candidate,
+        "--gba", args.gba, "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", rectangle_review)
+    require_hash(rectangle_review, "BAD282D7F5AEAC391022D3A3C350C4257A6BC15A901406EC29F875CEDFB4DACA",
+                 "source-relative child command rectangles and complete163-payload ownership")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1263,27 +1281,27 @@ def main() -> int:
             "7168 initializer P1/P0/P2 assets, and the bounded Ver. 1.5-only "
             "D2-to-GBA-0x5C pitch/timing/stereo/modulation reconstruction; "
             "the final one-byte CE layer also corrects its source-proved right-only pan; "
-            "the resident but intentionally uncalled auxiliary-object constructor binds "
+            "the source-bound auxiliary-object constructor binds "
             "WSC Ver. 1.5 ES:071E through the commercial 1.0 ID-0x343/pool-5 lineage "
             "to native GBA slot 0x03004D3C and installed Shoot rule resources; the "
             "resident 26-entry upper-state population translates 2320 source code bytes, "
             "its fourth P2 record, intro palette table, target table, native RNG role, "
             "and internal state transitions; the final resident boundary layer connects both 9908 "
-            "calls to same-update SELECT/APPLY while the external scene route remains closed; a dependent layer corrects inverted "
+            "calls to same-update SELECT/APPLY; a later source-conditioned route connects the scene, and a dependent layer corrects inverted "
             "P1/P2 constructor arguments in the child and auxiliary components and inverted "
             "auxiliary player links, then installs source 71D1..7394 player binding with "
             "a fifteen-entry HP table and allocation-free reuse of the existing auxiliary body; "
-            "the phase assigns upper entry 7792 internally but has no external caller; "
+            "at that historical layer the phase assigns upper entry 7792 internally without an external caller; "
             "a subsequent dependent repair corrects five P0 descriptor pointers and installs "
             "all 46 source far descriptors and 393 missing tiles, preserving code and layouts; "
             "the legacy zero-descriptor artifacts remain historical intermediates only; "
             "the final dependent layer fixes three additional-character physics pointers "
             "and installs resident source 73F0..74A2 other-player restoration using native "
             "character resources, the existing OBJ palette mirror and 32-bit physics pointers; "
-            "this second player phase also remains uncalled until complete initialization; "
+            "at that historical layer this second player phase awaited complete initialization; "
             "two further resident resource segments implement source 7394..73A9 OBJ slot-5 "
             "palette loading and 74A2..74DA native HUD tile-3FC/palette-6 loading plus scroll reset; "
-            "they reuse exact commercial HUD pixels and have no external caller; "
+            "they reuse exact commercial HUD pixels and had no external caller at that historical layer; "
             "new resident controller selection/application components preserve the 64-way source "
             "decision table and RNG cardinality without connecting absent callbacks; palette "
             "operations preserve selective backup, split BG/OBJ row consumers and source-channel "
@@ -1303,7 +1321,9 @@ def main() -> int:
             "guard connects the stationary base0 terminal family to the source transition IRQ, "
             "retaining prior queued callbacks on rejection; seventeen terminal phases, native result "
             "consumers and four upper-state same-update repairs are resident; the stage11 fatal "
-            "callback selector is connected while the nonfatal hook and external scene entry remain closed; "
+            "callback selector, nonfatal palette path and source-conditioned external scene entry are connected; "
+            "the presentation target survives native angle calls, stage11 omits the ordinary score HUD, "
+            "and all eight child command rectangles resolve against their own source P1 resource; "
             "SRAM observer analysis remains explicitly UNRESOLVED_OBSERVER; general terminal "
             "interrupted-DI and moving-player camera domains remain unfulfilled; "
             "the final repair binds both Shoot backgrounds to the complete source collision grid "
@@ -1353,8 +1373,8 @@ def main() -> int:
             "while unrelated source control transfers remain unresolved; "
             "source Shoot attack types1A/1B now have native typed consumers, no-freeze reaction constructors "
             "and the retained HP/orb helper without changing old dispatch destinations; "
-            "external initializer/scene/menu entry, "
-            "reachable controller gameplay, unresolved player spatial lifetimes, audible timbre parity, "
+            "general menu and scene families beyond the verified base0 route, "
+            "unverified controller cases, unresolved player spatial lifetimes, audible timbre parity, "
             "playback and runtime validation, "
             "remaining Ver. 1.5 content completion, and final QA excluded"
         ),
@@ -1369,13 +1389,13 @@ def main() -> int:
             "controller_entry": "085C6500", "exit_router_entry": "086FC300",
             "declared_bytes": 96, "changed_bytes": 90,
             "external_hooks_changed": False,
-            "scope": "Synchronous SELECT/APPLY and exact stage11 terminal routing; external route remains closed pending reached lifetime contracts",
+            "scope": "Synchronous SELECT/APPLY and exact stage11 terminal routing; source-conditioned base0 entry is connected, with broader lifetime contracts still open",
         },
         "resident_controller_bridge": {
             "boundary": "085C0A00", "target": "085C6500", "declared_bytes": 4,
             "verification_sha256": "ACCAA6312E68606199B35F5588BEE28C860F0AF6CD9C051636A02A61C4053525",
             "producer_domain_sha256": "5DBB2620877D5ADEE92338B87B285610914CA07F2C484077846A602EDA707B46",
-            "producer_domain_closed": False, "external_scene_route_installed": False,
+            "producer_domain_closed": False, "external_scene_route_installed_by_this_layer": False,
             "scope": "Internal call chain only; actual Shoot entry and coupled player X/Y lifetime remain unproved",
         },
         "shoot_attack_dispatch": {
@@ -1383,7 +1403,7 @@ def main() -> int:
             "verification_sha256": "02E7819CC861561CC8E747683420294B7CB0F9A691AE2BEF4A355261F29368FD",
             "declared_bytes": 1828, "changed_bytes": 1375, "new_RAM_bytes": 0,
             "legacy_dispatch_preserved": True, "native_HP_orb_helper": "08341034",
-            "external_scene_route_installed": False, "historical_E5_cause_resolved": False,
+            "external_scene_route_installed_by_this_layer": False, "historical_E5_cause_resolved": False,
             "scope": "Source new attack reactions use existing native services and converted records; actual Shoot reachability remains open",
         },
         "shoot_spatial_subset": {
@@ -1391,7 +1411,7 @@ def main() -> int:
             "declared_bytes": 28, "changed_bytes": 27,
             "source_normal_pattern_pairs": 2568421376, "newly_accepted_pairs": 963404288,
             "nonpattern_pairs_unresolved": 1726545920,
-            "complete_controller_input_domain": False, "external_scene_route_installed": False,
+            "complete_controller_input_domain": False, "external_scene_route_installed_by_this_layer": False,
             "scope": "All source-defined normal patterns now represented; source unrelated control transfers and producer reachability remain open",
         },
         "shoot_static_companion_clear": {
@@ -1399,7 +1419,7 @@ def main() -> int:
             "declared_bytes": 984, "changed_bytes": 964, "new_RAM_bytes": 0,
             "camera_subset": [261, 288], "static_companion_resources": 30,
             "storage": "existing terminal payload+52",
-            "complete_terminal_clear": False, "external_scene_route_installed": False,
+            "complete_terminal_clear": False, "external_scene_route_installed_by_this_layer": False,
             "scope": "Fixed-base49 static companion tiles and source preload expiration; primary parity, other owners, IRQ and entry remain open",
         },
         "shoot_projectile_clear": {
@@ -1407,7 +1427,7 @@ def main() -> int:
             "reload_proof_sha256": "2E96EEEBA7E42ECCB464F6E7AB8FFE80A7CC6D5BF490A39EF16591A7C84C8990",
             "declared_bytes": 80, "changed_bytes": 73, "new_RAM_bytes": 0,
             "source_resource": "93E7", "native_P0": "085DB300", "fixed_tile_base": 109,
-            "complete_terminal_clear": False, "external_scene_route_installed": False,
+            "complete_terminal_clear": False, "external_scene_route_installed_by_this_layer": False,
             "full_post_clear_reload_exclusion_approved": False,
             "scope": "Static93E7 tiles under the retained normal callback graph; side1 companions, other owners, IRQ and entry remain open",
         },
@@ -1417,22 +1437,37 @@ def main() -> int:
             "declared_bytes": 1576, "changed_bytes": 1550, "new_RAM_bytes": 0,
             "queue_copy_hook": "080D0BE8", "transition_IRQ": "086FFE10",
             "source_DI_value_emulated": False, "low_Y_moving_family_closed": False,
-            "external_scene_route_installed": False,
+            "external_scene_route_installed_by_this_layer": False,
             "scope": "Late copied-queue selection for the stationary base0 terminal family, current blank rows across all160 native lines and a mode7 callback guard; other families retain their prior queue",
         },
         "shoot_fatal_callback_route": {
             "verification_sha256": "61656691CD4126193003FB2E43B851F3CAA57A8C6C78A147ED602B181F2F2FD4",
             "hook": "0836E5EC", "existing_adapter": "085CD960",
             "declared_bytes": 4, "changed_bytes": 4, "new_code_bytes": 0, "new_RAM_bytes": 0,
-            "non11_retail_behavior_retained": True, "nonfatal_hook_installed": False,
-            "external_scene_route_installed": False, "historical_E5_cause_resolved": False,
+            "non11_retail_behavior_retained": True, "nonfatal_hook_installed_by_this_layer": False,
+            "external_scene_route_installed_by_this_layer": False, "historical_E5_cause_resolved": False,
             "scope": "Stage11 lethal kind3 damage selects the resident upper and linked-auxiliary callbacks; native HP arithmetic and common continuation are preserved",
+        },
+        "shoot_native_scene_connection": {
+            "verification_sha256": "37812C30D6A1EA005F48CB1E3298D38FBCD795008A614CEEA9339679B16B75B8",
+            "declared_bytes": 152, "changed_bytes": 136, "new_RAM_bytes": 0,
+            "external_scene_route_installed": True, "nonfatal_hook_installed": True,
+            "entry_hook": "0833FD04", "nonfatal_hook": "0836E634",
+            "source_conditioned_entry": True, "presentation_receiver_preserved": True,
+            "stage11_score_HUD_omitted": True, "final_port_complete": False,
+        },
+        "shoot_child_command_rectangles": {
+            "verification_sha256": "BAD282D7F5AEAC391022D3A3C350C4257A6BC15A901406EC29F875CEDFB4DACA",
+            "declared_bytes": 42, "changed_bytes": 34, "source_payloads_checked": 163,
+            "relocated_command_pointers": 8, "null_command_pointers_unchanged": 155,
+            "source_rectangle": "3D1F3C", "native_rectangle": "085B9180",
+            "legacy_dispatch_unchanged": True, "historical_E5_cause_resolved": False,
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",
             "initializer_entry": "08629800", "phase_12C6_entry": "085C9B00",
-            "external_route_installed": False, "controller_boundary_connected": True,
-            "scope": "22 source-ordered resident scene placements; live palette/IRQ/camera and controller domains remain gates",
+            "external_route_installed": True, "controller_boundary_connected": True,
+            "scope": "22 source-ordered resident scene placements with the source-conditioned external route and observed healthy controller activation; general camera/IRQ and terminal domains remain gates",
         },
         "sources": {
             "gba_usa_sha256": GBA_SHA256,

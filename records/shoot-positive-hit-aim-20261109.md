@@ -8,13 +8,15 @@ literal substitutions: the approved ROM identity becomes1477F90E, and the
 ordinary-input policy changes. Argument names, healthy68927 load/full-five-RAM
 verification/resave, actual hit/flash/eight-update gates, failure hooks,
 captures, marker and1200-frame bound remain unchanged. Actual wrapper
-execution under the BizHawk Lua54 DLL consumes the raw CRLF observer,
+execution under the BizHawk Lua54 DLL consumes the raw observer,
 performs both anchors, and verifies the entire generated source against
 normalized9F12 plus exactly those two substitutions. The effective source
 compiles and hashes to
 `02D6B04C6072B53C15067E9C6A3235B9B04079635E994C38222642807E2754F6`.
-The earlier ED51 draft is withdrawn: compile-only checks missed its CRLF
-anchor mismatch, which root review identified before runtime.
+The current9F12 observer has180 LF and zero CRLF. The earlier ED51 draft
+was withdrawn for line-ending portability hardening, not an observed
+current-file anchor failure. Independent QA also tests a synthetic CRLF
+serialization of the same logical observer.
 
 The previous1477 trial completed1200 frames through70127 with HP4/37 and no
 accepted hit. Its first ground interception window begins68999 (relative72):

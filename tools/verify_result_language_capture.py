@@ -146,6 +146,29 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC':
+        restored = bytearray(result_predecessor)
+        for offset in range(0x5B90A4, 0x5B9115, 0x10):
+            restored[offset:offset + 4] = bytes.fromhex('38043508')
+        restored[0x5B9180:0x5B918A] = b'\xff' * 10
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '6D883A52A1F13467477DC0733D6B349510703A66CA4D7AC74436ABB7E9D00331',
+             'whole source-relative child rectangle inverse to reviewed native scene')
+    if sha(result_predecessor) == '6D883A52A1F13467477DC0733D6B349510703A66CA4D7AC74436ABB7E9D00331':
+        restored = bytearray(result_predecessor)
+        restored[0x33FD04:0x33FD08] = bytes.fromhex('A8809FE5')
+        restored[0x6FF380:0x6FF3E8] = b'\xff' * 104
+        restored[0x5C9108:0x5C910C] = bytes.fromhex('141094E5')
+        restored[0x5C910C:0x5C9110] = bytes.fromhex('F403D1E1')
+        restored[0x5C9120:0x5C9124] = bytes.fromhex('F633D1E1')
+        restored[0x5C9174:0x5C9178] = bytes.fromhex('F403D1E1')
+        restored[0x5C91A4:0x5C91A8] = bytes.fromhex('F603D1E1')
+        restored[0x373ED8:0x373EDC] = bytes.fromhex('070059E3')
+        restored[0x6FF400:0x6FF410] = b'\xff' * 16
+        restored[0x36E634:0x36E638] = bytes.fromhex('5C809FE5')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7',
+             'whole native scene connection inverse to exact v73')
     if sha(result_predecessor) == '6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7':
         restored = bytearray(result_predecessor)
         restored[0x36E5EC:0x36E5F0] = bytes.fromhex('0500A0E1')
