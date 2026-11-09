@@ -16,8 +16,10 @@ Trace92400/92700/93000/93300 reports P1 held/edge zero despite physical X4,
 A and later X2/B key requests. P1 remains X0E00 and reaches groundY1500.
 The timer remains18000 through93300. At93600 the timer is17970 and P1HP0.
 The last preceding A request was93510..93518; the next is93690..93698.
-The trace therefore does not show an accepted opening jump before that HP
-loss. It also does not prove that early physical X4 made P1 walk or fall:
+The trace does not show an accepted opening jump before that HP decrease.
+Later causal capture proves the decrease restores previously saved zero HP,
+not an opening attack that a jump could have avoided. It also does not prove
+that early physical X4 made P1 walk or fall:
 the corresponding source actor controls were still cleared.
 
 The source scene positively explains the boundary. Callback71F0:1540 at
@@ -29,19 +31,24 @@ consumed. The sparse timer samples bracket activation between93300 and93600;
 17970 at93600 is compatible with activation near93570, but it is not an
 independently captured exact transition frame.
 
-## HP1 is source-carried state, not an extra player-HP cheat
+## Corrected HP origin: temporary1 with saved0
 
 Shoot entry772E37..42 reads FIRST HP into the scene's+46 saved word and writes
 a temporary FIRST HP1. After03D8 bit2,773357..35F restores that saved word to
-FIRST HP. This run survived the boss with1 HP and has1 through the stage11
-opening; the source carries/restores the survivor's HP rather than providing
-a free refill. The authorized one-shot module targets SECOND only. Neither
-this finding nor the run authorizes a P1 HP change.
+FIRST HP. The earlier claim that this run survived the boss with1 HP is
+withdrawn. Actual boss-hit pre/post/root5 RAM in both the prior boss1 run and
+`build/bizhawk-wsc-shoot-boundary-20261109-a` has FIRSTHP0 and event+A4=005B.
+Root4 requires death-event003E, so the real root5 can take priority while HP
+is already0. The stage11 initializer/checkpoint shows temporaryHP1 but the
+actual scene at taskheader2324/payload2334 has saved+46=0.
 
-The later P1HP0 is an observed failure state. Current sparse telemetry has no
-paired P1-loss writer/attacker snapshot, so this note does not identify its
-exact damaging object or attribute it to a particular physical key. The early
-cleared-input samples rule out treating every sent key as an accepted action.
+The completed causal baseline records the actual restoration at core93549:
+write callbacks D7D4/D7D5,PS:PC=71F0:1462,DS0=0C00,SI=2334,DI=1784,
+matching77335F's saved-HP store. Activation is later at93570 with HP0.
+There is no3030 damage pair for this change; fallback loss_unpaired honestly
+reports the observed1→0 transition. The earlier inference of an opening hit
+is withdrawn. No P1 HP change is authorized, and the stage11 HP1 module's
+positive-P1 guard must remain intact.
 
 ## Small bounded controller change worth testing
 
@@ -52,13 +59,12 @@ callback16E8. B remains ordinary helper0224; no alternate Shoot-specific fire
 mapping is established by these consumers. A held continuously through the
 intro is not equivalent to a fresh jump edge after activation.
 
-The smallest source-backed input correction to evaluate is confined to
-stage11: release keys during its locked intro; detect03D8 bit4 together with
-the owned07FA input callback and a jump-accepting P1 callback; then issue a
-fresh A press instead of waiting for the existing modulo90 pulse. This fixes
-a positively identified input-availability mismatch. It does not prove that
-the opening jump avoids a particular attack, defeats the opponent, or reaches
-the terminal. No new bot or experiment was implemented here.
+For a future checkpoint with positively saved/liveHP>0, a phase-aware fresh
+A remains a possible input test: release during the locked intro, then press
+after03D8 bit4/owned07FA and a jump-accepting callback. It cannot repair this
+savedHP0 checkpoint. The causal baseline later accepts jumps at93781/93963
+while HP remains0, reinforcing that input acceptance alone is not survival.
+No new bot, jump policy, HP intervention or experiment follows from this note.
 
 A useful next read-only capture is the exact active transition RAM, followed
 by the first actual P1 HP-loss instruction/attacker and accepted jump callback

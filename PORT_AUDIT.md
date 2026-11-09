@@ -1,5 +1,20 @@
 # Port recovery audit
 
+## 2026-11-09 actual preactivation failure and verified checkpoint replay
+
+The new baseline and genuine checkpoint replay completed normally. FIRST already had HP0/event005B
+at the actual boss hit/root5 (91708). The following scene saved0 at payload2334+46, temporarily set
+HP1, then restored0 at93549 before input activation93570. The earlier carried-survivor-HP1 inference
+is withdrawn; a fresh jump cannot repair this captured entry. No3030 damage pair occurred.
+
+The restored complete native+managed core equals the genuine checkpoint. All2810 recorded FIRST/stage
+contexts and seven shared activation RAM/SRAM/PNG outputs match. Original save and GBA v72 are unchanged.
+Terminal/DI remain unobserved. Next: ordinary Continue from the proven final state to fresh stage7 HP8,
+with no P1 HP or progression writes. Stage11 is mechanically the second boss; do not conflate this
+repository's Shoot label with the separate menu mode23. E5's first invalid writer remains unknown.
+See [corrected cause](records/shoot-actual-input-boundary-20261109.md) and
+[completed capture/replay QA](records/wsc-shoot-boundary-checkpoint-qa-20261109.md).
+
 ## 2026-11-09 approved boss HP1 observation — actual hit and Shoot entry
 
 The separate hidden original-reference run completed normally, including host cleanup. Exactly one
