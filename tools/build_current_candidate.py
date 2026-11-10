@@ -228,7 +228,9 @@ EXPECTED_LAYERS = {
     "shoot-guarded-transition.gba": "18BBA3DF3A2634828A80033F6BA5E788C58CD1C78B169F502C99663BE514EBD1",
     "shoot-fatal-callback.gba": "6A1AEBDD3751D3E2684C7F7D26A28F0473EB6733BE6371F50F0E9C2A12A033B7",
     "shoot-native-scene.gba": "6D883A52A1F13467477DC0733D6B349510703A66CA4D7AC74436ABB7E9D00331",
-    "current-candidate.gba": "1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC",
+    "shoot-child-rectangle.gba": "1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC",
+    "shoot-palette-calls.gba": "FF3A9D54F74225E77B36EAF156589169D49FAC71A81DA511754CA7FE8E3590A8",
+    "current-candidate.gba": "46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B",
 }
 
 
@@ -542,6 +544,8 @@ def main() -> int:
     shoot_guarded_transition = output / "shoot-guarded-transition.gba"
     shoot_fatal = output / "shoot-fatal-callback.gba"
     shoot_native_scene = output / "shoot-native-scene.gba"
+    shoot_rectangle = output / "shoot-child-rectangle.gba"
+    shoot_palette_calls = output / "shoot-palette-calls.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -815,7 +819,11 @@ def main() -> int:
         "--manifest", output / "shoot-fatal-callback.json")
     run("build_shoot_native_scene_connection.py", shoot_fatal, args.gba, args.wsc15, shoot_native_scene,
         "--manifest", output / "shoot-native-scene.json")
-    run("build_shoot_child_attack_rectangle.py", shoot_native_scene, args.gba, args.wsc15, candidate,
+    run("build_shoot_child_attack_rectangle.py", shoot_native_scene, args.gba, args.wsc15, shoot_rectangle,
+        "--manifest", output / "shoot-child-rectangle.json")
+    run("build_shoot_palette_dim_calls.py", shoot_rectangle, args.wsc15, shoot_palette_calls,
+        "--manifest", output / "shoot-palette-calls.json")
+    run("build_shoot_terminal_owner_link.py", shoot_palette_calls, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1233,10 +1241,20 @@ def main() -> int:
     require_hash(scene_review, "37812C30D6A1EA005F48CB1E3298D38FBCD795008A614CEEA9339679B16B75B8",
                  "source-only native entry, receiver lifetime, HUD and nonfatal composition")
     rectangle_review = intermediate / "shoot-child-rectangle-verification.json"
-    run("verify_shoot_child_attack_rectangle_production.py", "--before", shoot_native_scene, "--after", candidate,
-        "--gba", args.gba, "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", rectangle_review)
+    run("verify_shoot_child_attack_rectangle_production.py", "--before", shoot_native_scene, "--after", shoot_rectangle,
+        "--gba", args.gba, "--source", args.wsc15, "--manifest", output / "shoot-child-rectangle.json", "--report", rectangle_review)
     require_hash(rectangle_review, "BAD282D7F5AEAC391022D3A3C350C4257A6BC15A901406EC29F875CEDFB4DACA",
                  "source-relative child command rectangles and complete163-payload ownership")
+    palette_calls_review = intermediate / "shoot-palette-calls-verification.json"
+    run("verify_shoot_palette_dim_calls_production.py", "--before", shoot_rectangle, "--after", shoot_palette_calls,
+        "--source", args.wsc15, "--manifest", output / "shoot-palette-calls.json", "--report", palette_calls_review)
+    require_hash(palette_calls_review, "94F9FD0FC4B95F64CA7BFB4F424DF333EF29170B8CDA32A1CA2FB4BEF0BDC840",
+                 "source-bound conditional dim calls with complete four-word inverse")
+    owner_link_review = intermediate / "shoot-owner-link-verification.json"
+    run("verify_shoot_terminal_owner_link_production.py", "--before", shoot_palette_calls, "--after", candidate,
+        "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", owner_link_review)
+    require_hash(owner_link_review, "8CE38E626C7629F4A1F2ABB041B55B85B94AD71809CC1B8EA8C1F8F338AF27A3",
+                 "source-bound reciprocal auxiliary owner and retained terminal guard")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1462,6 +1480,18 @@ def main() -> int:
             "relocated_command_pointers": 8, "null_command_pointers_unchanged": 155,
             "source_rectangle": "3D1F3C", "native_rectangle": "085B9180",
             "legacy_dispatch_unchanged": True, "historical_E5_cause_resolved": False,
+        },
+        "shoot_palette_dim_calls": {
+            "verification_sha256": "94F9FD0FC4B95F64CA7BFB4F424DF333EF29170B8CDA32A1CA2FB4BEF0BDC840",
+            "declared_bytes": 16, "changed_bytes": 12, "new_RAM_bytes": 0,
+            "conditional_calls": 4, "existing_helper": "085C6FD4",
+            "self_targeting_calls_removed": True,
+        },
+        "shoot_terminal_owner_link": {
+            "verification_sha256": "8CE38E626C7629F4A1F2ABB041B55B85B94AD71809CC1B8EA8C1F8F338AF27A3",
+            "declared_bytes": 4, "changed_bytes": 1, "new_RAM_bytes": 0,
+            "guard_site": "086FFC00", "auxiliary_owner_offset": 40,
+            "other_guard_predicates_unchanged": True, "final_port_complete": False,
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

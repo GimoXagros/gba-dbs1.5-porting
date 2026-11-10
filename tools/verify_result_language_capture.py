@@ -146,6 +146,19 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B':
+        restored = bytearray(result_predecessor)
+        restored[0x6FFC00:0x6FFC04] = bytes.fromhex('180096E5')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == 'FF3A9D54F74225E77B36EAF156589169D49FAC71A81DA511754CA7FE8E3590A8',
+             'whole reciprocal auxiliary owner inverse to reviewed palette calls')
+    if sha(result_predecessor) == 'FF3A9D54F74225E77B36EAF156589169D49FAC71A81DA511754CA7FE8E3590A8':
+        restored = bytearray(result_predecessor)
+        for offset in (0x5C6F4C, 0x5C6F5C, 0x5C6F88, 0x5C6FBC):
+            restored[offset:offset + 4] = bytes.fromhex('FEFFFF1B')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC',
+             'whole palette dim call inverse to exact v74')
     if sha(result_predecessor) == '1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC':
         restored = bytearray(result_predecessor)
         for offset in range(0x5B90A4, 0x5B9115, 0x10):
