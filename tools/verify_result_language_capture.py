@@ -146,6 +146,15 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    if sha(result_predecessor) == '280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7':
+        restored = bytearray(result_predecessor)
+        restored[0x6FF6E8:0x6FF6EC] = bytes.fromhex('449FFBEB')
+        restored[0x6FF720:0x6FF768] = b'\xff' * 72
+        restored[0x6FFDE8:0x6FFDEC] = bytes.fromhex('CCDF0000')
+        restored[0x6FFDEC:0x6FFDF0] = bytes.fromhex('001E0000')
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == '46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B',
+             'whole display epoch inverse to exact v75')
     if sha(result_predecessor) == '46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B':
         restored = bytearray(result_predecessor)
         restored[0x6FFC00:0x6FFC04] = bytes.fromhex('180096E5')

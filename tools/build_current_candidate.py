@@ -230,7 +230,8 @@ EXPECTED_LAYERS = {
     "shoot-native-scene.gba": "6D883A52A1F13467477DC0733D6B349510703A66CA4D7AC74436ABB7E9D00331",
     "shoot-child-rectangle.gba": "1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC",
     "shoot-palette-calls.gba": "FF3A9D54F74225E77B36EAF156589169D49FAC71A81DA511754CA7FE8E3590A8",
-    "current-candidate.gba": "46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B",
+    "shoot-owner-link.gba": "46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B",
+    "current-candidate.gba": "280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7",
 }
 
 
@@ -546,6 +547,7 @@ def main() -> int:
     shoot_native_scene = output / "shoot-native-scene.gba"
     shoot_rectangle = output / "shoot-child-rectangle.gba"
     shoot_palette_calls = output / "shoot-palette-calls.gba"
+    shoot_owner_link = output / "shoot-owner-link.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -823,7 +825,9 @@ def main() -> int:
         "--manifest", output / "shoot-child-rectangle.json")
     run("build_shoot_palette_dim_calls.py", shoot_rectangle, args.wsc15, shoot_palette_calls,
         "--manifest", output / "shoot-palette-calls.json")
-    run("build_shoot_terminal_owner_link.py", shoot_palette_calls, args.wsc15, candidate,
+    run("build_shoot_terminal_owner_link.py", shoot_palette_calls, args.wsc15, shoot_owner_link,
+        "--manifest", output / "shoot-owner-link.json")
+    run("build_shoot_terminal_display_epoch.py", shoot_owner_link, args.wsc15, candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1251,10 +1255,15 @@ def main() -> int:
     require_hash(palette_calls_review, "94F9FD0FC4B95F64CA7BFB4F424DF333EF29170B8CDA32A1CA2FB4BEF0BDC840",
                  "source-bound conditional dim calls with complete four-word inverse")
     owner_link_review = intermediate / "shoot-owner-link-verification.json"
-    run("verify_shoot_terminal_owner_link_production.py", "--before", shoot_palette_calls, "--after", candidate,
-        "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", owner_link_review)
+    run("verify_shoot_terminal_owner_link_production.py", "--before", shoot_palette_calls, "--after", shoot_owner_link,
+        "--source", args.wsc15, "--manifest", output / "shoot-owner-link.json", "--report", owner_link_review)
     require_hash(owner_link_review, "8CE38E626C7629F4A1F2ABB041B55B85B94AD71809CC1B8EA8C1F8F338AF27A3",
                  "source-bound reciprocal auxiliary owner and retained terminal guard")
+    display_epoch_review = intermediate / "shoot-display-epoch-verification.json"
+    run("verify_shoot_terminal_display_epoch_production.py", "--before", shoot_owner_link, "--after", candidate,
+        "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", display_epoch_review)
+    require_hash(display_epoch_review, "AFC67C96B20744286BEC58BA05313808A7CE22D3788E05E6B2385874A8ADCE65",
+                 "planned display mapping and live consumption recheck with exact whole inverse")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1492,6 +1501,13 @@ def main() -> int:
             "declared_bytes": 4, "changed_bytes": 1, "new_RAM_bytes": 0,
             "guard_site": "086FFC00", "auxiliary_owner_offset": 40,
             "other_guard_predicates_unchanged": True, "final_port_complete": False,
+        },
+        "shoot_terminal_display_epoch": {
+            "verification_sha256": "AFC67C96B20744286BEC58BA05313808A7CE22D3788E05E6B2385874A8ADCE65",
+            "declared_bytes": 84, "changed_bytes": 69, "new_RAM_bytes": 0,
+            "additional_stack_bytes": 0, "consumption_entry": "086FF720",
+            "planned_mapping_checked": True, "live_display_fields_rechecked": True,
+            "earliest_compare_runtime_verified": False, "final_port_complete": False,
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

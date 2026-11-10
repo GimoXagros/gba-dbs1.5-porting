@@ -81,3 +81,27 @@ and stationary-family proofs remain relevant, but do not justify claiming
 that no ordinary scheduler iteration can occur in that interval. If those
 conditions cannot be established, the two-literal proposal is insufficient.
 No ROM, guard, main build or frozen predecessor has been changed here.
+
+## Actual confirmation and superseding isolated component
+
+The completed added-telemetry trial
+`build/bizhawk-gba-shoot-terminal-bg-epoch-20261110-a` confirms the chain.
+At69932, the paired shake hooks show2356 changing0000→0200; the guard
+returns actual R0=0 while that word is0200. The subsequent clear hooks
+show2356 returning to0000. The fallback then calls FEC with actual R0=12,
+and the paired hardware-store hooks show BG1CNT1E03→1F03. At69933 all four
+velocities are zero, but BG1CNT1F03 causes another actual R0=0 guard return.
+The first guard itself spans observed VCOUNT172→176 before reaching map or
+row checks, so repeating the full guard inside a line1 IRQ would need a
+separate latency justification.
+
+Independent actual auditF25BB784 establishes all20 whole Cores exact with
+zero normalization against the prior46B3 run, and every snapshot RAM/image/
+display exact. Removing the20 scalar records restores the entire prior331
+trace lines exactly. This confirms causality without a new guest mutation;
+see `shoot-native-terminal-bg-epoch-capture-qa-20261110.md`.
+
+The subsequent isolated280D component in
+`shoot-terminal-display-epoch-20261110.md` supersedes the two-literal-only
+proposal: it adds a short consumption-time hardware/velocity recheck as
+well. Mainv75/46B3 and both diagnostic captures remain unchanged.
