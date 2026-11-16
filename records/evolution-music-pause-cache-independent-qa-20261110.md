@@ -1,0 +1,11 @@
+# Independent pause/resume cache repair
+
+PASS for frozen C344 over C508. Capture-free production gate `tools/verify_evolution_music_pause_cache.py` SHA256 `E678081D5082ACA480722743FBE90491A6FD6D6478706F1FC796DD07B8AFB462`; report `build/evolution-music-pause-cache-independent-qa-20261110/report.json` SHA256 `1E30456EC7394CF98D74B94D4AB3EBA49D7F1D084A4094E71EFE4BEF987EE022`.
+
+The gate accepts `--before`, `--after`, `--manifest`, `--report`. Its report is path-independent and uses only frozen ROM, manifest and source-tool pins, with no capture dependency. It independently reconstructs the two spans: conditional branch37B458 and20-byte tailD7DFC0. All24 declared bytes and23 changed bytes agree; the whole16MiB inverse restores C508. The entire64-byte reservation tail is erased in the predecessor; the frozen conservative full-image pointer/ARM/Thumb scan reports zero inbound encodings.
+
+1080 actual ARM executions compare old and new behavior for IDs00..7F and signed/unsigned boundary values under four NZCV patterns. Only6C..6F gain cache writes. Play/stop arguments, all noncache writes, stack/return and general registers remain equivalent, except the expected R9 cache-address scratch in newly admitted paths. Existing zero-song global stop remains intact.
+
+Eight actual ARM pause/resume routes pass the corrected cached ID. A separate bounded Thumb decoder executes the actual consumer bytes from37C348 and37C37C: song-table indexing, player-table lookup, active-header load, song-header load, CMP, conditional branch, actual BL target and stack return. Thirty-two cases cover matching active headers, stale cached15 with active evolution header, stale active header, and zero active header. Only matching6C..6F cases call the selected player at actual MPlayStop37C9C8 or resume37C1A8. Negative header cases skip the call. This exercises the missing consumer contract beyond author-side ARM admission.
+
+The downstream MPlay implementations are explicit service boundaries; their synthesis and full runtime effects are not simulated. The Thumb decoder supports only the executed bounded instruction subset and rejects unsupported encodings. No emulator, runtime pause observation, main-file change or Git operation was performed. Existing render-only evidence does not substitute for ordinary gameplay pause verification.

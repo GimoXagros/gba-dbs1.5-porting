@@ -231,7 +231,10 @@ EXPECTED_LAYERS = {
     "shoot-child-rectangle.gba": "1477F90EB06820D533F85F28EEC20130933660E0BFD1B728EF7953EDB0941FAC",
     "shoot-palette-calls.gba": "FF3A9D54F74225E77B36EAF156589169D49FAC71A81DA511754CA7FE8E3590A8",
     "shoot-owner-link.gba": "46B37BAA3741E13A1C9873C3C5B496B9A6BD05B33F541162271D53EC3AB3C22B",
-    "current-candidate.gba": "280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7",
+    "shoot-display-epoch.gba": "280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7",
+    "evolution-music.gba": "DD6D73B51B867E3EA2EE5D691252FB2A8F15FE82F8BFD3C172FCBCACAA7A6049",
+    "evolution-music-display.gba": "C5089F81C13FA381495C169AA7BA0538CD3D7FE599564894608F99596F8DD346",
+    "current-candidate.gba": "C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278",
 }
 
 
@@ -548,6 +551,9 @@ def main() -> int:
     shoot_rectangle = output / "shoot-child-rectangle.gba"
     shoot_palette_calls = output / "shoot-palette-calls.gba"
     shoot_owner_link = output / "shoot-owner-link.gba"
+    shoot_display_epoch = output / "shoot-display-epoch.gba"
+    evolution_music = output / "evolution-music.gba"
+    evolution_music_display = output / "evolution-music-display.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -827,8 +833,14 @@ def main() -> int:
         "--manifest", output / "shoot-palette-calls.json")
     run("build_shoot_terminal_owner_link.py", shoot_palette_calls, args.wsc15, shoot_owner_link,
         "--manifest", output / "shoot-owner-link.json")
-    run("build_shoot_terminal_display_epoch.py", shoot_owner_link, args.wsc15, candidate,
-        "--manifest", output / "current-candidate.json")
+    run("build_shoot_terminal_display_epoch.py", shoot_owner_link, args.wsc15, shoot_display_epoch,
+        "--manifest", output / "shoot-display-epoch.json")
+    run("build_wsc_evolution_music.py", "--input", shoot_owner_link, "--wsc", args.wsc15, "--gba", args.gba,
+        "--output", evolution_music, "--manifest", output / "evolution-music.json")
+    run("build_evolution_music_integration.py", "--display", shoot_display_epoch, "--audio", evolution_music,
+        "--output", evolution_music_display, "--manifest", output / "evolution-music-display.json")
+    run("build_evolution_music_pause_cache.py", "--before", evolution_music_display,
+        "--output", candidate, "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1260,10 +1272,26 @@ def main() -> int:
     require_hash(owner_link_review, "8CE38E626C7629F4A1F2ABB041B55B85B94AD71809CC1B8EA8C1F8F338AF27A3",
                  "source-bound reciprocal auxiliary owner and retained terminal guard")
     display_epoch_review = intermediate / "shoot-display-epoch-verification.json"
-    run("verify_shoot_terminal_display_epoch_production.py", "--before", shoot_owner_link, "--after", candidate,
-        "--source", args.wsc15, "--manifest", output / "current-candidate.json", "--report", display_epoch_review)
+    run("verify_shoot_terminal_display_epoch_production.py", "--before", shoot_owner_link, "--after", shoot_display_epoch,
+        "--source", args.wsc15, "--manifest", output / "shoot-display-epoch.json", "--report", display_epoch_review)
     require_hash(display_epoch_review, "AFC67C96B20744286BEC58BA05313808A7CE22D3788E05E6B2385874A8ADCE65",
                  "planned display mapping and live consumption recheck with exact whole inverse")
+    music_author_review = intermediate / "evolution-music-author-verification.json"
+    run("verify_wsc_evolution_music_author.py", "--rom", evolution_music,
+        "--manifest", output / "evolution-music.json", "--report", music_author_review)
+    require_hash(music_author_review, "D7B0A1E03B1AA25F7B627FF0CA316DF09364FEF12F6664FC7B17AEA3FF20B0FD",
+                 "complete source music stream decoding and native selector ABI")
+    music_integration_review = intermediate / "evolution-music-integration-verification.json"
+    run("verify_evolution_music_display_composition.py", "--before", shoot_display_epoch, "--audio", evolution_music,
+        "--after", evolution_music_display, "--music-manifest", output / "evolution-music.json",
+        "--display-manifest", output / "shoot-display-epoch.json", "--report", music_integration_review)
+    require_hash(music_integration_review, "FAFF1A4105F0F9A555FAB4FA18B3599EBA27915B6796E51C19AF27F4A1A38FD0",
+                 "disjoint music and display layers with both whole-image inverses")
+    music_pause_review = intermediate / "evolution-music-pause-verification.json"
+    run("verify_evolution_music_pause_cache.py", "--before", evolution_music_display, "--after", candidate,
+        "--manifest", output / "current-candidate.json", "--report", music_pause_review)
+    require_hash(music_pause_review, "1E30456EC7394CF98D74B94D4AB3EBA49D7F1D084A4094E71EFE4BEF987EE022",
+                 "four-song cache admission and actual native pause/resume header consumers")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1297,7 +1325,9 @@ def main() -> int:
         "schema": 1,
         "kind": "reproducible-current-candidate-build",
         "claim_scope": (
-            "exact current integration candidate including the five-state "
+            "exact current integration candidate with four source evolution scores and original waveforms; "
+            "existing production music stop/return behavior retained, audible parity not claimed; "
+            "including the five-state "
             "opening choice path, selector records 11..14, the four added "
             "linear opening callbacks, the Shoot child resource layer, and the "
             "resident 9229->94C1->9570->9617 child generator/callback family with "
@@ -1508,6 +1538,17 @@ def main() -> int:
             "additional_stack_bytes": 0, "consumption_entry": "086FF720",
             "planned_mapping_checked": True, "live_display_fields_rechecked": True,
             "earliest_compare_runtime_verified": False, "final_port_complete": False,
+        },
+        "original_evolution_music": {
+            "source_groups": [56, 60, 64, 248], "native_songs": [108, 109, 110, 111],
+            "source_channels": 16, "notes": 1917, "prior_song_entries_preserved": 108,
+            "input_size": 8388608, "output_size": 16777216,
+            "music_changed_bytes": 104216, "test_stop_suppression": False,
+            "pause_cache_declared_bytes": 24, "pause_cache_changed_bytes": 23,
+            "pause_cache_additional_ids": [108, 109, 110, 111],
+            "pause_resume_gameplay_runtime_verified": False,
+            "representation_limits": "tempo, pitch/pan quantization, waveform restart and vibrato phase",
+            "full_audible_parity_verified": False, "final_port_complete": False,
         },
         "resident_scene": {
             "verification_sha256": "AC1D7CCFBC2753D1439B2AFCA364240F7AFC0D26C1E030860898B82ED99DD15D",

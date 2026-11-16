@@ -146,6 +146,25 @@ def selfchecks(retail):
 
 def audit(directory, rom, retail, observer):
     result_predecessor = rom
+    script_sha = SCRIPT
+    if sha(result_predecessor) == 'C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278':
+        restored = bytearray(result_predecessor)
+        restored[0x37B458:0x37B45C] = bytes.fromhex('0100005A')
+        restored[0xD7DFC0:0xD7DFD4] = b'\xff' * 20
+        result_predecessor = bytes(restored)
+        need(sha(result_predecessor) == 'C5089F81C13FA381495C169AA7BA0538CD3D7FE599564894608F99596F8DD346',
+             'whole pause-cache inverse to exact music/display composition')
+    if sha(result_predecessor) == 'C5089F81C13FA381495C169AA7BA0538CD3D7FE599564894608F99596F8DD346':
+        from build_evolution_music_integration import inverse_music
+        root = Path(__file__).resolve().parents[1]
+        need(sha(read(root / 'tools/build_evolution_music_integration.py')) ==
+             '1BFF03992429A94CAF1143D02A84165581B19699A7597E7CC77FBB6905DB5794', 'frozen music inverse')
+        need(sha(read(root / 'tools/bizhawk_probe_result_languages.lua')) == SCRIPT, 'frozen wrapped observer')
+        result_predecessor = inverse_music(result_predecessor)
+        script_sha = '5D6264063DEBCB9F6F3A1405B0F0BA5F96AFFF96A6D072E8E97819E5BF877EAF'
+        if sha(rom) == 'C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278':
+            need(sha(read(root / 'tools/bizhawk_probe_result_languages_16m.lua')) == script_sha, 'frozen16MiB inner wrapper')
+            script_sha = 'CE19C883938D17D82C19BC6678B0F521D53E104BB132362528098A510D7FE430'
     if sha(result_predecessor) == '280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7':
         restored = bytearray(result_predecessor)
         restored[0x6FF6E8:0x6FF6EC] = bytes.fromhex('449FFBEB')
@@ -249,13 +268,13 @@ def audit(directory, rom, retail, observer):
         result_predecessor = bytes(restored)
     need(sha(result_predecessor) == PINS['after'] and sha(retail) == PINS['gba'],
          'immutable result ROM or exact whole-ROM inverse of reviewed resident callers')
-    need(sha(observer) == SCRIPT, 'reviewed frozen ordinary-input observer')
+    need(sha(observer) == script_sha, 'reviewed frozen ordinary-input observer')
     need(not re.search(rb'(memory\.write|emu\.setregister|savestate\.|loadstate)', observer), 'no guest state-write APIs')
     launch = json.loads(read(directory / 'launch.json'))
     for key in ('completed', 'loaded_rom_exact', 'script_unchanged'):
         need(launch.get(key) is True, 'completed launch evidence: ' + key)
     need(launch['visible'] is False and launch['physical_background_input'] is False and launch['guest_writes'] == [], 'private ordinary-input launch')
-    need(launch['script_sha256'] == SCRIPT and launch['rom_sha256'] == sha(rom) and launch['exe_sha256'] == EXE, 'pinned launch identities')
+    need(launch['script_sha256'] == script_sha and launch['rom_sha256'] == sha(rom) and launch['exe_sha256'] == EXE, 'pinned launch identities')
     root = Path(__file__).resolve().parents[1]
     need(sha(read(root / 'tools/bizhawk_probe_gba_collision.lua')) == launch['base_script_sha256'], 'unchanged base observer')
     need(sha(read(root / 'local/BizHawk-2.11.1/EmuHawk.exe')) == EXE, 'actual pinned emulator executable')
@@ -263,7 +282,7 @@ def audit(directory, rom, retail, observer):
     need(names == set(launch['files']), 'complete final top-level capture inventory')
     for name, digest in launch['files'].items():
         need(Path(name).name == name and sha(read(directory / name)) == digest, 'frozen capture identity: ' + name)
-    need(read(directory / 'loaded-rom.bin') == rom == read(directory / 'probe.gba'), 'complete actual loaded8MB ROM')
+    need(read(directory / 'loaded-rom.bin') == rom == read(directory / 'probe.gba'), 'complete actual loaded ROM')
     cfg = json.loads(read(directory / 'config.json'))
     for key in ('AcceptBackgroundInput', 'AutoLoadLastSaveSlot', 'AutosaveSaveRAM'):
         need(cfg[key] is False, 'isolated configuration: ' + key)
@@ -337,7 +356,7 @@ def audit(directory, rom, retail, observer):
     counts = {name: len(oam_check(snap['oam'])) for name, snap in snaps.items()}
     return dict(status='PASS', language=('en', 'ja', 'ko', 'digicode')[language], rom_sha256=sha(rom),
                 launch_sha256=sha(read(directory / 'launch.json')), trace_sha256=sha(read(directory / 'trace.txt')),
-                observer_sha256=SCRIPT, files_verified=len(names), snapshots=len(snaps), writer_calls=len(writers),
+                observer_sha256=script_sha, files_verified=len(names), snapshots=len(snaps), writer_calls=len(writers),
                 init_calls=len(init), draw_calls=int(summary['draw_calls']), unique_draws=len(draws), rendered_label=rendered,
                 oam_counts=counts, native_renderer_sha256=sha(retail[0x12C58:0x12DD8]),
                 last_chance_observed=any(int(e['event']) == 3 for e in labels), negative_selfchecks=negatives,

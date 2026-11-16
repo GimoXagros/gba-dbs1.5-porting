@@ -1,0 +1,15 @@
+# First source/native audio render pair
+
+Capture provenance PASS; native rendering is explicitly partial. Report `build/bgm-render-pair38-capture-qa-20261110/report.json` SHA256 `775C2F999D65639A7399F0346980BCC229AAB6554F51B07612CFF82D6606ACC8` was produced by the new independent `tools/verify_bgm_render_pair38_capture.py`. No emulator was run and no capture was modified.
+
+Both captures bind the frozen host, observer, fixture manifest and independent fixture gate. Complete file inventories and actual PCM measurements match host reports. Saved configuration retains physical audio off and isolated save/input settings. Both files are stereo signed16-bit 44100Hz WAV. Their lengths, 58.3 seconds WSC and 73.653401 seconds GBA, match 4400 frames at their respective platform rates. Both have zero saturated samples; peaks7735/30014 alone do not establish a volume error across different cores.
+
+WSC initializes selected descriptors3840/3930/3EDA/422C at frame521, with actual state bytes64/33/146/35. The later00 foreground request changes slots0..3 while slots4..7 retain these background descriptors. Final nonzero PCM is50.956916 seconds; the simple521+3309-update prediction is50.7475 seconds. The additional0.209416 seconds remains a timing qualification, not exact scheduling parity.
+
+Native request01 at534 is consumed535. Request00 at2883 is consumed2884, corresponding to48.285965 seconds. Last nonzero PCM is48.274240 seconds, within one frame of that stop. Expected native schedule end is52.695465 seconds. The fixture is thus4.421225 seconds short of the unbroken schedule; its silence does not prove natural song completion.
+
+For broad pitch comparison, 36 windows at1-second intervals were aligned to the observed initialization and known+0.242655% native tempo difference. Each8192-sample window contributes a gain-normalized stereo power spectrum on192 logarithmic frequency points100..5000Hz. Median cosine similarity is0.911843 at equal frequencies, versus0.163223 and0.177650 under half/double frequency comparisons. Dominant-frequency landmarks broadly agree. This supports broad pitch correspondence and provides no evidence of a wholesale octave error; it is not a full note-identity or listening test.
+
+The50ms stereo RMS envelope correlation over the first38seconds is only0.151035. Envelope, timbre and stereo balance parity are therefore not established. Quantization, modulation, core mixing and timing offsets require separate attribution; this metric alone does not identify a code defect. Source/native rendered buffers are not expected to be sample-identical.
+
+The first checker draft assumed ordinary-boot channel states32/33/34/35 and refused before writing a report. Inspection of actual selected-score telemetry corrected the new checker to64/33/146/35; no evidence was altered. Root supplied process exit0 confirmation; the host itself stores completion rather than an exit-code field. No normal evolution activation, complete native score, title identity or audible-quality claim follows from this fixture audit.
