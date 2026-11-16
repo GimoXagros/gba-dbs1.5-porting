@@ -234,7 +234,9 @@ EXPECTED_LAYERS = {
     "shoot-display-epoch.gba": "280DAF9F7587FCE7A860C29DEFB144DB80729965C13939841CA8093774C05FB7",
     "evolution-music.gba": "DD6D73B51B867E3EA2EE5D691252FB2A8F15FE82F8BFD3C172FCBCACAA7A6049",
     "evolution-music-display.gba": "C5089F81C13FA381495C169AA7BA0538CD3D7FE599564894608F99596F8DD346",
-    "current-candidate.gba": "C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278",
+    "evolution-music-pause.gba": "C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278",
+    "impmon-evolution.gba": "8C727FA831F0DF3B2DCE41EE76AE471BE2D50F0DAA877235E40E856CD78B2BD8",
+    "current-candidate.gba": "C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1",
 }
 
 
@@ -554,6 +556,8 @@ def main() -> int:
     shoot_display_epoch = output / "shoot-display-epoch.gba"
     evolution_music = output / "evolution-music.gba"
     evolution_music_display = output / "evolution-music-display.gba"
+    evolution_music_pause = output / "evolution-music-pause.gba"
+    impmon_evolution = output / "impmon-evolution.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -840,7 +844,13 @@ def main() -> int:
     run("build_evolution_music_integration.py", "--display", shoot_display_epoch, "--audio", evolution_music,
         "--output", evolution_music_display, "--manifest", output / "evolution-music-display.json")
     run("build_evolution_music_pause_cache.py", "--before", evolution_music_display,
-        "--output", candidate, "--manifest", output / "current-candidate.json")
+        "--output", evolution_music_pause, "--manifest", output / "evolution-music-pause.json")
+    run("build_impmon_evolution_gate.py", "--before", evolution_music_pause, "--gba", args.gba,
+        "--wsc10", args.wsc10, "--wsc15", args.wsc15, "--output", impmon_evolution,
+        "--manifest", output / "impmon-evolution.json")
+    run("build_evolution_transition_tables.py", "--before", impmon_evolution, "--wsc15", args.wsc15,
+        "--allocation-manifest", output / "evolution-music.json", "--output", candidate,
+        "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1288,10 +1298,20 @@ def main() -> int:
     require_hash(music_integration_review, "FAFF1A4105F0F9A555FAB4FA18B3599EBA27915B6796E51C19AF27F4A1A38FD0",
                  "disjoint music and display layers with both whole-image inverses")
     music_pause_review = intermediate / "evolution-music-pause-verification.json"
-    run("verify_evolution_music_pause_cache.py", "--before", evolution_music_display, "--after", candidate,
-        "--manifest", output / "current-candidate.json", "--report", music_pause_review)
+    run("verify_evolution_music_pause_cache.py", "--before", evolution_music_display, "--after", evolution_music_pause,
+        "--manifest", output / "evolution-music-pause.json", "--report", music_pause_review)
     require_hash(music_pause_review, "1E30456EC7394CF98D74B94D4AB3EBA49D7F1D084A4094E71EFE4BEF987EE022",
                  "four-song cache admission and actual native pause/resume header consumers")
+    impmon_evolution_review = intermediate / "impmon-evolution-verification.json"
+    run("verify_impmon_evolution_gate.py", "--before", evolution_music_pause, "--after", impmon_evolution,
+        "--gba", args.gba, "--wsc10", args.wsc10, "--wsc15", args.wsc15, "--report", impmon_evolution_review)
+    require_hash(impmon_evolution_review, "D727C5DC1D35E2C743F8C3B8E6D24BC096AFFACBE45172FE078DD5196A250661",
+                 "source default-mode Impmon contact route with exact full-image inverse")
+    evolution_tables_review = intermediate / "evolution-transition-verification.json"
+    run("verify_evolution_event_tables.py", "--before", impmon_evolution, "--after", candidate,
+        "--wsc15", args.wsc15, "--music-manifest", output / "evolution-music.json", "--report", evolution_tables_review)
+    require_hash(evolution_tables_review, "A787F41CD3A78BD0B509F2A7EC96C10133BDB825292BC11EDB169D162AA2469B",
+                 "source fifteen-identity evolution selectors, bounded allocation and full-image inverse")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1538,6 +1558,16 @@ def main() -> int:
             "additional_stack_bytes": 0, "consumption_entry": "086FF720",
             "planned_mapping_checked": True, "live_display_fields_rechecked": True,
             "earliest_compare_runtime_verified": False, "final_port_complete": False,
+        },
+        "impmon_evolution_contact": {
+            "mode_scope": "source flag-clear default Ver.1.5 mode; alternate mode not implemented",
+            "declared_bytes": 4, "changed_bytes": 1, "boss_identity_15_excluded": True,
+            "actual_runtime_evolution_verified": False, "final_port_complete": False,
+        },
+        "evolution_transition_tables": {
+            "playable_identities": 15, "tables": 3, "declared_bytes": 114, "changed_bytes": 109,
+            "old_identities_0_to_10_preserved": True, "source_events_and_native_bounds_verified": True,
+            "actual_runtime_verified": False, "historical_e5_cause_proven": False, "final_port_complete": False,
         },
         "original_evolution_music": {
             "source_groups": [56, 60, 64, 248], "native_songs": [108, 109, 110, 111],
