@@ -246,7 +246,8 @@ EXPECTED_LAYERS = {
     "iraira-render.gba": "3FE5CF45072E6277FACD74515B95CD883109135935F5D6B9994F9372FE80B77F",
     "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
     "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
-    "current-candidate.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
+    "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
+    "current-candidate.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
 }
 
 
@@ -578,6 +579,7 @@ def main() -> int:
     iraira_render = output / "iraira-render.gba"
     mode20_title = output / "mode20-title-assets.gba"
     iraira_outer = output / "iraira-outer-palette.gba"
+    child_contact = output / "shoot-child-contact.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -909,7 +911,12 @@ def main() -> int:
         output / "character-ai-parameter-alignment.json", "--output", iraira_outer,
         "--manifest", output / "iraira-outer-palette.json")
     run("build_shoot_child_contact.py", "--before", iraira_outer, "--source", args.wsc15,
-        "--output", candidate, "--manifest", output / "current-candidate.json")
+        "--output", child_contact, "--manifest", output / "shoot-child-contact.json")
+    results_route = output / "stage11-results-route"
+    run("build_shoot_stage11_results_route.py", "--before", child_contact, "--source", args.wsc15,
+        "--owner", output / "shoot-child-contact.json", "--output", results_route)
+    (results_route / "component.gba").replace(candidate)
+    (results_route / "manifest.json").replace(output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1432,15 +1439,21 @@ def main() -> int:
     require_hash(outer_review, "C095EBCB4238A058BA763C2C322E70EF59B0D0C348B19F6282AD3034A10C1C8B",
                  "source Iraira outer display dispatch and complete palette consumer")
     contact_review = intermediate / "shoot-child-contact-verification.json"
-    run("verify_shoot_child_contact_component.py", "--before", iraira_outer, "--after", candidate,
+    run("verify_shoot_child_contact_component.py", "--before", iraira_outer, "--after", child_contact,
         "--source", args.wsc15, "--report", contact_review)
     require_hash(contact_review, "74462AE34C72F28510474E1DF68B3CFA9DB8BD49C95EB8F9C3314FE17991DF77",
                  "source stage11 child contact, owned placement and native event/audio consumers")
     contact_callbacks_review = intermediate / "shoot-child-contact-callback-verification.json"
-    run("verify_shoot_child_contact_callbacks.py", "--before", iraira_outer, "--installed", candidate,
+    run("verify_shoot_child_contact_callbacks.py", "--before", iraira_outer, "--installed", child_contact,
         "--source", args.wsc15, "--entry", "0x08D8C800", "--report", contact_callbacks_review)
     require_hash(contact_callbacks_review, "D6958EA29893D14A0684DB110240C0B58805191C62B6419F47C2052341E20C3B",
                  "source three-callback lifetime, timer wrap and exact non11 route preservation")
+    results_route_review = intermediate / "shoot-stage11-results-route-verification.json"
+    run("verify_shoot_stage11_results_route.py", "--before", child_contact, "--after", candidate,
+        "--source", args.wsc15, "--manifest", output / "current-candidate.json",
+        "--owner", output / "shoot-child-contact.json", "--report", results_route_review)
+    require_hash(results_route_review, "F12C481BA9A03745E132AA10A4A9BA48C19898A2EDF35BBF7EFA735DC14511CC",
+                 "source stage7/11 final Results constructor and native ending route")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1772,6 +1785,13 @@ def main() -> int:
             "declared_bytes": 620, "changed_bytes": 607, "new_RAM_bytes": 0,
             "source_callbacks": ["966A", "96E6", "973E"],
             "restores_stage11_contact_and_parent_parent_cooldown": True,
+            "actual_runtime_verified": False, "final_port_complete": False,
+        },
+        "shoot_stage11_results_route": {
+            "verification_sha256": "F12C481BA9A03745E132AA10A4A9BA48C19898A2EDF35BBF7EFA735DC14511CC",
+            "declared_bytes": 16, "new_RAM_bytes": 0,
+            "source_final_stages": [7, 11], "native_transition_modes": [8, 12, 13, 11, 20, 3],
+            "ordinary_progress_table_preserved": True,
             "actual_runtime_verified": False, "final_port_complete": False,
         },
         "original_evolution_music": {

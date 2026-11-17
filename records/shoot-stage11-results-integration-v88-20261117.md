@@ -1,0 +1,23 @@
+# v88: source final Results routing
+
+The main candidate is `E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C`, built by frozen main `0F116F63C0F49F91FE8A0D75227F675E87E4E9329BEE11284C21113E939EBD16`. It is not the final port.
+
+The preceding actual Shoot test performed a real lethal hit and completed the source terminal sequence, but the retail Results dispatcher treated physical stage11 as an ordinary match. It incremented the final progression index10 to11 and selected `FFFFFFFF` beyond the eleven-row ordinary table. The source compares both stage7 and stage11 at777049/77704F; the native predicate at08089538 compared only7.
+
+The correction restores that shared predicate with a twelve-byte adapter at08D8CB20 and one four-byte branch. The existing source-shaped final-result flag and native constructor then select8→12→13→11→20→3. The ordinary progression table is unchanged. No index clamp, sentinel rewrite, forced mode, or guest-state repair is installed. Whole-image inversion, source anchors and the mandatory portable native gate `F12C481B` cover the exact16 bytes and no additional RAM.
+
+Original full-build processes66785 and87652 both exited0. Independent inventory `8B242ACAF24686779F0E2D05C8BB5A4EED6EFF0CFC30D3223927871BCFCFAE77` records359 identical files and136 manifest entries in `build/repro-v88-20261117-a` and `-b`. The356-file v87 inventory remains intact; only the current ROM, its manifest and build metadata differ at shared paths. The additional files preserve the5284 child-contact layer and the mandatory Results proof.
+
+Fresh private-desktop run58832 completed all eleven ordinary campaign rows, both actual boss hits and Shoot cleanup. It reached Results90942, mode12 at90944, credits92717, then physically changed13→11 at102011. The run stopped because the observer watched only the alternate credits exit. Independent actual audit `F03C8BE3` checks395 captured files and287 unchanged prefix files; it does not claim a title return. Authorized score999 and boss HP1 were confined to the test process and remain absent from the built ROM.
+
+The source's normal credits producer75AA6B/76 uses cursor≥22 and completion flags003F. Its native counterpart080CA310..398 retires the credit tasks and requests1,0,0. This differs from the alternate fade callback080CBC7C. Adding the independently proved normal producer observation to a bounded replay observed its actual request at102010 and the ending constructor at102012. That replay83139 then waited on the retained native final staff card; the earlier name-entry input observer no longer refreshed once its callback changed to080C0F40. The added typed A-input readiness and post-request observation subsequently passed independent verification and the successful r4 replay below.
+
+The commercial final staff card is a known source-parity gap: WSC1.5 deliberately suppliesFF at77B34D and bypasses the dormant card, while the current native image retains the ordinary A-confirmed card. Successfully testing that retained path must not be described as exact WSC1.5 ending parity. Source mode11 award/save integration and the extended statistics/tag record remain open.
+
+Separately, mode23's complete scene/eligibility component36A12620 passed independent composition and relocated ARM checks. Its corrected title/menu layer and four-language graphics remain isolated from this main. Digicode spacing, the COLLECTION letterforms and language-specific character portrait headers are active user-requested work. Mode22, extended saved statistics, complete language coverage and final whole-port verification are not complete.
+
+## Actual tail closure
+
+Original private-desktop process38332 exited0 with `shoot-checkpoint-aim-terminal-results-title`. It observed normal credits request102010, staff-card A readiness102729 and actual request102806, mode20 entry102808, source-art installation102838, return request102868 and title-ready102870. The only mode20 observer correction was recognizing the actual sign-extended FFFFF100 task priority; the native constructor and allocator both explicitly sign-extend the source16-bit F100 priority. The ROM was unchanged during observer corrections.
+
+Independent actual report B4832A0D checks the complete bound capture and physical transition sequence. At both mode20 art/return snapshots, all408 source tiles (26,112 decoded pixels),504 map cells,96 source colors plus32 retained padding colors and BG0CNT1F02 match the source resource contract. The installation image can still be dark during the native transition; the return and title snapshots show the visible source background. This does not assert equality of every framebuffer pixel or final whole-port completion.

@@ -1,0 +1,9 @@
+# Current Shoot checkpoint replay host review
+
+Independent read-only preflight passed before root launched the diagnostic. New checker `tools/check_shoot_checkpoint_aim_host.py` SHA256 `F783D4789D48BC8F8C4C0D86D3E802C0ABDBDF6FC02BB2C0E7353CAE9C69ADFF` produced `build/shoot-checkpoint-aim-independent-20261117/host.json` SHA256 `7942F06DEE46929EF0B2B8FE0A365ADDC2B92C026759F0EFA5D1722BADC65C17` with exit0.
+
+The15 explicit substitutions invert complete host4E3F3959 to frozen1C0BCBBB. Current ROM5284435A equals the checkpoint's ROM. Source launch4F4CD759, CoreBCA24A09, frame89405 and all five IWRAM/EWRAM/VRAM/palette/OAM snapshots pass the existing parser and source manifest hashes. The preceding wholeplay ended in defeat; that outcome does not invalidate its earlier healthy checkpoint.
+
+The host retains a private desktop, copied inputs only, no supplied save, disabled auto-load/auto-save and disabled background physical input. Its bound is360 seconds. The only new guest-write authority is the already authorized one-shot stage11 boss HP word1 at a qualified ordinary B input. The probe removes the old score/stage7 writer from its observer, checks the exact current actor/parent/HP owners, and drives ordinary direction/B input through the frozen ending guards. Five script pins include probeCF71EE66 and the separately authored nine-case actual-Lua report0222C2B3. This independent review binds that fixture and reviews the host changes; it does not duplicate the fixture or claim runtime success.
+
+The host records every byte difference between the original and reserialized restored Core. It does not normalize the historical15 differences or assume the new count is15. CPU bank, native extensions and managed suffix remain separately compared; all five restored memory regions must match before advancing. Final runtime evidence still requires the original host's exit and complete launch/capture audit.
