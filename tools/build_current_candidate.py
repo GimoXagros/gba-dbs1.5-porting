@@ -239,7 +239,8 @@ EXPECTED_LAYERS = {
     "evolution-transition.gba": "C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1",
     "id13-air-relaunch.gba": "FBD9CD19FB1F8EB65675D11403774189040BB181791DB71C98587920BB6885FD",
     "campaign-stage-progression.gba": "ADBF5D521A3EB2C672F11633104F625520004BCE59B7393005C32E96C3B6FDB9",
-    "current-candidate.gba": "933C9434C78F8ED3AE77227AAE974FFCC2346232A532C4F317A2ECE31C9B6775",
+    "campaign-progress-consumers.gba": "933C9434C78F8ED3AE77227AAE974FFCC2346232A532C4F317A2ECE31C9B6775",
+    "current-candidate.gba": "75BD7C17D32CC7567815FFFF42EFE383696E7317BFF34E09437C28DFDB99F32F",
 }
 
 
@@ -564,6 +565,7 @@ def main() -> int:
     evolution_transition = output / "evolution-transition.gba"
     id13_air = output / "id13-air-relaunch.gba"
     campaign_stage = output / "campaign-stage-progression.gba"
+    campaign_consumers = output / "campaign-progress-consumers.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -868,7 +870,13 @@ def main() -> int:
     run("build_campaign_progression_consumers.py", "--before", campaign_stage, "--source", args.wsc15,
         "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
         "--id13-manifest", output / "id13-air-relaunch.json", "--campaign-manifest", output / "campaign-stage-progression.json",
-        "--output", candidate, "--manifest", output / "current-candidate.json")
+        "--output", campaign_consumers, "--manifest", output / "campaign-progress-consumers.json")
+    run("build_character_type8_tables.py", "--before", campaign_consumers, "--gba", args.gba,
+        "--old", args.wsc10, "--source", args.wsc15,
+        "--owners", output / "evolution-music.json", output / "evolution-transition.json",
+        output / "id13-air-relaunch.json", output / "campaign-stage-progression.json",
+        output / "campaign-progress-consumers.json", "--output", candidate,
+        "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1345,13 +1353,21 @@ def main() -> int:
     require_hash(campaign_review, "1162727F1240E8AB2F9A658AF93D4E07E41B695F37B8262F48A574549B83E2C0",
                  "source clean-mode campaign producer, both stage getters and whole-image inverse")
     campaign_consumers_review = intermediate / "campaign-stage-consumers-verification.json"
-    run("verify_campaign_stage_consumers_r2.py", "--before", campaign_stage, "--after", candidate,
-        "--manifest", output / "current-candidate.json", "--source", args.wsc15,
+    run("verify_campaign_stage_consumers_r2.py", "--before", campaign_stage, "--after", campaign_consumers,
+        "--manifest", output / "campaign-progress-consumers.json", "--source", args.wsc15,
         "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
         "--id13-manifest", output / "id13-air-relaunch.json", "--producer-manifest", output / "campaign-stage-progression.json",
         "--producer-review", campaign_review, "--report", campaign_consumers_review)
     require_hash(campaign_consumers_review, "3E22A59DD56C2A5EF6F61FABDCACEEA62174636EDACE6BAEB1D7BACCB3FE9A84",
                  "source progress-indexed AI tables, decimal round label and complete layered inverse")
+    type8_review = intermediate / "type8-tables-verification.json"
+    run("verify_character_type8_tables.py", "--before", campaign_consumers, "--after", candidate,
+        "--source", args.wsc15, "--old", args.wsc10, "--gba", args.gba,
+        "--owners", output / "evolution-music.json", output / "evolution-transition.json",
+        output / "id13-air-relaunch.json", output / "campaign-stage-progression.json",
+        output / "campaign-progress-consumers.json", "--report", type8_review)
+    require_hash(type8_review, "0A5EB8355D74AF38C61A90C74ECAD636BDCF6250066C786119DC4EC2513C8896",
+                 "source fifteen-identity type8 selectors, actual event consumers and exact inverse")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1626,6 +1642,14 @@ def main() -> int:
             "initial_AI_entries": 13, "AI_entries_per_difficulty": 12, "difficulty_rows": 3,
             "declared_bytes": 453, "changed_bytes": 423, "new_RAM_bytes": 0,
             "temporary_character_stage_override_removed": True, "dedicated_stage11_preserved": True,
+            "actual_runtime_verified": False, "whole_campaign_runtime_verified": False,
+            "final_port_complete": False,
+        },
+        "type8_reaction_tables": {
+            "verification_sha256": "0A5EB8355D74AF38C61A90C74ECAD636BDCF6250066C786119DC4EC2513C8896",
+            "source_identities": 15, "tables": 4, "native_pointer_readers": 5,
+            "declared_bytes": 260, "changed_bytes": 255, "new_RAM_bytes": 0,
+            "native_action_records_and_code_preserved": True,
             "actual_runtime_verified": False, "whole_campaign_runtime_verified": False,
             "final_port_complete": False,
         },
