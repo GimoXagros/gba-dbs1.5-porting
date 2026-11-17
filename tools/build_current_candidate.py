@@ -243,7 +243,9 @@ EXPECTED_LAYERS = {
     "character-type8-tables.gba": "75BD7C17D32CC7567815FFFF42EFE383696E7317BFF34E09437C28DFDB99F32F",
     "character-ai-tables.gba": "DEEE43414D5145CCA6B9B857013B401D228C1535BA9FA8EF58FD9D7F13ADCD98",
     "character-ai-parameter-alignment.gba": "E6B2C30E3E7D880BFFEE82A3201D0F69AE3DE0EBBEE5B523D24DD6D03FA08CF4",
-    "current-candidate.gba": "3FE5CF45072E6277FACD74515B95CD883109135935F5D6B9994F9372FE80B77F",
+    "iraira-render.gba": "3FE5CF45072E6277FACD74515B95CD883109135935F5D6B9994F9372FE80B77F",
+    "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
+    "current-candidate.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
 }
 
 
@@ -572,6 +574,8 @@ def main() -> int:
     character_type8 = output / "character-type8-tables.gba"
     character_ai = output / "character-ai-tables.gba"
     ai_aligned = output / "character-ai-parameter-alignment.gba"
+    iraira_render = output / "iraira-render.gba"
+    mode20_title = output / "mode20-title-assets.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -894,7 +898,14 @@ def main() -> int:
         "--output", ai_aligned, "--manifest", output / "character-ai-parameter-alignment.json")
     run("build_iraira_render_repair.py", "--before", ai_aligned, "--source", args.wsc15,
         "--alignment-owner", output / "character-ai-parameter-alignment.json",
-        "--output", candidate, "--manifest", output / "current-candidate.json")
+        "--output", iraira_render, "--manifest", output / "iraira-render.json")
+    run("build_mode20_title_assets.py", "--before", iraira_render, "--source", args.wsc15,
+        "--owner", output / "iraira-render.json", "--output", mode20_title,
+        "--manifest", output / "mode20-title-assets.json")
+    run("build_iraira_outer_palette_route.py", "--before", mode20_title, "--source", args.wsc15,
+        "--owners", output / "mode20-title-assets.json", output / "iraira-render.json",
+        output / "character-ai-parameter-alignment.json", "--output", candidate,
+        "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1401,11 +1412,21 @@ def main() -> int:
     require_hash(alignment_review, "34CB670213FC84344BB76C6052E812DEAB079DC78F85AC46211D8DC389677664",
                  "ARM7-aware source halfword loads and aligned parameter consumers")
     iraira_review = intermediate / "iraira-render-verification.json"
-    run("verify_iraira_render_consumers.py", "--before", ai_aligned, "--after", candidate,
-        "--source", args.wsc15, "--manifest", output / "current-candidate.json",
+    run("verify_iraira_render_consumers.py", "--before", ai_aligned, "--after", iraira_render,
+        "--source", args.wsc15, "--manifest", output / "iraira-render.json",
         "--alignment-owner", output / "character-ai-parameter-alignment.json", "--report", iraira_review)
     require_hash(iraira_review, "0112FDCC4B6EB2A64DB67A22CB57583847840FEC6A96DA11ACB91614702DABCC",
                  "source Iraira graphics, palette and display ownership")
+    mode20_review = intermediate / "mode20-title-assets-verification.json"
+    run("verify_mode20_title_assets.py", "--before", iraira_render, "--after", mode20_title,
+        "--source", args.wsc15, "--owner", output / "iraira-render.json", "--report", mode20_review)
+    require_hash(mode20_review, "94DCC785AD5CF8305F4B0B95143E82AC82C9DE46D123FDF659FCC1F63BAB10F2",
+                 "source title assets in native return-to-title continuation")
+    outer_review = intermediate / "iraira-outer-palette-verification.json"
+    run("verify_iraira_outer_palette_route_portable.py", "--before", mode20_title, "--after", candidate,
+        "--source", args.wsc15, "--report", outer_review)
+    require_hash(outer_review, "C095EBCB4238A058BA763C2C322E70EF59B0D0C348B19F6282AD3034A10C1C8B",
+                 "source Iraira outer display dispatch and complete palette consumer")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1715,6 +1736,20 @@ def main() -> int:
             "source_tiles": 512, "source_maps": 8, "initial_palette_colors": 111,
             "animated_palette_colors": 38, "palette_counters": 5,
             "declared_bytes": 25382, "changed_bytes": 23155, "new_RAM_bytes": 0,
+            "actual_runtime_verified": False, "final_port_complete": False,
+        },
+        "mode20_title_assets": {
+            "verification_sha256": "94DCC785AD5CF8305F4B0B95143E82AC82C9DE46D123FDF659FCC1F63BAB10F2",
+            "declared_bytes": 60, "changed_bytes": 58, "new_RAM_bytes": 0,
+            "mode23_implemented": False,
+            "native_timing_and_task_handshake_retained": True,
+            "actual_runtime_verified": False, "final_port_complete": False,
+        },
+        "iraira_outer_palette": {
+            "verification_sha256": "C095EBCB4238A058BA763C2C322E70EF59B0D0C348B19F6282AD3034A10C1C8B",
+            "declared_bytes": 64, "changed_bytes": 63, "new_RAM_bytes": 0,
+            "replaces_stage10_legacy_stage3_display_dispatch": True,
+            "retains_source_common_font_overlay": True,
             "actual_runtime_verified": False, "final_port_complete": False,
         },
         "original_evolution_music": {
