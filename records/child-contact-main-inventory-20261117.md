@@ -1,0 +1,9 @@
+# Child-contact main integration inventory
+
+Independent preflight passed on frozen main `7B293379F8EA36BC9AE8264561F7F2A59660F7A03A78857FA9D4C44FD7C54F3E`. New checker `tools/verify_child_contact_main_inventory.py` SHA256 `1AE10949A17FD1D40EBA259BD1B4E14B74BDF4F58925DA72DFDAE7AA5C8FB98D` produced `build/child-contact-main-inventory-20261117/preflight-r2.json` SHA256 `BDA018015C24B47635BA8E8DA3A123371CB0103A3188A496C9B390EAA33D4835`, with exit0. The earlier draft preflight remains preserved separately.
+
+The new main inverts byte-for-byte to prior6479 after removing exactly three bindings, three calls, two independent gates, one layer identity and one metadata section, then restoring the old outer-palette output references. The previous final574F becomes the preserved `iraira-outer-palette.gba/json` intermediate. The new current candidate is5284435A. Both new gates are mandatory: independent component/native-consumer74462 and source callback-bodyD695. Earlier source pins, isolated inputs and the completed352-file inventory are unchanged.
+
+The isolated component retains the exact two-span full-image inverse,620 declared/607 changed bytes and no new RAM. The main's metadata remains a bounded static-build claim; the separately finalized source-contact runtime result is recorded in `shoot-child-contact-independent-20261117.md`. No earlier semantic suite or emulator was run by this inventory checker.
+
+Expected closure is356 identical files and135 manifest entries per fresh build, with four new paths: the preserved outer-palette ROM/manifest and the two new verification reports. Among previous paths, only `build-manifest.json`, `current-candidate.gba` and `current-candidate.json` may differ. Final verification awaits root's original exit0 confirmation for both fresh builds; this preflight does not claim those builds have completed.

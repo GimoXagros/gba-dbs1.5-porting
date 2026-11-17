@@ -245,7 +245,8 @@ EXPECTED_LAYERS = {
     "character-ai-parameter-alignment.gba": "E6B2C30E3E7D880BFFEE82A3201D0F69AE3DE0EBBEE5B523D24DD6D03FA08CF4",
     "iraira-render.gba": "3FE5CF45072E6277FACD74515B95CD883109135935F5D6B9994F9372FE80B77F",
     "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
-    "current-candidate.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
+    "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
+    "current-candidate.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
 }
 
 
@@ -576,6 +577,7 @@ def main() -> int:
     ai_aligned = output / "character-ai-parameter-alignment.gba"
     iraira_render = output / "iraira-render.gba"
     mode20_title = output / "mode20-title-assets.gba"
+    iraira_outer = output / "iraira-outer-palette.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -904,8 +906,10 @@ def main() -> int:
         "--manifest", output / "mode20-title-assets.json")
     run("build_iraira_outer_palette_route.py", "--before", mode20_title, "--source", args.wsc15,
         "--owners", output / "mode20-title-assets.json", output / "iraira-render.json",
-        output / "character-ai-parameter-alignment.json", "--output", candidate,
-        "--manifest", output / "current-candidate.json")
+        output / "character-ai-parameter-alignment.json", "--output", iraira_outer,
+        "--manifest", output / "iraira-outer-palette.json")
+    run("build_shoot_child_contact.py", "--before", iraira_outer, "--source", args.wsc15,
+        "--output", candidate, "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1423,10 +1427,20 @@ def main() -> int:
     require_hash(mode20_review, "94DCC785AD5CF8305F4B0B95143E82AC82C9DE46D123FDF659FCC1F63BAB10F2",
                  "source title assets in native return-to-title continuation")
     outer_review = intermediate / "iraira-outer-palette-verification.json"
-    run("verify_iraira_outer_palette_route_portable.py", "--before", mode20_title, "--after", candidate,
+    run("verify_iraira_outer_palette_route_portable.py", "--before", mode20_title, "--after", iraira_outer,
         "--source", args.wsc15, "--report", outer_review)
     require_hash(outer_review, "C095EBCB4238A058BA763C2C322E70EF59B0D0C348B19F6282AD3034A10C1C8B",
                  "source Iraira outer display dispatch and complete palette consumer")
+    contact_review = intermediate / "shoot-child-contact-verification.json"
+    run("verify_shoot_child_contact_component.py", "--before", iraira_outer, "--after", candidate,
+        "--source", args.wsc15, "--report", contact_review)
+    require_hash(contact_review, "74462AE34C72F28510474E1DF68B3CFA9DB8BD49C95EB8F9C3314FE17991DF77",
+                 "source stage11 child contact, owned placement and native event/audio consumers")
+    contact_callbacks_review = intermediate / "shoot-child-contact-callback-verification.json"
+    run("verify_shoot_child_contact_callbacks.py", "--before", iraira_outer, "--installed", candidate,
+        "--source", args.wsc15, "--entry", "0x08D8C800", "--report", contact_callbacks_review)
+    require_hash(contact_callbacks_review, "D6958EA29893D14A0684DB110240C0B58805191C62B6419F47C2052341E20C3B",
+                 "source three-callback lifetime, timer wrap and exact non11 route preservation")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1750,6 +1764,14 @@ def main() -> int:
             "declared_bytes": 64, "changed_bytes": 63, "new_RAM_bytes": 0,
             "replaces_stage10_legacy_stage3_display_dispatch": True,
             "retains_source_common_font_overlay": True,
+            "actual_runtime_verified": False, "final_port_complete": False,
+        },
+        "shoot_child_contact": {
+            "verification_sha256": "74462AE34C72F28510474E1DF68B3CFA9DB8BD49C95EB8F9C3314FE17991DF77",
+            "callback_verification_sha256": "D6958EA29893D14A0684DB110240C0B58805191C62B6419F47C2052341E20C3B",
+            "declared_bytes": 620, "changed_bytes": 607, "new_RAM_bytes": 0,
+            "source_callbacks": ["966A", "96E6", "973E"],
+            "restores_stage11_contact_and_parent_parent_cooldown": True,
             "actual_runtime_verified": False, "final_port_complete": False,
         },
         "original_evolution_music": {
