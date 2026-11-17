@@ -236,7 +236,8 @@ EXPECTED_LAYERS = {
     "evolution-music-display.gba": "C5089F81C13FA381495C169AA7BA0538CD3D7FE599564894608F99596F8DD346",
     "evolution-music-pause.gba": "C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278",
     "impmon-evolution.gba": "8C727FA831F0DF3B2DCE41EE76AE471BE2D50F0DAA877235E40E856CD78B2BD8",
-    "current-candidate.gba": "C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1",
+    "evolution-transition.gba": "C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1",
+    "current-candidate.gba": "FBD9CD19FB1F8EB65675D11403774189040BB181791DB71C98587920BB6885FD",
 }
 
 
@@ -558,6 +559,7 @@ def main() -> int:
     evolution_music_display = output / "evolution-music-display.gba"
     evolution_music_pause = output / "evolution-music-pause.gba"
     impmon_evolution = output / "impmon-evolution.gba"
+    evolution_transition = output / "evolution-transition.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -849,7 +851,11 @@ def main() -> int:
         "--wsc10", args.wsc10, "--wsc15", args.wsc15, "--output", impmon_evolution,
         "--manifest", output / "impmon-evolution.json")
     run("build_evolution_transition_tables.py", "--before", impmon_evolution, "--wsc15", args.wsc15,
-        "--allocation-manifest", output / "evolution-music.json", "--output", candidate,
+        "--allocation-manifest", output / "evolution-music.json", "--output", evolution_transition,
+        "--manifest", output / "evolution-transition.json")
+    run("build_id13_air_relaunch.py", "--before", evolution_transition, "--source", args.wsc15,
+        "--gba", args.gba, "--audio-manifest", output / "evolution-music.json",
+        "--table-manifest", output / "evolution-transition.json", "--output", candidate,
         "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
@@ -1308,10 +1314,17 @@ def main() -> int:
     require_hash(impmon_evolution_review, "D727C5DC1D35E2C743F8C3B8E6D24BC096AFFACBE45172FE078DD5196A250661",
                  "source default-mode Impmon contact route with exact full-image inverse")
     evolution_tables_review = intermediate / "evolution-transition-verification.json"
-    run("verify_evolution_event_tables.py", "--before", impmon_evolution, "--after", candidate,
+    run("verify_evolution_event_tables.py", "--before", impmon_evolution, "--after", evolution_transition,
         "--wsc15", args.wsc15, "--music-manifest", output / "evolution-music.json", "--report", evolution_tables_review)
     require_hash(evolution_tables_review, "A787F41CD3A78BD0B509F2A7EC96C10133BDB825292BC11EDB169D162AA2469B",
                  "source fifteen-identity evolution selectors, bounded allocation and full-image inverse")
+    id13_air_review = intermediate / "id13-air-relaunch-verification.json"
+    run("verify_id13_air_relaunch.py", "--before", evolution_transition, "--after", candidate,
+        "--manifest", output / "current-candidate.json", "--source", args.wsc15, "--gba", args.gba,
+        "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
+        "--report", id13_air_review)
+    require_hash(id13_air_review, "AF427CBB5E7FCD208D20E624CD907DDF4F3A3573408A67AD8272FB198DFFD6C0",
+                 "ID13 source aerial graph, all three fall callers, owned aliases and full-image inverse")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1423,7 +1436,8 @@ def main() -> int:
             "source-only Train hazard state remains unimplemented; "
             "Iraira class14 now invokes the source-backed launch trigger, quiet initial/wait phases "
             "and eight bounded scores, with two effect consumers using the same logical stage; "
-            "source-only character13 aerial branches and audio timbre parity remain unimplemented; "
+            "ID13 automatic aerial entry and four source callbacks connect through all three shared fall consumers; "
+            "shared field aliases and native special-air units are preserved; audio timbre parity remains unimplemented; "
             "three roster consumers use immutable expanded lists without overwriting the native "
             "selection presentation handle; source alternate-mode roster policy remains unchanged; "
             "VS names append two source layouts to the retained native font, and the palette-only "
@@ -1568,6 +1582,13 @@ def main() -> int:
             "playable_identities": 15, "tables": 3, "declared_bytes": 114, "changed_bytes": 109,
             "old_identities_0_to_10_preserved": True, "source_events_and_native_bounds_verified": True,
             "actual_runtime_verified": False, "historical_e5_cause_proven": False, "final_port_complete": False,
+        },
+        "id13_air_relaunch": {
+            "verification_sha256": "AF427CBB5E7FCD208D20E624CD907DDF4F3A3573408A67AD8272FB198DFFD6C0",
+            "source_entry_sites": 4, "native_entry_sites": 3, "callbacks": 4,
+            "declared_bytes": 988, "changed_bytes": 968, "new_RAM_bytes": 0,
+            "actual_runtime_verified": False, "wall_clock_parity_verified": False,
+            "final_port_complete": False,
         },
         "original_evolution_music": {
             "source_groups": [56, 60, 64, 248], "native_songs": [108, 109, 110, 111],
