@@ -237,7 +237,9 @@ EXPECTED_LAYERS = {
     "evolution-music-pause.gba": "C3448F183F886AF5AFD8878DF0839FEE5856DA1812BB94FE060301BAAB5E7278",
     "impmon-evolution.gba": "8C727FA831F0DF3B2DCE41EE76AE471BE2D50F0DAA877235E40E856CD78B2BD8",
     "evolution-transition.gba": "C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1",
-    "current-candidate.gba": "FBD9CD19FB1F8EB65675D11403774189040BB181791DB71C98587920BB6885FD",
+    "id13-air-relaunch.gba": "FBD9CD19FB1F8EB65675D11403774189040BB181791DB71C98587920BB6885FD",
+    "campaign-stage-progression.gba": "ADBF5D521A3EB2C672F11633104F625520004BCE59B7393005C32E96C3B6FDB9",
+    "current-candidate.gba": "933C9434C78F8ED3AE77227AAE974FFCC2346232A532C4F317A2ECE31C9B6775",
 }
 
 
@@ -560,6 +562,8 @@ def main() -> int:
     evolution_music_pause = output / "evolution-music-pause.gba"
     impmon_evolution = output / "impmon-evolution.gba"
     evolution_transition = output / "evolution-transition.gba"
+    id13_air = output / "id13-air-relaunch.gba"
+    campaign_stage = output / "campaign-stage-progression.gba"
     candidate = output / "current-candidate.gba"
     run("build_base_roster_probe.py", args.gba, assets, base,
         "--manifest", output / "base.json")
@@ -855,8 +859,16 @@ def main() -> int:
         "--manifest", output / "evolution-transition.json")
     run("build_id13_air_relaunch.py", "--before", evolution_transition, "--source", args.wsc15,
         "--gba", args.gba, "--audio-manifest", output / "evolution-music.json",
-        "--table-manifest", output / "evolution-transition.json", "--output", candidate,
-        "--manifest", output / "current-candidate.json")
+        "--table-manifest", output / "evolution-transition.json", "--output", id13_air,
+        "--manifest", output / "id13-air-relaunch.json")
+    run("build_campaign_stage_progression.py", "--before", id13_air, "--source", args.wsc15,
+        "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
+        "--id13-manifest", output / "id13-air-relaunch.json", "--output", campaign_stage,
+        "--manifest", output / "campaign-stage-progression.json")
+    run("build_campaign_progression_consumers.py", "--before", campaign_stage, "--source", args.wsc15,
+        "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
+        "--id13-manifest", output / "id13-air-relaunch.json", "--campaign-manifest", output / "campaign-stage-progression.json",
+        "--output", candidate, "--manifest", output / "current-candidate.json")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1319,12 +1331,27 @@ def main() -> int:
     require_hash(evolution_tables_review, "A787F41CD3A78BD0B509F2A7EC96C10133BDB825292BC11EDB169D162AA2469B",
                  "source fifteen-identity evolution selectors, bounded allocation and full-image inverse")
     id13_air_review = intermediate / "id13-air-relaunch-verification.json"
-    run("verify_id13_air_relaunch.py", "--before", evolution_transition, "--after", candidate,
-        "--manifest", output / "current-candidate.json", "--source", args.wsc15, "--gba", args.gba,
+    run("verify_id13_air_relaunch.py", "--before", evolution_transition, "--after", id13_air,
+        "--manifest", output / "id13-air-relaunch.json", "--source", args.wsc15, "--gba", args.gba,
         "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
         "--report", id13_air_review)
     require_hash(id13_air_review, "AF427CBB5E7FCD208D20E624CD907DDF4F3A3573408A67AD8272FB198DFFD6C0",
                  "ID13 source aerial graph, all three fall callers, owned aliases and full-image inverse")
+    campaign_review = intermediate / "campaign-stage-progression-verification.json"
+    run("verify_campaign_stage_progression.py", "--before", id13_air, "--after", campaign_stage,
+        "--manifest", output / "campaign-stage-progression.json", "--source", args.wsc15, "--gba", args.gba,
+        "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
+        "--id13-manifest", output / "id13-air-relaunch.json", "--report", campaign_review)
+    require_hash(campaign_review, "1162727F1240E8AB2F9A658AF93D4E07E41B695F37B8262F48A574549B83E2C0",
+                 "source clean-mode campaign producer, both stage getters and whole-image inverse")
+    campaign_consumers_review = intermediate / "campaign-stage-consumers-verification.json"
+    run("verify_campaign_stage_consumers_r2.py", "--before", campaign_stage, "--after", candidate,
+        "--manifest", output / "current-candidate.json", "--source", args.wsc15,
+        "--audio-manifest", output / "evolution-music.json", "--table-manifest", output / "evolution-transition.json",
+        "--id13-manifest", output / "id13-air-relaunch.json", "--producer-manifest", output / "campaign-stage-progression.json",
+        "--producer-review", campaign_review, "--report", campaign_consumers_review)
+    require_hash(campaign_consumers_review, "3E22A59DD56C2A5EF6F61FABDCACEEA62174636EDACE6BAEB1D7BACCB3FE9A84",
+                 "source progress-indexed AI tables, decimal round label and complete layered inverse")
     glyphs = intermediate / "digicode-font.json"
     language_inventory = intermediate / "language-native-inventory.json"
     digicode_review = intermediate / "digicode-resource-verification.json"
@@ -1429,11 +1456,12 @@ def main() -> int:
             "selection portrait palette DMA now resolves the actual table and hardware destination; "
             "the relocated ordinary fighter spawner resolves native stage state before source-backed coordinates; "
             "three complete added-stage collision grids bind five native descriptors, with a bounded twelve-row "
-            "floor classification table; spawn selects the existing logical-stage service without changing "
-            "campaign progression, whose temporary character-route policy remains incomplete; "
+            "floor classification table; spawn selects the existing logical-stage service; "
+            "clean Ver.1.5 mode now uses the source eleven-encounter campaign, RNG row and CPU table, "
+            "with authoritative stage getters, extended progress-indexed AI and decimal round labels; "
             "Train binds all36 source maps and100 descriptors to two native backgrounds, restores "
             "the twelve-row camera table, and uses the proven palette and display-snapshot owners; "
-            "source-only Train hazard state remains unimplemented; "
+            "source Train shake update reachability and native private state remain unproved; "
             "Iraira class14 now invokes the source-backed launch trigger, quiet initial/wait phases "
             "and eight bounded scores, with two effect consumers using the same logical stage; "
             "ID13 automatic aerial entry and four source callbacks connect through all three shared fall consumers; "
@@ -1454,7 +1482,7 @@ def main() -> int:
             "four indexed hit/follow-up views cover fifteen fighters, including source variant8 across the original record blocks; "
             "two result-pose byte-pair views preserve the source win/lose events for all fifteen fighters; "
             "the third Waterfall pattern binds its source mode3 constructor and shared continuations, with corrected successor-row clearing; "
-            "two manager lookups prioritize dedicated logical stage11 over temporary character routes; "
+            "two manager lookups retain dedicated logical stage11 priority; "
             "a disconnected initializer chain covers preparation, stage manager, player phase, slot5 palette and the owned0660 clear in source phase order; "
             "two ordered source SRAM halfword clears use native EEPROM block25 with separate read-modify-write operations, "
             "preserving the other six API-buffer bytes per write under the initialized functional-backend contract; "
@@ -1588,6 +1616,17 @@ def main() -> int:
             "source_entry_sites": 4, "native_entry_sites": 3, "callbacks": 4,
             "declared_bytes": 988, "changed_bytes": 968, "new_RAM_bytes": 0,
             "actual_runtime_verified": False, "wall_clock_parity_verified": False,
+            "final_port_complete": False,
+        },
+        "campaign_progression": {
+            "producer_verification_sha256": "1162727F1240E8AB2F9A658AF93D4E07E41B695F37B8262F48A574549B83E2C0",
+            "consumer_verification_sha256": "3E22A59DD56C2A5EF6F61FABDCACEEA62174636EDACE6BAEB1D7BACCB3FE9A84",
+            "mode_scope": "source config+25 mask0001 clear; alternate-mode owner remains unimplemented",
+            "encounters": 11, "RNG_rows": 8, "ordinary_CPU_entries": 11,
+            "initial_AI_entries": 13, "AI_entries_per_difficulty": 12, "difficulty_rows": 3,
+            "declared_bytes": 453, "changed_bytes": 423, "new_RAM_bytes": 0,
+            "temporary_character_stage_override_removed": True, "dedicated_stage11_preserved": True,
+            "actual_runtime_verified": False, "whole_campaign_runtime_verified": False,
             "final_port_complete": False,
         },
         "original_evolution_music": {
