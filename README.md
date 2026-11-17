@@ -8,7 +8,7 @@
 
 주 빌드는 **16MiB**, ROM SHA-256은 `C91E8EE23830C1BDCB52C8060742EB939ADDCD156B34DAC4C877ED5F47E5B8B1`입니다. 독립 생성한 두 빌드의 **325개 파일과125개 매니페스트 항목**이 일치합니다. A는 전체 종료0, B는 생성 후 중단되어 기존309개를 보존하고 남은 검증만 재개해 종료0입니다. B의 원래 종료 코드는 확인할 수 없습니다. [독립 빌드 검수](records/repro-v78-inventory-qa-20261117.md).
 
-기존6E 검증에 이어 나머지6C·6D·6F 모두 창 없는 실제 대전에서 일시정지·같은 곡 재개·자연 진화 종료·스테이지 음악 복귀를 확인했습니다. CPU 임프몬 도전 대전까지는 승인된 D스피릿 보조만 사용했습니다. ID14도 메모리 개입 없이 일반 조작으로 수정 전 잘못된 번호와 수정 후 정상115/25 및 정지·재개·복귀를 비교했습니다. [임프몬 검수](records/evolution-music-6f-event-table-runtime-qa-20261116.md) · [ID14 검수](records/evolution-id14-event-table-runtime-qa-20261116.md).
+기존6E 검증에 이어 나머지6C·6D·6F 모두 창 없는 실제 대전에서 일시정지·같은 곡 재개·자연 진화 종료·스테이지 음악 복귀를 확인했습니다. CPU 임프몬 도전 대전까지는 승인된 D스피릿 보조만 사용했습니다. ID14도 메모리 개입 없이 일반 조작으로 수정 전 잘못된 번호와 수정 후 정상115/25 및 정지·재개·복귀를 비교했습니다. 별도 일반 점프로 [공중 종료도 비교](records/evolution-id14-air-actual-independent-qa-20261117.md)했습니다. [임프몬 검수](records/evolution-music-6f-event-table-runtime-qa-20261116.md) · [ID14 검수](records/evolution-id14-event-table-runtime-qa-20261116.md).
 
 원본·GBA 네 곡씩의 [전체 재생 비교](records/bgm-all-four-capture-qa-20261110.md)는 v77에서 완료했습니다. 파형 위상·양자화 등 플랫폼 차이가 있어 완전한 청감 일치는 주장하지 않습니다. 실제 플레이 시험은 호스트 음소거 상태에서 재생 상태와 제어 흐름을 확인했습니다.
 
