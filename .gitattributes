@@ -25,3 +25,4 @@ records/shoot-guarded-transition-layout-20261109.json text eol=lf
 tools/build_shoot_palette_dim_calls.py text eol=crlf
 tools/verify_result_v75_capture.py text eol=crlf
 tools/verify_result_v76_capture.py text eol=crlf
+tools/verify_character_ai_main_inventory.py text eol=crlf
