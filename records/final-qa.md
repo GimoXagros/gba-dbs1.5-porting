@@ -1,6 +1,13 @@
 # Final QA gate
 
+## 2026-11-24 v93 검수 범위
+
+검수판 `D432DBE9`에서 빈 저장 공간으로 시작한 어려움 난이도 캠페인이 94,893프레임에 타이틀로 돌아왔다. 중간 상태를 불러오거나 컨티뉴하지 않았다. 두 보스의 실제 격파, 마스터 태그와 이름 저장을 확인했다. 이 실행은 허용된 D-스피릿 및 보스 체력 보조를 사용했다. 통신 대전의 실제 승급과 재시작, 양 기종 15인 선택 목록, 네 언어 메뉴 52화면과 초상화 60장도 검수했다. [원본·실행 검수 기록](four-language-release-v93.md).
+
+원본과의 세부 차이가 남아 있다. 추가 캐릭터 효과음 5종은 원더스완의 음높이 변화와 노이즈 음색을 모두 복원하지 못했다. 열차 무대의 흔들림 루틴도 원본에서 누가 호출하는지 확인해야 한다. 전체 원더스완 완료 세이브와의 진행 상태 대조는 일반 1인 대전의 캐릭터 목록과 해금 상태까지 마쳤다. [효과음](character-audio-completion.md) · [열차 무대](train-shake-source-contract-20261117.md) · [완료 세이브 대조 범위](completed-save-roster-comparison-20261124.md).
+
 ## 2026-11-09 actual preactivation failure and verified checkpoint replay
+
 
 The new baseline and genuine checkpoint replay completed normally. FIRST already had HP0/event005B
 at the actual boss hit/root5 (91708). The following scene saved0 at payload2334+46, temporarily set
