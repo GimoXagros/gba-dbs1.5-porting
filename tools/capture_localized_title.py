@@ -15,7 +15,8 @@ rom=Path(sys.argv[3]).resolve()
 rom_bytes=rom.read_bytes();assert len(rom_bytes)==0x1000000 and sha(rom_bytes)==sys.argv[4]
 english_review = sys.argv[5:] == ['--english-review']
 earned_tag = sys.argv[5:] == ['--menu-review','--earned-tag']
-menu_review = sys.argv[5:] == ['--menu-review'] or earned_tag
+portraits = sys.argv[5:] == ['--all-portraits']
+menu_review = sys.argv[5:] == ['--menu-review'] or earned_tag or portraits
 assert not sys.argv[5:] or (language == 0 and english_review) or menu_review
 script_name = ('bizhawk_review_menu_matrix.lua' if menu_review else
                'bizhawk_capture_english_title.lua' if english_review else 'bizhawk_capture_localized_title.lua')
@@ -42,6 +43,9 @@ if menu_review:
  if earned_tag:
   donor=root/'build/bizhawk-mode11-rank-award-20261124-b/award/data/104/probe.SaveRAM'
   expected='8395264D780222936A3EEF63804EDD7DD225F5A9BB23E11FEC120075DCA273A7'
+ if portraits:
+  donor=root/'build/bizhawk-roster-name-v91-20261124-c/data/104/probe.SaveRAM'
+  expected='AE15A17E9B0B4C66EC85A19AA390069048A0D9B9B973CDC05FFACAE220995E5D'
  save_entry=cfg['PathEntries']['Paths'][104]
  assert (save_entry['System'],save_entry['Type'])==('GBA','Save RAM')
  digest=sha(donor.read_bytes())
@@ -49,7 +53,7 @@ if menu_review:
  shutil.copyfile(donor,Path(save_entry['Path'])/'probe.SaveRAM')
 (out/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8')
 shutil.copyfile(rom,out/'probe.gba')
-args=['--gdi','--config='+alias+'/config.json','--lua=W:/tools/'+script_name,'--userdata=output:'+alias+';language:'+str(language)+(';english_review:1' if english_review else ''),alias+'/probe.gba']
+args=['--gdi','--config='+alias+'/config.json','--lua=W:/tools/'+script_name,'--userdata=output:'+alias+';language:'+str(language)+(';english_review:1' if english_review else '')+(';portraits:1' if portraits else ''),alias+'/probe.gba']
 report=dict(visible=False,physical_background_input=False,supplied_save_used=False,guest_writes=[],language=language,rom_sha256=sha(rom_bytes),script_sha256=sha(script_bytes),host_sha256=sha(Path(__file__).read_bytes()),arguments=args)
 if menu_review:
  report['copied_campaign_eeprom']=digest

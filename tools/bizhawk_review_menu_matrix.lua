@@ -66,6 +66,31 @@ local function root()
     assert(menu(0))
     frames(2)
 end
+local function capture_portraits()
+    local current,changed,seen,count=0,0,{},0
+    event.on_bus_exec(function()
+        if iw(0x2310)==4 then
+            current=emu.getregisters().R1
+            assert(current>=0 and current<=14)
+            changed=emu.framecount()
+        end
+    end,0x084a5c70,"selection-portrait")
+    selectrow(0,0);mode(4);frames(150)
+    assert(iw(0x2328)&0x3030==0x3000 and iw(0x1132)&0x30==0x30)
+    for step=1,200 do
+        if not seen[current] and emu.framecount()-changed>=8 then
+            local name=string.format("fighter-%02d",current)
+            shot(name)
+            write(name.."-tiles.bin",memory.read_bytes_as_binary_string(0x5780,6144,"VRAM"))
+            write(name.."-palette.bin",memory.read_bytes_as_binary_string(32,32,"PALRAM"))
+            seen[current]=true
+            count=count+1
+            if count==15 then return end
+        end
+        frames(2,"Down");frames(24)
+    end
+    error("only "..count.." physical portraits were selected")
+end
 local ok,err=pcall(function()
     client.speedmode(800)
     write("loaded-rom.bin",memory.read_bytes_as_binary_string(0,0x1000000,"ROM"))
@@ -97,6 +122,7 @@ local ok,err=pcall(function()
     waitfor("five menu rows",function()return menu(0) and enabled()==110 end)
     frames(2);shot("main");assert(savestate.save(rootstate,true))
     write("root-oam.bin",memory.read_bytes_as_binary_string(0,0x400,"OAM"))
+    if userdata.get("portraits") then capture_portraits();return end
     selectrow(0,1)
     waitfor("versus paint",function()return menu(1) and enabled()>=44 end);frames(1);shot("versus")
     root();selectrow(0,4)

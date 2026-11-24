@@ -8,13 +8,20 @@ from build_character_select_name_assets import BASE, EN, JA, KO, unpack, sha
 from build_character_select_name_scene_r3 import ASSETS
 from verify_title_portrait_live_frames import color
 
-def render(rom, assets, owner, font):
+def render(rom, assets, owner, font, captures=None):
     assert sha(assets) == ASSETS
     entries = json.loads(assets)['entries']
     table, end = owner['table_span']
     assert end - table == 60 * 4
     pointers = struct.unpack_from('<60I', rom, table)
     assert list(pointers) == owner['header_pointers']
+    reports=[]
+    for lang,folder in enumerate(captures or []):
+        report=json.loads((folder/'launch.json').read_bytes())
+        assert report['language']==lang and report['outcome']=='PASS' and report['rom_sha256']==sha(rom)
+        assert report['loaded_rom_exact'] and report['guest_writes']==[] and not report['visible']
+        assert report['copied_campaign_eeprom']=='AE15A17E9B0B4C66EC85A19AA390069048A0D9B9B973CDC05FFACAE220995E5D'
+        reports.append(report)
     small, large = (ImageFont.truetype(str(font), n) for n in (20, 30))
     pitch, left, step = 231, 114, 278
     canvas = Image.new('RGB', (left + 4*pitch + 20, 110+15*step), '#171922')
@@ -39,14 +46,25 @@ def render(rom, assets, owner, font):
             grid = unpack(header+body,height=128)
             im = Image.new('RGB',(96,128))
             im.putdata([colors[p] for r in grid for p in r])
+            if captures:
+                folder=captures[lang]
+                name=f'fighter-{i:02d}'
+                for suffix,want in (('-tiles.bin',header+body),('-palette.bin',rom[palette:palette+32])):
+                    got=(folder/(name+suffix)).read_bytes()
+                    assert got==want and sha(got)==reports[lang]['files'][name+suffix],(lang,i,suffix)
+                assert sha((folder/(name+'.png')).read_bytes())==reports[lang]['files'][name+'.png']
+                actual=Image.open(folder/(name+'.png')).convert('RGB').crop((124,16,220,144))
+                assert actual.tobytes()==im.tobytes(),(lang,i,'physical frame')
+                im=actual
             canvas.paste(im.resize((192,256),Image.Resampling.NEAREST),(left+lang*pitch,y))
     return canvas
 
 if __name__ == '__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for arg in ('rom','assets','owner','font','output'): p.add_argument('--'+arg,required=True,type=Path)
+    p.add_argument('--captures',nargs=4,type=Path)
     a=p.parse_args()
-    sheet=render(a.rom.read_bytes(),a.assets.read_bytes(),json.loads(a.owner.read_bytes()),a.font)
+    sheet=render(a.rom.read_bytes(),a.assets.read_bytes(),json.loads(a.owner.read_bytes()),a.font,a.captures)
     a.output.parent.mkdir(exist_ok=True,parents=True)
     sheet.save(a.output)
     print('PASS 15 x 4',sheet.size,sha(a.output.read_bytes()))
