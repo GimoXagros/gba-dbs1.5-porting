@@ -6,11 +6,11 @@ from verify_title_portrait_live_frames import color
 from build_character_select_name_scene import sha
 from build_title_background import TILES1,TILES2,MAP
 
-def verify(rom,owner,folders):
+def verify(rom,owner,folders,languages=range(4)):
     native=rom[TILES1:TILES1+8192]+rom[TILES2:TILES2+4864]
     entries=[]
-    for i,lang in enumerate(('en','ja','ko','dg')):
-        folder=folders[i]
+    for i,folder in zip(languages,folders,strict=True):
+        lang=('en','ja','ko','dg')[i]
         launch=json.loads((folder/'launch.json').read_bytes())
         assert launch['language']==i and launch['rom_sha256']==sha(rom) and launch['outcome']=='PASS'
         assert launch['loaded_rom_exact'] and not launch['visible'] and not launch['guest_writes']
@@ -47,9 +47,11 @@ def verify(rom,owner,folders):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for arg in ('rom','owner','output'): p.add_argument('--'+arg,type=Path,required=True)
-    p.add_argument('folders',type=Path,nargs=4)
+    p.add_argument('--language',type=int,choices=range(4))
+    p.add_argument('folders',type=Path,nargs='+')
     a=p.parse_args()
     rom=a.rom.read_bytes()
-    report=dict(rom_sha256=sha(rom),captures=verify(rom,json.loads(a.owner.read_bytes()),a.folders))
+    languages=range(4) if a.language is None else (a.language,)
+    report=dict(rom_sha256=sha(rom),captures=verify(rom,json.loads(a.owner.read_bytes()),a.folders,languages))
     a.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8',newline='\n')
-    print('PASS 4 x 3840',sha(a.output.read_bytes()))
+    print('PASS',len(languages),'x 3840',sha(a.output.read_bytes()))

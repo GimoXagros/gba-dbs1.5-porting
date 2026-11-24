@@ -4,7 +4,7 @@ import json
 import struct
 from pathlib import Path
 from build_character_select_name_scene import Allocator, BASE, exclude, sha
-from build_options_korean_poc import FONT_SHA, font_glyphs
+from build_options_korean_poc import font_glyphs
 from build_poc import convert_planar_tile
 from build_stage_assets import convert_map
 from build_title_background import MAP, TILES1, TILES2, SOURCE, PALETTE, branch
@@ -14,6 +14,7 @@ from mode23_compact_menu_digicode import compact_text
 from mode23_linker import compose
 
 KOREAN = ('혼고 아키요시', '도에이 애니메이션')
+CREDIT_FONT_SHA = '16A4CE94CEB329F90261949C850743CC791457A5385EF3193E72F72837CD798E'
 READING = ('ほんごうあきよし', 'とうえいアニメーシヨン')
 FIRST = 0x2E5
 COUNT = 38
@@ -29,7 +30,7 @@ def strip_pixels(word, tiles, cells):
     return pixels
 
 def credits(before, source, font):
-    assert sha(source)==SOURCE and sha(font)==FONT_SHA
+    assert sha(source)==SOURCE and sha(font)==CREDIT_FONT_SHA
     tilemap = struct.unpack_from('<504H',before,MAP)
     tiles = before[TILES1:TILES1+8192]+before[TILES2:TILES2+4864]
     palette = struct.unpack_from('<16H',before,PALETTE+128)
@@ -70,10 +71,11 @@ def credits(before, source, font):
     catalog=json.loads(CATALOG.read_bytes())
     def label(words,digi):
         result=set()
-        cursor=55 if digi else 54
+        cursor=55
         for j,word in enumerate(words):
             if j:
-                result.update((cursor+dx,125+dy) for dx in (0,1) for dy in (0,1))
+                dot_y=125 if digi else 124
+                result.update((cursor+dx,dot_y+dy) for dx in (0,1) for dy in (0,1))
                 cursor+=5
             if digi:
                 pts,width=compact_text(word,catalog)
@@ -82,8 +84,8 @@ def credits(before, source, font):
             else:
                 for ch in word:
                     advance,points=ko_font[ch]
-                    result.update((cursor+x,132+y) for x,y in points)
-                    cursor+=advance+1
+                    result.update((cursor+x,128+y) for x,y in points)
+                    cursor+=advance
         return result
     def pack(grid,columns,rows):
         return bytes(grid[x+i,y+j] | grid[x+i+1,y+j]<<4
