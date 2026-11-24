@@ -130,15 +130,20 @@ def main():
         p.add_argument('--'+name, type=Path, required=True)
     for name in ('wsc-art','gba-art','wsc-skip','gba-skip'):
         p.add_argument('--'+name,type=Path)
+    p.add_argument('--playback-image',type=Path,
+                   help='Later integrated ROM used for both GBA playback captures')
     a = p.parse_args()
     src, prior, image = (f.read_bytes() for f in (a.source,a.prior,a.image))
     palettes = check_image(src,prior,image,json.loads(a.owner.read_bytes()))
     report = dict(source=digest(src),prior=digest(prior),image=digest(image),owner=digest(a.owner.read_bytes()),
                   original_actor_rows=[43,44],native_fade_state='0300267C',whole_image_inverse=True)
     captures = (a.wsc_art,a.gba_art,a.wsc_skip,a.gba_skip)
+    if a.playback_image and not all(captures):
+        p.error("--playback-image requires all four captures")
     if any(captures):
         assert all(captures)
-        hashes = (digest(src),digest(image))
+        hashes = (digest(src),digest(a.playback_image.read_bytes()) if a.playback_image else digest(image))
+        report['playback_rom'] = hashes[1]
         report['art'] = check_art(a.wsc_art,a.gba_art,palettes,hashes)
         source_skip, ws_time = check_skip(a.wsc_skip,hashes[0],True)
         native_skip, gba_time = check_skip(a.gba_skip,hashes[1],False)
