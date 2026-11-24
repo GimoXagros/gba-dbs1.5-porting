@@ -41,8 +41,9 @@ def pose_candidates(image, active, vram, palette, y, event, facing):
     return found
 
 
-def run(source,image,folder):
-    saves=capture(source,folder,sha(image))
+def run(source,image,folder,saves=None):
+    if saves is None:
+        saves=capture(source,folder,sha(image))
     player=next(p['player'] for p in saves if p['won'])
     def read(age,name):
         return (folder/f'p{player}-card-party-{age}-{name}.bin').read_bytes()
