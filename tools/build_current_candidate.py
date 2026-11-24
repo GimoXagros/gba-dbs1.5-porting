@@ -12,6 +12,7 @@ import sys
 
 
 import build_collection_native_tail as collection_native
+import build_ending_awards_main_tail as ending_awards
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
@@ -250,6 +251,7 @@ EXPECTED_LAYERS = {
     "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
     "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
     **collection_native.STAGES,
+    **ending_awards.STAGES,
     "initial-portrait.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
     "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
     "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
@@ -1017,6 +1019,7 @@ def main() -> int:
                  "localized first portrait on character selection entry")
     source_english_tail(args.gba, args.wsc15, title / "manifest.json", output)
     collection_native.build(args.wsc15, output, run, require_hash)
+    ending_awards.build(args.wsc15, output, run, require_hash)
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1976,6 +1979,7 @@ def main() -> int:
         "output": "current-candidate.gba",
     }
     collection_native.update_manifest(manifest)
+    ending_awards.update_manifest(manifest)
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
