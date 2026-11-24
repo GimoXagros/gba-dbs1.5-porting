@@ -247,7 +247,8 @@ EXPECTED_LAYERS = {
     "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
     "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
     "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
-    "current-candidate.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
+    "current-candidate.gba": "8C6D6CC077013FEEEC60F70D702750268E81044C1A1DF6DBB6E70FF4A51BC869",
+    "initial-portrait.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
     "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
     "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
 }
@@ -271,6 +272,26 @@ def run(tool: str, *arguments: object) -> None:
     command = [sys.executable, str(ROOT / "tools" / tool), *(str(value) for value in arguments)]
     print(f"[build] {tool}")
     subprocess.run(command, cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+
+
+def source_english_tail(usa, source, title_owner, output):
+    initial = output / "initial-portrait.gba"
+    english = output / "intermediate" / "source-english-menus"
+    candidate = output / "current-candidate.gba"
+    require_hash(initial, EXPECTED_LAYERS["initial-portrait.gba"], "initial portrait parent")
+    run("build_source_english_submenus.py", "--input", initial, "--source", source,
+        "--title-owner", title_owner, "--output", english)
+    (english / "component.gba").replace(candidate)
+    (english / "manifest.json").replace(output / "current-candidate.json")
+    require_hash(output / "current-candidate.json",
+                 "183A4C195AF6AC917D9AF5E58FBF0957B5F433423E3282848AD620E306EF6065",
+                 "restored source English atlas and complete inverse")
+    review = output / "intermediate" / "source-english-menus-verification.json"
+    run("verify_source_english_submenus.py", "--usa", usa, "--source", source,
+        "--before", initial, "--after", candidate, "--report", review)
+    require_hash(review, "A11A01E8C45A942167B35494354A83663420D30F7EF7237227E17F08A9D7DC42",
+                 "native English and original Ver. 1.5 menu pixels")
+    require_hash(candidate, EXPECTED_LAYERS["current-candidate.gba"], "source English candidate")
 
 
 def main() -> int:
@@ -958,9 +979,11 @@ def main() -> int:
     initial_portrait = intermediate / "initial-portrait"
     run("build_initial_portrait_header.py", "--input", selector, "--owner", selector_manifest,
         "--output", initial_portrait)
-    (initial_portrait / "component.gba").replace(candidate)
-    (initial_portrait / "manifest.json").replace(output / "current-candidate.json")
-    require_hash(output / "current-candidate.json",
+    initial = output / "initial-portrait.gba"
+    initial_owner = output / "initial-portrait.json"
+    (initial_portrait / "component.gba").replace(initial)
+    (initial_portrait / "manifest.json").replace(initial_owner)
+    require_hash(initial_owner,
                  "29B914EF1CD8403C70B5C92A8CF9478E40B0014DAC41CD8FCB9F7F181AC11505",
                  "initial portrait ownership and full inverse")
 
@@ -986,10 +1009,11 @@ def main() -> int:
         "--scene-owner", scene / "manifest.json", "--title-owner", title / "manifest.json", "--report", header_review)
     require_hash(header_review, "6BA326D4FF37F9866E893306C53CC54C111C6B6819D05C8DC89319EB7B901ED4", "all localized portrait headers")
     initial_review = intermediate / "initial-portrait-verification.json"
-    run("verify_initial_portrait_header.py", "--before", selector, "--after", candidate,
-        "--manifest", output / "current-candidate.json", "--owner", selector_manifest, "--report", initial_review)
+    run("verify_initial_portrait_header.py", "--before", selector, "--after", initial,
+        "--manifest", initial_owner, "--owner", selector_manifest, "--report", initial_review)
     require_hash(initial_review, "8B9B04E3F777CE49CE7CB60422C21DE18D0419E59ECB46C5A8C6B3CD7F5E575E",
                  "localized first portrait on character selection entry")
+    source_english_tail(args.gba, args.wsc15, title / "manifest.json", output)
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1563,6 +1587,7 @@ def main() -> int:
             "shoot_mode": 23, "tamer_tag_guarded": True, "source_title_counter_pending": True,
             "title_languages": ["en", "ja", "ko", "digicode"], "root_rows": 5, "portrait_ids": 15,
             "korean_empty_columns_between_syllables": 2, "complete_port": False,
+            "english_title_graphics": {"usa": [0, 1, 2, 3, 4], "wsc15_english": [5, 6, 7, 8, 9, 10]},
         },
         "claim_scope": (
             "exact current integration candidate with four source evolution scores and original waveforms; "
