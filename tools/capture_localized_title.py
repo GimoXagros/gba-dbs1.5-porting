@@ -14,7 +14,8 @@ assert os.path.samefile('W:/',root)
 rom=Path(sys.argv[3]).resolve()
 rom_bytes=rom.read_bytes();assert len(rom_bytes)==0x1000000 and sha(rom_bytes)==sys.argv[4]
 english_review = sys.argv[5:] == ['--english-review']
-earned_tag = sys.argv[5:] == ['--menu-review','--earned-tag']
+named_tag = sys.argv[5:] == ['--menu-review','--named-tag']
+earned_tag = sys.argv[5:] == ['--menu-review','--earned-tag'] or named_tag
 portraits = sys.argv[5:] == ['--all-portraits']
 menu_review = sys.argv[5:] == ['--menu-review'] or earned_tag or portraits
 assert not sys.argv[5:] or (language == 0 and english_review) or menu_review
@@ -43,6 +44,9 @@ if menu_review:
  if earned_tag:
   donor=root/'build/bizhawk-mode11-rank-award-20261124-b/award/data/104/probe.SaveRAM'
   expected='8395264D780222936A3EEF63804EDD7DD225F5A9BB23E11FEC120075DCA273A7'
+ if named_tag:
+  donor=root/'build/v92-hidden-ending-20261124/award/data/104/probe.SaveRAM'
+  expected='85DAD5C8C27133CA82CE0F5818E7C47E53C57D71AFC4A28A2181BE8DCBC75EF9'
  if portraits:
   donor=root/'build/bizhawk-roster-name-v91-20261124-c/data/104/probe.SaveRAM'
   expected='AE15A17E9B0B4C66EC85A19AA390069048A0D9B9B973CDC05FFACAE220995E5D'
