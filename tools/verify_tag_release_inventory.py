@@ -54,8 +54,15 @@ def archived_layer_order(layers):
     return result
 
 
+def v93_layers():
+    from build_assist_opening_audio_tail import RELATIVE as later
+    layers = {k:v for k,v in production.EXPECTED_LAYERS.items() if not k.startswith(later.as_posix()+"/")}
+    layers["current-candidate.gba"] = current.pins()[-1]["sha256"]
+    return layers
+
+
 def v92_layers():
-    parent = {n:val for n,val in production.EXPECTED_LAYERS.items()
+    parent = {n:val for n,val in v93_layers().items()
               if not n.startswith(current.RELATIVE.as_posix()+"/")}
     parent["current-candidate.gba"] = current.PARENT
     return archived_layer_order(parent)
@@ -71,7 +78,7 @@ def historical(parent,output,previous,source,font,credit):
 
 def extend(output,source):
     rows=current.install(output,source,production.run)
-    update_manifest(output,production.EXPECTED_LAYERS,"tag_audio_and_link_build",rows)
+    update_manifest(output,v93_layers(),"tag_audio_and_link_build",rows)
     return inventory(output)
 
 
@@ -117,7 +124,7 @@ def fresh(a,archive):
     added.add((current.RELATIVE/"presentation.json").as_posix())
     assert set(one)-set(original)==added and not (set(original)-set(one))
     assert {n for n,v in original.items() if one[n]!=v}==TOP
-    assert all(one[key]==value for key,value in production.EXPECTED_LAYERS.items())
+    assert all(one[key]==value for key,value in v93_layers().items())
     result=dict(status="PASS",prior_audit=V92_AUDIT,pristine_pair_sha256=sha(proof.read_bytes()),
                 previous_files=len(original),files_each=len(one),final_sha256=one["current-candidate.gba"],
                 pipeline_sha256=sha(Path(production.__file__).read_bytes()),stages_sha256=sha(current.PINS.read_bytes()),
