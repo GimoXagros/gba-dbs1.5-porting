@@ -1,0 +1,13 @@
+# Corrected title component reaches the native Shoot scene
+
+Component `9F0DA0316B76CA6D2634DF7F89CCE1FFD1F1B0AC2CB37B2EDCDC0753466B228A` passed independent installed-image, complete native initializer, and title-to-Shoot checks. The reviewed atlas is the open Digicode r2 design. The subsequently requested compact design requires a new asset rebase and validation.
+
+All ten writes reverse over the complete image to the verified eligibility scene. The six allocations use erased spans with zero conservative inbound addresses. All pointer relocations in each of the five physical title objects reverse to the exact audited atlas. The native palette remains unchanged and the only old-range writes are the four title initialization and normal-start hooks.
+
+An ARM fixture executes complete native initializer `080908A0`, including construction of all five presentations from each selected language's actual installed resource pointers. The actual title constructor, 60-frame native prompt, ordinary Start, root animation and active rendering execute as well. At root, English, Japanese, and Korean use 110 simultaneous parts and Digicode uses 116. Bank 1 comes from selected colors `03002C38` and bank 2 from unselected colors `03002C18`. Four closed-marker cases refuse ordinary A on the restricted Shoot row. Mode 22 remains independently unavailable because it has no native handler.
+
+With a valid modeled EEPROM marker, the installed reader opens the Shoot row. The fixture follows ordinary menu inputs through the five-row root to the two-row submenu. Selecting Shoot starts the native confirmation window. The actual display projection produces `DISPCNT=5B00`, `WIN1H=5050`, and `WIN1V=5F5F`. After 51 callbacks the two title tasks retire, leaving the dispatcher and a real tuple `1,0,0` with config bit 8. The actual dispatcher moves 3 → 4. The native character-select handler consumes bit 8, stores choice 5, and the five predecessor producers retire before the native dispatcher consumes `1,5,0` and enters mode 23.
+
+The frozen independent scene lifecycle check proves mode 23's own cleanup and transition to mode 20. The complete title layer inverses preserve that scene byte for byte. The title fixture models the EEPROM device and DMA/interrupt registers. It does not establish hardware playback, a visible game menu, or a complete emulator run.
+
+Checker `tools/verify_mode23_title_scene_installed.py` SHA-256 `D1A9C0079E7330FD5C63F2AF84FA88E320B7495BE6A84C7828CA70EF4B069AFB`. Report `build/mode23-title-installed-independent-20261117/final.json` SHA-256 `94A5E5DBF2FF1CDA6AA8CEB24584338447F9812C5FE44AD60B922BD8AA99D2D7`.

@@ -1,0 +1,19 @@
+# Mode 23 graphics and palette verification
+
+The independent check reconstructs all 46,320 graphics asset bytes from the original WSC image. It compares 1,161 tiles and their 74,304 pixel indices, 4,280 map words and 303 palette words against the authored bundle. It verifies the complete copy extents through the linked ARM constructors. Round meshes fill 32 columns for 18 rows. The failure map fills 32×32 with source 2000 padding. The completion map changes 28×18 cells and preserves the right four columns and lower 14 rows. All seven round IDs choose the source geometry and palette, with the separate last-round assets selected at ID 6.
+
+The source snapshot at 772061 captures 256 halfwords. Its fade-out at 7720AB selects eight rows by phase parity, calls the RGB444 decrement at 751E8D and completes on invocation 32. Round entry captures then blacks the palette and initializes count 16 at 74B32D–74B34D. AA70 at 74B370 uses the source RGB444 increment at 751EE5 on all 16 rows and completes on the sixteenth invocation. The checker executes every native tick and checks the resulting aligned, ordered stores and the private counter at controller +D4. It seeds different OBJ and BG alias zero values to show that resident 085C1900 takes the latter for saved OBJ zeros. Every OBJ fade updates both physical aliases. The other shared palette bytes remain outside the fade write list.
+
+The native display adapters run in the same fixture as the real common projection at 0801155C–080116DB. The first check exposed an incorrect horizontal-window pair. The original left/right stores reached 030012C2/C3, which the common code maps to WIN0V. Mode 23 enables WIN1. The corrected adapters write 030012BC/BD for WIN1H and retain 030012BE/BF for WIN1V. The actual common code maps source round window B4,70,E0,70 to physical WIN1H=BCE8 and WIN1V=7878. Failure window 00,32,01,50 maps to 0809 and 3A58. The four cleared round scrolls each project to −8. Common projection preserves source-installed BG0CNT=1F02 and BG1CNT=1E03, with screenblocks F800/F000 and charblock 0. With display shadow high byte 80 it writes physical backdrop PAL0 from the BG alias +100. The source-only BG palette row-zero write and the common projected backdrop are separate epochs in the check.
+
+An unadjusted narrow Keystone link compiled numeric BL 085C1900 at fixture address 08E003EC as EBDF0633, targeting 085C1CC0. The palette-only assembly did reach the correct resident target. The independent combined fixture uses explicit symbolic veneers containing the native target, and verifies exactly one actual 085C1900 entry in each round constructor. Final integration must use the shared checked linker and validate its own complete branch directory.
+
+The inherited blank bank0 tile0 and black intro palette0 apply to the intended ordinary character-select path, with distinct source and native producer evidence in the entry-lifetime record. Concurrent mirror writers and predecessor-task retirement remain integration obligations. The presentation and audio boundary calls use typed fixture callbacks here. No registered scene, emulator, or supplied save was opened.
+
+- Independent checker SHA-256 8C92D6F344DDCDAB200FDBC9C6B8AF86619BFBF56153F19A6AF8D136B33EC905
+- Report SHA-256 AA618EFF87FD9156048264F4A9F366A69CE0FF805808A25F084F8E9DFBDA5A79 at build/mode23-graphics-palette-independent-20261117/report.json
+- Graphics asset SHA-256 2C7E91850D9706354DE4832B295D2B6717D8020C4F384FEE7F82A704300D84A8
+- Corrected native-services SHA-256 F5723182E96792E7875F6F8550473C263F38D69F23E4046D95E2680D380C2F65
+
+Invoke tools/verify_mode23_graphics_palette.py with --source local/BizHawk-2.11.1/ref15.wsc, --native build/repro-v86-20261117-a/current-candidate.gba, --author-dir build/mode23-graphics-author-20261117 and a fresh --report path.
+

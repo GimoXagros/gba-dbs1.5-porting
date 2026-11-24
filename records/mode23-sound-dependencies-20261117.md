@@ -1,0 +1,20 @@
+# Mode 23 source sound dependencies
+
+The source census binds 25 enqueue sites for 19 commands on the original WonderSwan Ver. 1.5 image. All 25 use delay zero. The corresponding four-channel retail scores are source `18` → native `04`, `1C` → `05`, `24` → `07`, `30` → `0A`, and `6C` → `19`, with request priority 4. The first two melodic tracks match each native pitch sequence. Source `7D` → native `23`, `9A` → `5A`, and `AC` → `4E` retain priority 1. Source `04` starts four zero-volume loops. The available retail `00` service stops native playback, which reproduces silence and has a different channel lifetime.
+
+The bounded finite-conversion set is `7C`, `84`, `98`, `D5`, `D6`, `D7`, `D9`, and `DA`. `7C` has a related native `22` score and a second native score with the complete chromatic interval contour transposed. The available caller evidence leaves that alias open. `84` and `98` have exact old WonderSwan payloads and still lack verified native counterparts. Source hardware sweep matters for `D6`, `D7`, and `DA` on channel 2. `D9` selects noise mode 2. `D7` uses request priority 2 and the other seven finite sounds use priority 1.
+
+Source `F0` and `F4` use the four-channel priority-4 start. Each has three audible channels and one muted loop. Within the same producer, the round-6 branch queues `F4` after `F0` with both delay words zero, so it replaces the pending selection before the consumer runs. In each track, `FD F0` saves the cursor after that directive and `B0 F0` reloads it without adding another wait. The following `FF FF` terminator is unreachable along that loop.
+
+| Source group | Intro score ticks | Repeat score ticks | First loop start and first repeat in driver updates | Steady update period |
+|---|---:|---:|---:|---:|
+| `F0` | 32 | 2,304 | 63 and 4,671 | 4,608 |
+| `F4` | 32 | 2,944 | 50 and 4,761 | 23,552 across five loops |
+
+The first melody pass in each group begins with source control values that differ from the steady loop. The parser independently advances the speed fraction and tracks global vibrato phase and inherited envelope, waveform and stereo state. Source waveforms `01`, `09`, and `0A` match the native PCM payloads at raw `D33398`, `D33400`, and `D33434`. The exact source waveform `04` still needs a native PCM slot. Independent noise mode 0 expansion matches the retained 32,767-sample payload at raw `D334D0`. The existing converter produced dry one-pass previews for the eight tracks. A future native looping conversion needs a branch back to the steady phase, including the five-loop `F4` cadence.
+
+The enqueue routine `080D15C0` takes the translated song ID in `R8`, source priority in `R9`, and zero delay in `R10`. Its adapter must preserve `R4–R11` and the return address. It writes the existing owner `030022F0`. Source service `8719:0148` corresponds to native `080D1500`, which clears the pending flag and delay before playback dispatch. The conditional source `4FFF:4F84` call steps channel volume fades. The native legacy per-channel entry `080158C8` is an immediate return, so the fade remains separate work. The current native table holds entries `00–6F` at `08D33000`. Its five consumers require relocation of the complete table for added entries because the following words belong to the evolution selector.
+
+Source request checker `tools/analyze_mode23_sound_dependencies.py` SHA-256 `3A067A6D1A42E3E2701AC3FC8A585679390A298BDAA3F53D157EEEA8F1EC50D1`. Source request report `build/mode23-sound-dependencies-20261117/report.json` SHA-256 `4FD3231076F583BF0B070D1A6E531EB8DB067E60C5FBAE9EAC5A2D708D8091A2`.
+
+Loop parser `tools/analyze_mode23_looped_music.py` SHA-256 `B533493374DA5E6E6E100CAC2A8BF389CD0DCAC4C95BE3F9588E98A44EAB0D9B`. Loop report `build/mode23-looped-music-source-20261117/report.json` SHA-256 `47BBF933DF5C6FF7E47EADB427E7350BAC0EBBD97A0CC09D8C64470CA3054EE5`. The analysis uses source bytes and the current native score table. Native mode 23 installation, fade behavior and audio playback remain unverified.

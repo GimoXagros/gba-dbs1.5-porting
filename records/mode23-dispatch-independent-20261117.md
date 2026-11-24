@@ -1,0 +1,19 @@
+# Independent mode23 dispatcher review
+
+The proposed dispatcher tables and selective character-select branch pass the bounded independent review on5284435A. Report `build/mode23-dispatch-independent-20261117/report.json` SHA256 `EDB417295EBF5699FCAA67458FCA4574B6601A443FB5E912D4510FCC692057D8` was produced with exit0 by `tools/verify_mode23_dispatch_tables.py` SHA256 `3C666B1EE68EE79F3329BF8104D5E37C6FC14DDE69AC5076490513DABBC842BF`. It binds generator `tools/mode23_dispatch_tables.py` SHA256 `1510AE5FC5C575E69DEAAA09CECD85920AD384F16EAFB5009085A473BD681864`.
+
+All six aligned ARM immediate PC-address producers into the old table extent15B70..15D30 are covered:159E0→15B70,159FC/15A20→15B74,15AD4→15B78,15AF0→15CC8 and15AF8→15C6C. A byte-aligned encoded pointer census finds no additional direct address literals into that extent. This is finite encoded-consumer coverage, not an arbitrary computed-alias or Thumb discovery proof.
+
+The528-byte relocated data contains24 callback triples,24 dispatch pointers and24 six-byte transition rows. Existing21 callback/dispatch rows and all five old transition choices are preserved exactly. Old mode18 already had a zero callback triple;21 preserved rows do not mean21 implemented modes. Modes21/22 remain zero and unregistered. Their absence is safe only while no installed producer selects them.
+
+The old table heads become five pointer slots, all six ADR readers become matching LDR readers, and two arithmetic words change the transition stride from5 to6. Only row4 choice5 becomes23 and row23 choice0 becomes20. The conditional81C80 branch is retained as EQ: source bit2 remains higher priority, actor state10 still selects choice4, and only its previous ordinary branch gains the bit8→choice5 decision. No title/menu producer is added by this module.
+
+Source callback row74FBE0 is `4090:A040,4090:A041,4FA3:0287`; the initializer74A940 and common callback74FCB7 are RETF. Native080159B0 BXLR correctly preserves incoming scheduler R2. The independent fixture executes actual159B4 and actual12008 task-callback stores with incoming active counts0,1,3,9,52 across all16 NZCV states. Nonzero counts construct immediately and install15AB4. Zero stores the constructor at03002308 and installs15A48; readiness15A78→15A48 installs15A8C, which invokes the constructor and then installs15AB4. The constructor body is a minimal typed R2-capture fixture; it does not stand in for verified real scene resources or retirement.
+
+Checks include630 old-route comparisons against the original native dispatcher,512 selector combinations,80 scheduler/constructor cases and16 complete common-exit cases. The mode23 idle common path returns without changing mode. With terminal request4=1 and choice6=0, the actual common BXLR, six-byte row lookup, config4/6/8 clearing and12008 store select mode20 and callback159B4 with balanced stack. The mode20 callbacks remain the original040448/040470, including the already repaired title-resource route. This does not execute the complete title scene or prove that all mode23 producers have retired before the handoff.
+
+All test placement is in an in-memory image. Undoing the14 changed words,528 table bytes,16 selector bytes and16 fixture bytes reconstructs the exact original image. No ROM reservation, installed constructor, menu exposure, emulator, main builder or Git change is approved by this standalone check. The final component must prove its chosen reservation, actual constructor/private layout, task retirement, resource ownership and entry producer independently.
+
+```powershell
+python tools/verify_mode23_dispatch_tables.py --source "C:/Users/김기호/Downloads/JUS/Digimon Tamers - Battle Spirit Ver 1.5.wsc" --native build/shoot-child-contact-20261117/component.gba --report build/mode23-dispatch-independent-20261117/report.json
+```
