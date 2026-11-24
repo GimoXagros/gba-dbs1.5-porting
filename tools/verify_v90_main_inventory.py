@@ -34,7 +34,9 @@ def run():
         parser.add_argument('--'+name,type=Path,required=True)
     args=parser.parse_args()
     assert sha(Path(main.__file__).read_bytes())==PRIMARY
-    original=json.loads(args.v89_audit.read_bytes())
+    parent_report=args.v89_audit.read_bytes()
+    assert sha(parent_report)=='7D5E2DC932A0EA8D1151B7F901D7B6EAFA4313D9D2F22B935790912E3806B993'
+    original=json.loads(parent_report)
     assert original['status']=='TITLE_AND_PORTRAITS_TWO_FRESH_BUILDS_PASS'
     assert original['final_sha256']==PREVIOUS['current-candidate.gba']
     assert len({p.resolve() for p in (args.first_parent,args.second_parent,args.first,args.second)})==4
@@ -68,4 +70,3 @@ def run():
 
 if __name__=='__main__':
     run()
-
