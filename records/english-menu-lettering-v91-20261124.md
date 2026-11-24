@@ -1,0 +1,9 @@
+# Native English menu lettering, 24 November 2026
+
+The native USA OPTIONS button contains only four ink columns (68–71) for its last S. The original English atlas and the stable screen agree down to the native palette indices. The corrected row takes the six-column S from the Versus button and places it at columns 66–71. The second Versus row reads **VS VER B•S**. Its B and E come from 1P BATTLE, its middle dot comes from the original English Versus row, and V, S and R come from the native Versus graphics. Both rows keep the original 88 × 16 panel, blue marker, two-tone lettering and 22-object layout.
+
+The isolated input is A1CA6459, with complete SHA-256 values in the builder. Both optional ROM and owner pins must be supplied together when following a later build. The existing English atlas has its own 6,064-byte SHA-256 guard. Changes affect the decoded content of events 3 and 7 only.
+
+* Builder: `tools/build_english_menu_lettering.py --input ROM --owner MANIFEST --output DIRECTORY`. It accepts `--input-sha256` and `--owner-sha256` for a relocated predecessor. Its original-branch image SHA-256 is `58C7352A1F3F69C73A29DDF863F428F0610E7E064DB5DE7EDA476203DC2F422A`.
+* Independent check: `tools/verify_english_menu_lettering.py PARENT OLD_CAPTURE NEW_CAPTURE DIRECTORY`. The old capture is `build/bizhawk-title-headers-english-source-20261124-lang0`. The new one is `build/bizhawk-title-headers-english-lettering-v91-20261124-lang0`.
+* QA checks both ROM glyph sources and the final PNG against every visible palette-indexed VRAM/OAM pixel. The root screen has 110 objects and its Versus submenu has 44. The headless run used controller inputs only. The report `build/english-menu-lettering-qa-20261124/report.json` has SHA-256 `5C941BBD5A499656FE532C81A2D3E650BF0423A23C3D02355C51FF17C1A93084`. Direct 1× and 4× screen crops are alongside it.
