@@ -67,6 +67,7 @@ def main():
     p.add_argument('--component',type=Path,help='standalone presentation build directory')
     p.add_argument('--rom',type=Path,help='standalone or combined full GBA image')
     p.add_argument('--presentation-owner',type=Path,help='original presentation manifest')
+    p.add_argument('--score-owner',type=Path,help='authenticated ending score audio overlay')
     a=p.parse_args()
     out=a.output.resolve()
     out.mkdir()
@@ -84,10 +85,24 @@ def main():
     marker=owner['symbols']['m11_tag_audio_ready']-0x08000000
     enabled=struct.unpack_from('<I',image,marker)[0]
     assert enabled in (0,1)
+    score_hook=None
+    if a.score_owner:
+        score_raw=a.score_owner.read_bytes()
+        assert sha(score_raw)=='A41428915AC1241000B31176086FB0A20B647B9216749BBB7DEF184E2889F116'
+        score=json.loads(score_raw)
+        for row in score['writes']:
+            at,n=row['offset'],row['size']
+            assert sha(image[at:at+n])==row['after_sha256']
+            if at==0xea4840:
+                assert n==4 and row['before_sha256']==sha(bytes.fromhex('a4059fe5'))
+                score_hook=at
+        assert score_hook and enabled
     for row in owner['writes']:
         start,n=row['offset'],row['size']
         data=bytearray(image[start:start+n])
         if start<=marker and marker+4<=start+n:data[marker-start:marker-start+4]=bytes(4)
+        if score_hook and start<=score_hook and score_hook+4<=start+n:
+            data[score_hook-start:score_hook-start+4]=bytes.fromhex('a4059fe5')
         assert sha(data)==row['after_sha256'],f'changed presentation bytes at {start:08X}'
     assert not a.component or sha(image)==owner['output_sha256']
     state=ROOT/'build/bizhawk-collection-hidden-aux-v91-20261124-b/permanent-award.State'

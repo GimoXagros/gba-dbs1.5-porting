@@ -8,6 +8,11 @@ local function log(msg)local f=assert(io.open(out.."/trace.txt","a"));f:write(em
 local function iw(n)return memory.read_u16_le(n,"IWRAM")end
 local function ew(n)return memory.read_u32_le(n,"EWRAM")end
 local function eb(n)return memory.read_u8(n,"EWRAM")end
+local function audio_state(label)
+ local function w(addr)return memory.read_u32_le(addr,"IWRAM")end
+ log(string.format("audio-state %s p0=%08X/%08X p3=%08X/%08X",label,
+  w(0x6b40),w(0x6b44),w(0x6c90),w(0x6c94)))
+end
 local function task(cb)
  for i=0,51 do local h=0x10000+i*0x118
   if eb(h+16)&2~=0 and ew(h)==cb then return h end
@@ -31,6 +36,8 @@ local ok,err=pcall(function()
   assert(savestate.load(out.."/earned-campaign.State",true))
   assert(emu.framecount()==225116 and iw(0x2310)==11)
   local rank, count=nil,0
+  event.on_bus_exec(function()audio_state("before-number-stop")end,0x08E09518,"reel-stop-before")
+  event.on_bus_exec(function()audio_state("after-number-stop")end,0x08E0952C,"reel-stop-after")
   event.on_bus_exec(function()
    local regs=emu.getregisters()
    log(string.format("card-cue %02X priority=%d",regs.R0,regs.R1))
@@ -72,6 +79,9 @@ local ok,err=pcall(function()
     local phase=memory.read_u16_le(p+2,"EWRAM")
     local elapsed=memory.read_u16_le(p,"EWRAM")
     if phase==0 and elapsed==390 then capture("score")end
+    if phase==0 and (elapsed==75 or elapsed==105 or elapsed==250 or elapsed==317 or elapsed==320)then
+     audio_state("score-"..elapsed)
+    end
     if phase==0 and elapsed==30 then capture("score-fade-in")end
     if phase==0 and elapsed==690 then capture("score-fade-out")end
     if phase==1 and elapsed==140 then capture("card")end
