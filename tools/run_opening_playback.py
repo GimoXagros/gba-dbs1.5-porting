@@ -32,9 +32,12 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--rom',required=True,type=Path);p.add_argument('--output',required=True,type=Path)
     p.add_argument('--limit',type=int,default=36000);p.add_argument('--skip',action='store_true')
+    p.add_argument('--expected-sha256')
+    p.add_argument('--choice-detail',action='store_true')
     a=p.parse_args();ws=a.rom.suffix.lower()=='.wsc'
     rom=a.rom.read_bytes()
     expected='C415F227ED9A277F6553B4EC03CA16CE4D0058D1C1104889D90BD88071D76FD7' if ws else 'D432DBE9B221A0EFC15B644B8E76A0D39D374DFF1087165A917EF977A3E8BD99'
+    if a.expected_sha256 and not ws:expected=a.expected_sha256
     assert sha(rom)==expected and Path('W:/').samefile(ROOT)
     exe=ROOT/'local/BizHawk-2.11.1/EmuHawk.exe'
     assert sha(exe.read_bytes())=='F8CDB93551A544F680BF3876D9D8D72643859E7A44A23B04E1A25B92E48F80CD'
@@ -42,7 +45,7 @@ def main():
     alias=Path('W:/')/out.relative_to(ROOT)
     src=Path(__file__).with_name('bizhawk_opening_playback.lua')
     symbols=','.join(f'[0x{k:x}]={v}' for k,v in owners(ws).items())
-    script=src.read_text(encoding='utf8').replace('@@SYMBOLS@@',symbols).replace('@@SKIP@@',str(a.skip).lower()).replace('@@LIMIT@@',str(a.limit))
+    script=src.read_text(encoding='utf8').replace('@@SYMBOLS@@',symbols).replace('@@SKIP@@',str(a.skip).lower()).replace('@@LIMIT@@',str(a.limit)).replace('@@DETAIL@@',str(a.choice_detail).lower())
     (out/'probe.lua').write_text(script,encoding='utf8',newline='\n')
     filename='game'+a.rom.suffix.lower()
     shutil.copyfile(a.rom,out/filename)
@@ -58,7 +61,7 @@ def main():
         while not (out/'finished.txt').exists() and time.monotonic()<until:time.sleep(.25)
     status=(out/'finished.txt').read_text() if (out/'finished.txt').exists() else 'host-timeout'
     result=dict(status=status,rom_sha256=expected,loaded_rom_exact=(out/'loaded-rom.bin').read_bytes()==rom,
-                visible=False,guest_writes=[],supplied_save=False,host_limit=a.limit,skip=a.skip,
+                visible=False,guest_writes=[],supplied_save=False,host_limit=a.limit,skip=a.skip,choice_detail=a.choice_detail,
                 script_sha256=sha((out/'probe.lua').read_bytes()),trace_sha256=sha((out/'trace.txt').read_bytes()))
     (out/'launch.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf8',newline='\n')
     print(status,result['trace_sha256'])

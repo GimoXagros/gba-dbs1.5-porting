@@ -2,6 +2,7 @@ local out=assert(userdata.get("output"))
 local ws=emu.getsystemid()=="WSWAN"
 local skip=@@SKIP@@
 local limit=@@LIMIT@@
+local detail=@@DETAIL@@
 local known={@@SYMBOLS@@}
 local cache=nil
 local last=-1
@@ -66,7 +67,7 @@ local function play()
    if m==3 and changes>0 then
     initial_title=initial_title or f
     capture(26,f)
-    if skip or (choices[19] and choices[20] and choices[21] and choices[22] and choices[23]) then
+    if skip or (detail and choices[23]) or (choices[19] and choices[20] and choices[21] and choices[22] and choices[23]) then
      save("finished.txt","title");return
     end
    end
@@ -77,6 +78,27 @@ local function play()
    changes=changes+1;current_index=index;current_start=f
    log(string.format("callback frame=%d id=%d state=%d mode=%d owner=%s",f,index,start_state(),m,ws and string.format("%s@%04X",cache[2],cache[1]) or string.format("EWRAM@%05X",cache)))
    if index>=19 and index<=23 then choices[index]=true end
+  end
+  if detail and current_start and current_index==23 and m==2 then
+   local age=f-current_start
+   for _,k in ipairs({8,10,16,20,32,40,48,60,64,80}) do
+    if age==k then
+     local prefix=string.format("choice3-%02d",age)
+     client.screenshot(out.."/"..prefix..".png")
+     if ws then
+      save(prefix.."-ram.bin",memory.read_bytes_as_binary_string(0,65536,"RAM"))
+     else
+      save(prefix.."-oam.bin",memory.read_bytes_as_binary_string(0,1024,"OAM"))
+      save(prefix.."-palette.bin",memory.read_bytes_as_binary_string(0,1024,"PALRAM"))
+      save(prefix.."-vram.bin",memory.read_bytes_as_binary_string(0,98304,"VRAM"))
+     end
+    end
+   end
+  end
+  if detail and skip and pressed and f-pressed<=110 and m==2 then
+   local d=ws and "RAM" or "IWRAM"
+   local at=ws and 0x3916 or 0x267c
+   log(string.format("fade frame=%d step=%d limit=%d elapsed=%d",f,current_index,memory.read_u16_le(at,d),memory.read_u16_le(at+2,d)))
   end
   if current_start and f==current_start+8 and m~=3 then capture(current_index,f) end
   if skip and not pressed and current_index==8 and f-current_start>=15 then
