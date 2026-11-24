@@ -11,6 +11,8 @@ import subprocess
 import sys
 
 
+import build_collection_native_tail as collection_native
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
 WSC10_SHA256 = "58220B9C050C3BF29B4953885C9576BE103EA8E00A7BCB96CCA18607E19E9735"
@@ -247,7 +249,7 @@ EXPECTED_LAYERS = {
     "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
     "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
     "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
-    "current-candidate.gba": "8C6D6CC077013FEEEC60F70D702750268E81044C1A1DF6DBB6E70FF4A51BC869",
+    **collection_native.STAGES,
     "initial-portrait.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
     "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
     "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
@@ -277,13 +279,13 @@ def run(tool: str, *arguments: object) -> None:
 def source_english_tail(usa, source, title_owner, output):
     initial = output / "initial-portrait.gba"
     english = output / "intermediate" / "source-english-menus"
-    candidate = output / "current-candidate.gba"
+    candidate = output / "source-english.gba"
     require_hash(initial, EXPECTED_LAYERS["initial-portrait.gba"], "initial portrait parent")
     run("build_source_english_submenus.py", "--input", initial, "--source", source,
         "--title-owner", title_owner, "--output", english)
     (english / "component.gba").replace(candidate)
-    (english / "manifest.json").replace(output / "current-candidate.json")
-    require_hash(output / "current-candidate.json",
+    (english / "manifest.json").replace(output / "source-english.json")
+    require_hash(output / "source-english.json",
                  "183A4C195AF6AC917D9AF5E58FBF0957B5F433423E3282848AD620E306EF6065",
                  "restored source English atlas and complete inverse")
     review = output / "intermediate" / "source-english-menus-verification.json"
@@ -291,7 +293,7 @@ def source_english_tail(usa, source, title_owner, output):
         "--before", initial, "--after", candidate, "--report", review)
     require_hash(review, "A11A01E8C45A942167B35494354A83663420D30F7EF7237227E17F08A9D7DC42",
                  "native English and original Ver. 1.5 menu pixels")
-    require_hash(candidate, EXPECTED_LAYERS["current-candidate.gba"], "source English candidate")
+    require_hash(candidate, EXPECTED_LAYERS["source-english.gba"], "source English candidate")
 
 
 def main() -> int:
@@ -1014,6 +1016,7 @@ def main() -> int:
     require_hash(initial_review, "8B9B04E3F777CE49CE7CB60422C21DE18D0419E59ECB46C5A8C6B3CD7F5E575E",
                  "localized first portrait on character selection entry")
     source_english_tail(args.gba, args.wsc15, title / "manifest.json", output)
+    collection_native.build(args.wsc15, output, run, require_hash)
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1972,6 +1975,7 @@ def main() -> int:
         "layers": EXPECTED_LAYERS,
         "output": "current-candidate.gba",
     }
+    collection_native.update_manifest(manifest)
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
