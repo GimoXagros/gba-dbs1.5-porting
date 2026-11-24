@@ -64,7 +64,21 @@ def main():
     script=script.replace('@@ATTACKER@@',str(a.attacker)).replace('@@VERSION_ROW@@','0' if a.version=='1.5' else '1')
     if a.card_screens:
         snippet=Path(__file__).with_name('mgba_link_card_capture.lua').read_text(encoding='utf8')
+        if a.carry_to_special:
+            master=Path(__file__).with_name('mgba_link_master_capture.lua').read_text(encoding='utf8')
+            meta_path=a.rom.with_name('manifest.json')
+            meta=json.loads(meta_path.read_bytes()) if meta_path.exists() else {}
+            party_init=meta.get('symbols',{}).get('m24s_party_init')
+            if party_init:
+                assert meta['output_sha256']==a.rom_sha256
+                master=master.replace('@@PARTY_INIT@@',str(party_init))
+            else:
+                master='local function inspect_master(f) end'
+            snippet=snippet.replace('local function inspect_card(f,mode)',master+'\nlocal function inspect_card(f,mode)')
+            snippet=snippet.replace('local elapsed=f-card_entered','local elapsed=f-card_entered\n inspect_master(f)')
         script=script.replace('local function frame()',snippet+'\nlocal function frame()').replace('f-exit_frame>220','f-exit_frame>30').replace('f>=21000','f>=48000')
+        script=script.replace('if md==4 and entered_result and not exit_frame then exit_frame=f end','if md==4 and entered_result and not exit_frame then if card_had_result then exit_frame=f else entered_result=nil end end')
+        script=script.replace('emu:clearKeys(1023);','if md==7 then allowed=arena_keys(f,'+str(a.attacker)+') end\n emu:clearKeys(1023);')
         script=script.replace('local serial=read(0x04000128,2)','inspect_card(f,md)\n local serial=read(0x04000128,2)')
     script_path=out/'probe.lua' 
     script_path.write_text(script,encoding='utf8',newline='\n')
