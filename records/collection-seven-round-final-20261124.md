@@ -1,0 +1,13 @@
+# Earned Collection entry and seven-round victory on the GBA
+
+The development image `8C6D6CC077013FEEEC60F70D702750268E81044C1A1DF6DBB6E70FF4A51BC869` completed one continuous private-desktop run from the genuine stage 11 checkpoint at frame 89405 through the seven-round Shoot victory and return to title mode at 124035. The authorized boss adjustment set HP to 1 once. A real shot hit, stage 11 cleared, and the in-game writer unlocked the Collection menu. The approved checkpoint copy came from a prior GBA campaign.
+
+The source-English Shoot row appeared after the player navigated the post-clear title. The live controller entered mode 23 at 103333. The seven rounds took 2, 2, 5, 5, 7, 9, 3 player shots respectively. The final round reached the completion callback and its save routine at 123555. The game reached the victory presentation, switched to mode 20 at 123973 and returned to the title. The pending unlock byte changed from 0 to 16. The permanent flag was still 0 at the observed exit. The native record checksum matched.
+
+A separate cold boot loaded a copy of the EEPROM from this run. Normal navigation reached the unlocked English DIGIMON SHOOT row again at frame 3190. All 196 bytes of the native record and checksum matched the saved copy. The pending reward byte returned to zero on boot. The permanent reward flag was zero both before and after reboot. The cold-boot audit is `build/collection-coldboot-verified-20261124/report.json`, SHA-256 `0B2DD23117B41399422CCF5E465348A65F510481D63FFBCBF5D51246EE48F352`.
+
+Development input exploration on the earlier graphics candidate used round and turn checkpoints. The recorded run on the stated image replayed only ordinary controller inputs after the stage 11 hit. This run loaded its starting campaign checkpoint once. It did not restore any state inside Collection or write to guest memory in the minigame.
+
+The source-English selected menu is in `build/bizhawk-collection-v89-20261124-final-a/english-shoot-selected.png` with matching physical memory captures. The launch record SHA-256 is `A8650FED8C28758EADB8F9704B3D1E1ED3E8F699DC2F2B7D45EA02C80C50C630`. The portable capture audit verifies all 211 indexed files, each round, input decision chronology, completion and title retirement. Its SHA-256 is `04C49969CD5AAE13C73C39C0B3D24D467DC640EE9A70F79F82ACE2E13C8C30D7`.
+
+With the established private capture environment and stored genuine campaign checkpoint, repeat with `python tools/run_collection_seven_round_v90.py bizhawk-collection-v89-20261124-final-b` and `python tools/verify_collection_seven_round_capture.py build/bizhawk-collection-v89-20261124-final-b build/collection-seven-round-repeat/verified.json`.
