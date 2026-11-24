@@ -37,11 +37,13 @@ def run(a):
     shutil.copyfile(a.save,saved)
     shutil.copyfile(rom,out/'probe.gba')
     script=Path(__file__).with_name('bizhawk_native_play_assists.lua')
-    lua=script.read_text(encoding='utf8')
+    frozen=out/'controller.lua'
+    shutil.copyfile(script,frozen)
+    lua=frozen.read_text(encoding='utf8')
     assert all(x not in lua for x in ('memory.write','savestate.','setregister','dofile','loadfile'))
     symbols=owner['symbols']
     u=f"output:{alias};fixed:{a.fixed};route:{a.route};score_pc:{symbols['assist_score_store']};boss_pc:{symbols['assist_boss_store']}"
-    args=['--gdi','--config='+alias+'/config.json','--lua=W:/tools/'+script.name,'--userdata='+u,alias+'/probe.gba']
+    args=['--gdi','--config='+alias+'/config.json','--lua='+alias+'/controller.lua','--userdata='+u,alias+'/probe.gba']
     with PrivateDesktopProcess(exe,args,exe.parent):
         deadline=time.monotonic()+1800
         while not (out/'done.txt').is_file() and time.monotonic()<deadline:time.sleep(.4)
@@ -50,7 +52,7 @@ def run(a):
             deadline=time.monotonic()+10
             while digest(saved)==a.save_sha256 and time.monotonic()<deadline:time.sleep(.2)
     report=dict(rom=a.expected,save_in=a.save_sha256,save_out=digest(saved),fixed=a.fixed,route=a.route,
-                script_sha256=digest(script),visible=False,loaded_rom_exact=digest(out/'loaded-rom.bin')==a.expected,
+                script_sha256=digest(frozen),visible=False,loaded_rom_exact=digest(out/'loaded-rom.bin')==a.expected,
                 guest_writes=[],trace=digest(out/'play.txt'),outcome=outcome)
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8',newline='\n')
     lines=(out/'play.txt').read_text().splitlines()

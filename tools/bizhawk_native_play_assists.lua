@@ -64,7 +64,7 @@ local function run()
         assert(m~=9,"Continue reached at stage "..s)
         local k={}
         local pulse=step%32<3
-        if not full and samples>=400 then
+        if not full and samples>=400 and (fixed<0 or writes>0) then
             assert(fixed>=0 or writes==0)
             shot("score");log("sampled "..samples.." native score writes "..writes);return
         end
