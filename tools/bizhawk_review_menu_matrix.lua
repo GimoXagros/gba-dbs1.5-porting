@@ -84,11 +84,19 @@ local ok,err=pcall(function()
     waitfor("committed prompt",prompt)
     assert(iw(0x112E)>>8==0xA0+language)
     frames(45)
-    waitfor("visible Start",function()return enabled()>0 end)
-    frames(2)
+    waitfor("visible Start",function()
+        for j=0,127 do
+            local a=memory.read_u16_le(j*8,"OAM")
+            if a&0x300~=0x200 and a&255>=98 and a&255<=119 then return true end
+        end
+    end)
+    for _,region in ipairs({{"oam","OAM",0x400},{"palette","PALRAM",0x400},{"vram","VRAM",0x18000}}) do
+        write("title-"..region[1]..".bin",memory.read_bytes_as_binary_string(0,region[3],region[2]))
+    end
     shot("title");tap("Start")
     waitfor("five menu rows",function()return menu(0) and enabled()==110 end)
     frames(2);shot("main");assert(savestate.save(rootstate,true))
+    write("root-oam.bin",memory.read_bytes_as_binary_string(0,0x400,"OAM"))
     selectrow(0,1)
     waitfor("versus paint",function()return menu(1) and enabled()>=44 end);frames(1);shot("versus")
     root();selectrow(0,4)
