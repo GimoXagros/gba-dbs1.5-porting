@@ -1,0 +1,11 @@
+# Collection Shoot on the GBA
+
+A private BizHawk run of the graphics candidate `9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5` completed the route from the genuine stage 11 battle checkpoint through a real victory, the earned Collection unlock, the Shoot minigame, its defeat screen and the title.
+
+The single assisted action set the live boss HP to 1 at frame 89469. A real shot hit at 89483. The normal results code ran the eligibility writer at 90942. The title read the saved unlock, and the unlocked Collection showed Shoot as event 9. Ordinary input selected the menu item and character. The five character-select tasks finished, the dispatcher selected mode 23 at 103333, and the source-derived controller reached actual play at 103789. Three participants were live. The normal defeat callback ran at 105557. Mode 20 followed at 105559 and title mode returned at 105621.
+
+The capture directory is `build/bizhawk-collection-v89-20261124-c`. The original private launcher exited 0 with no supplied saves. The physical ROM matched the development image. Report `build/collection-route-20261124/verified.json` has SHA-256 `E8FF2DB2036E7157C32EEDF3DDC8C6F707A906F9691D81DFE2243D64ED5ED898`. It checks the complete file index, checkpoint run provenance, HP write and hit, menu events, cached eligibility, participants, dispatch and title task retirement. The launch file has SHA-256 `D2D0B1FEB32B0FDB08BE8FC4ECD21B62DEE7CD8F7B8F16CC49653A4A9948193F`.
+
+To repeat with the established W: alias, fresh local inputs and stored checkpoint, run `python tools/run_collection_route_v89.py bizhawk-collection-v89-20261124-d`, then `python tools/verify_collection_route_capture.py build/bizhawk-collection-v89-20261124-d build/collection-route-20261124/repeat.json`. The proven game path begins at the exact stage 11 checkpoint. Seven-round victory and reload persistence use separate tests.
+
+The first observation (directory ending in `-a`) reached mode 23 and checked the constructor too early. The mode word changes before the constructor executes on its next scheduler pass. A replay from that run's actual post-clear title (`-b`) verified the timing. The successful continuous capture (`-c`) keeps that distinction. The ROM was identical across the three runs.
