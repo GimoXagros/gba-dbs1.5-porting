@@ -14,6 +14,7 @@ import sys
 import build_collection_native_tail as collection_native
 import build_ending_awards_main_tail as ending_awards
 import build_tag_release_tail as tag_release
+import build_tag_audio_link_tail as tag_audio_link
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
@@ -254,6 +255,7 @@ EXPECTED_LAYERS = {
     **collection_native.STAGES,
     **ending_awards.STAGES,
     **tag_release.expected_layers(),
+    **tag_audio_link.expected_layers(),
     "initial-portrait.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
     "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
     "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
@@ -1026,6 +1028,7 @@ def main() -> int:
     collection_native.build(args.wsc15, output, run, require_hash)
     ending_awards.build(args.wsc15, output, run, require_hash)
     tag_stages = tag_release.install(output, args.wsc15, args.font, credit_font, run)
+    tag_audio_stages = tag_audio_link.install(output, args.wsc15, run)
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1987,6 +1990,7 @@ def main() -> int:
     collection_native.update_manifest(manifest)
     ending_awards.update_manifest(manifest)
     manifest["collection_and_language"]["ending_and_title_build"] = tag_stages
+    manifest["collection_and_language"]["tag_audio_and_link_build"] = tag_audio_stages
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
