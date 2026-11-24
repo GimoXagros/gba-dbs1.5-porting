@@ -247,7 +247,9 @@ EXPECTED_LAYERS = {
     "mode20-title-assets.gba": "3CB7A7137762AA77C7C8D9147CF32AB356CDB269E6CE819115B911DEF444E49E",
     "iraira-outer-palette.gba": "574FD26186CB94D447A8A6F9B60EAE65795CB9BA5AAE4350DBF861A0B2FAED76",
     "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
-    "current-candidate.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
+    "current-candidate.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
+    "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
+    "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
 }
 
 
@@ -915,8 +917,79 @@ def main() -> int:
     results_route = output / "stage11-results-route"
     run("build_shoot_stage11_results_route.py", "--before", child_contact, "--source", args.wsc15,
         "--owner", output / "shoot-child-contact.json", "--output", results_route)
-    (results_route / "component.gba").replace(candidate)
-    (results_route / "manifest.json").replace(output / "current-candidate.json")
+    results = output / "stage11-results.gba"
+    results_manifest = output / "stage11-results.json"
+    (results_route / "component.gba").replace(results)
+    (results_route / "manifest.json").replace(results_manifest)
+
+    audio = intermediate / "mode23-audio"
+    fragments = intermediate / "mode23-audio-fragments"
+    sound_report = intermediate / "mode23-sound.json"
+    scene = intermediate / "mode23-scene"
+    eligible = intermediate / "mode23-eligible"
+    title_assets = intermediate / "mode23-title-assets"
+    title = intermediate / "mode23-title"
+    names = intermediate / "portrait-names"
+    selection = intermediate / "portrait-selection"
+    graphics_inputs = ("--source", args.wsc15, "--native", child_contact, "--font", args.font,
+                       "--license", args.font_license)
+    run("analyze_mode23_sound_dependencies.py", "--source", args.wsc15, "--old", args.wsc10,
+        "--gba", args.gba, "--rom", iraira_outer, "--report", sound_report)
+    run("build_mode23_audio_assets.py", "--before", child_contact, "--source", args.wsc15, "--output", audio)
+    run("split_mode23_audio_tracks.py", "--input", audio, "--output", fragments)
+    sound_inputs = ("--source-audio-report", sound_report, "--audio-contract", audio / "manifest.json")
+    run("build_mode23_scene.py", "--input", child_contact, "--source", args.wsc15, *sound_inputs,
+        "--audio-bundle", fragments / "mode23-audio-assets.bin",
+        "--audio-manifest", fragments / "manifest.json", "--output-dir", scene)
+    run("build_mode23_eligible_scene.py", "--base", child_contact, "--results", results,
+        "--source", args.wsc15, "--scene", scene / "component.gba", "--scene-manifest",
+        scene / "manifest.json", "--output", eligible)
+    run("build_mode23_title_assets_r4.py", *graphics_inputs, "--output-dir", title_assets)
+    run("build_mode23_title_scene_r4.py", "--source", args.wsc15, "--native", child_contact,
+        "--input", eligible / "component.gba", "--assets-dir", title_assets,
+        "--scene-owner", scene / "manifest.json", "--output-dir", title)
+    run("build_character_select_name_assets_r3.py", *graphics_inputs, "--output-dir", names)
+    run("build_character_select_name_scene_r3.py", "--input", title / "component.gba", "--assets", names,
+        "--scene-owner", scene / "manifest.json", "--title-owner", title / "manifest.json", "--output-dir", selection)
+    selector = output / "portrait-selector.gba"
+    selector_manifest = output / "portrait-selector.json"
+    (selection / "component.gba").replace(selector)
+    (selection / "manifest.json").replace(selector_manifest)
+    initial_portrait = intermediate / "initial-portrait"
+    run("build_initial_portrait_header.py", "--input", selector, "--owner", selector_manifest,
+        "--output", initial_portrait)
+    (initial_portrait / "component.gba").replace(candidate)
+    (initial_portrait / "manifest.json").replace(output / "current-candidate.json")
+    require_hash(output / "current-candidate.json",
+                 "29B914EF1CD8403C70B5C92A8CF9478E40B0014DAC41CD8FCB9F7F181AC11505",
+                 "initial portrait ownership and full inverse")
+
+    scene_review = intermediate / "mode23-scene-verification.json"
+    run("verify_mode23_scene_component.py", "--before", child_contact, "--component", scene / "component.gba",
+        "--source", args.wsc15, "--manifest", scene / "manifest.json", *sound_inputs, "--report", scene_review)
+    require_hash(scene_review, "30B5BE9E19253E3DFB8B5CF514006A9D1808DA99374AE5D60FBB6CD4210ADC4D",
+                 "installed mode23 lifecycle")
+    eligible_review = intermediate / "mode23-eligible-verification.json"
+    run("check_mode23_eligible_scene.py", "--component", eligible / "component.gba",
+        "--manifest", eligible / "manifest.json", "--report", eligible_review)
+    require_hash(eligible_review, "147241468A39BE38DB614D9867820E2145567B4EA89592A27C45493B5C611801",
+                 "installed eligibility access and reset")
+    title_review = intermediate / "mode23-title-verification.json"
+    run("check_mode23_title_installed_r4.py", "--source", args.wsc15, "--native", child_contact,
+        "--scene", scene / "component.gba", "--component", title / "component.gba",
+        "--assets-dir", title_assets, "--report", title_review)
+    require_hash(title_review, "CC5DD47DCF235AE8B4C924EF1F5C5E3AA1F1694346D17553C29FFDBDADA8FC55",
+                 "four-language title, prompt and menu navigation")
+    header_review = intermediate / "portrait-names-verification.json"
+    run("verify_character_select_name_scene.py", "--source", args.wsc15, "--before", title / "component.gba",
+        "--after", selector, "--manifest", selector_manifest, "--assets", names, "--font", args.font,
+        "--scene-owner", scene / "manifest.json", "--title-owner", title / "manifest.json", "--report", header_review)
+    require_hash(header_review, "6BA326D4FF37F9866E893306C53CC54C111C6B6819D05C8DC89319EB7B901ED4", "all localized portrait headers")
+    initial_review = intermediate / "initial-portrait-verification.json"
+    run("verify_initial_portrait_header.py", "--before", selector, "--after", candidate,
+        "--manifest", output / "current-candidate.json", "--owner", selector_manifest, "--report", initial_review)
+    require_hash(initial_review, "8B9B04E3F777CE49CE7CB60422C21DE18D0419E59ECB46C5A8C6B3CD7F5E575E",
+                 "localized first portrait on character selection entry")
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1449,8 +1522,8 @@ def main() -> int:
     require_hash(contact_callbacks_review, "D6958EA29893D14A0684DB110240C0B58805191C62B6419F47C2052341E20C3B",
                  "source three-callback lifetime, timer wrap and exact non11 route preservation")
     results_route_review = intermediate / "shoot-stage11-results-route-verification.json"
-    run("verify_shoot_stage11_results_route.py", "--before", child_contact, "--after", candidate,
-        "--source", args.wsc15, "--manifest", output / "current-candidate.json",
+    run("verify_shoot_stage11_results_route.py", "--before", child_contact, "--after", results,
+        "--source", args.wsc15, "--manifest", results_manifest,
         "--owner", output / "shoot-child-contact.json", "--report", results_route_review)
     require_hash(results_route_review, "F12C481BA9A03745E132AA10A4A9BA48C19898A2EDF35BBF7EFA735DC14511CC",
                  "source stage7/11 final Results constructor and native ending route")
@@ -1486,6 +1559,11 @@ def main() -> int:
     manifest = {
         "schema": 1,
         "kind": "reproducible-current-candidate-build",
+        "collection_and_language": {
+            "shoot_mode": 23, "tamer_tag_guarded": True, "source_title_counter_pending": True,
+            "title_languages": ["en", "ja", "ko", "digicode"], "root_rows": 5, "portrait_ids": 15,
+            "korean_empty_columns_between_syllables": 2, "complete_port": False,
+        },
         "claim_scope": (
             "exact current integration candidate with four source evolution scores and original waveforms; "
             "existing production music stop/return behavior retained, audible parity not claimed; "
