@@ -13,6 +13,7 @@ import sys
 
 import build_collection_native_tail as collection_native
 import build_ending_awards_main_tail as ending_awards
+import build_tag_release_tail as tag_release
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
@@ -252,6 +253,7 @@ EXPECTED_LAYERS = {
     "shoot-child-contact.gba": "5284435AE1BA291699331F5A899358D254844E7EA4784A60D250DCEF2A07CECC",
     **collection_native.STAGES,
     **ending_awards.STAGES,
+    **tag_release.expected_layers(),
     "initial-portrait.gba": "F61053394798E4529F45A75E8363791EC8777774681F0B7354A69966EF780E3B",
     "portrait-selector.gba": "9B97967CFE6952C7C591805F9DEFCDD5815607A25986468D27F9F2AF3EC60DB5",
     "stage11-results.gba": "E21275218BEF6E4DDE08DB9EA64C2A0D925D102A265373A48BDFD1046A0C338C",
@@ -305,6 +307,7 @@ def main() -> int:
     parser.add_argument("wsc15", type=pathlib.Path, help="WonderSwan Color Ver. 1.5 original")
     parser.add_argument("output_dir", type=pathlib.Path)
     parser.add_argument("--font", required=True, type=pathlib.Path, help="pinned Galmuri11-Condensed BDF")
+    parser.add_argument("--credit-font", type=pathlib.Path, help="Galmuri7 BDF, defaults to the same distribution as --font")
     parser.add_argument("--font-license", required=True, type=pathlib.Path, help="original SIL Open Font License text")
     args = parser.parse_args()
 
@@ -317,6 +320,8 @@ def main() -> int:
     require_hash(args.wsc10, WSC10_SHA256, "WSC 1.0 original")
     require_hash(args.wsc15, WSC15_SHA256, "WSC Ver. 1.5 original")
     require_hash(args.font, FONT_SHA256, "Options font source")
+    credit_font = args.credit_font or args.font.with_name("Galmuri7.bdf")
+    require_hash(credit_font, "16A4CE94CEB329F90261949C850743CC791457A5385EF3193E72F72837CD798E", "Title credit font source")
     require_hash(args.font_license, FONT_LICENSE_SHA256, "Options font license")
 
     output = args.output_dir.resolve()
@@ -1020,6 +1025,7 @@ def main() -> int:
     source_english_tail(args.gba, args.wsc15, title / "manifest.json", output)
     collection_native.build(args.wsc15, output, run, require_hash)
     ending_awards.build(args.wsc15, output, run, require_hash)
+    tag_stages = tag_release.install(output, args.wsc15, args.font, credit_font, run)
     (output / "font-license.txt").write_bytes(args.font_license.read_bytes())
     for name, expected in EXPECTED_LAYERS.items():
         require_hash(output / name, expected, name)
@@ -1980,6 +1986,7 @@ def main() -> int:
     }
     collection_native.update_manifest(manifest)
     ending_awards.update_manifest(manifest)
+    manifest["collection_and_language"]["ending_and_title_build"] = tag_stages
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )

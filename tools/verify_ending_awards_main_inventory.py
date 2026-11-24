@@ -11,6 +11,11 @@ from verify_id13_main_inventory import inventory
 
 CORE_AUDIT = "93100E2379EC3609DDB0821E31A8CFAE677BAE7AB5C76D024BE82E4D60D37C8D"
 
+def historical_layers(parent):
+    layers=json.loads((parent/"build-manifest.json").read_bytes())["layers"]
+    layers.update(awards.STAGES)
+    return {key:layers[key] for key in production.EXPECTED_LAYERS if key in layers}
+
 
 def build(parent, output, source, approved_inventory):
     assert inventory(parent) == approved_inventory, "parent files match the original-backed A887 core"
@@ -18,7 +23,7 @@ def build(parent, output, source, approved_inventory):
     awards.build(source,output,production.run,production.require_hash)
     path=output/"build-manifest.json"
     data=json.loads(path.read_bytes())
-    data["layers"]=production.EXPECTED_LAYERS
+    data["layers"]=historical_layers(parent)
     awards.update_manifest(data)
     path.write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8")
     return inventory(output)
@@ -43,13 +48,14 @@ def main():
     assert first["collection-core.gba"]==previous["current-candidate.gba"]
     assert first["collection-core.json"]==previous["current-candidate.json"]
     assert first["current-candidate.json"]==awards.OWNER
-    for name,digest in production.EXPECTED_LAYERS.items():
+    layers=historical_layers(a.first_parent)
+    for name,digest in layers.items():
         assert first[name]==digest
     report=dict(status="ENDING_AWARDS_MAIN_TWO_VERIFIED_CORE_BUILDS",core_audit_sha256=CORE_AUDIT,
                 primary_sha256=awards.sha(Path(production.__file__).read_bytes()),
                 suffix_sha256=awards.sha(Path(awards.__file__).read_bytes()),
                 verifier_sha256=awards.sha(Path(__file__).read_bytes()),files_each=len(first),
-                inherited_unchanged=len(previous)-3,manifest_layers=len(production.EXPECTED_LAYERS),
+                inherited_unchanged=len(previous)-3,manifest_layers=len(layers),
                 final_sha256=first["current-candidate.gba"],sha256_by_relative_path=first)
     a.report.parent.mkdir(parents=True,exist_ok=True)
     a.report.write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8",newline="\n")
