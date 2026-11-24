@@ -9,3 +9,7 @@
 - 메뉴 검수표는 `build/menu-review-four-languages-20261124/menus-revised.png`다. 실제 화면 52장을 원본의 두 배 크기로 배치했다.
 - 초상화 검수표는 같은 폴더의 `all-portraits.png`다. 15개 슬롯을 ID 순서대로 나열하고, 롬에 설치된 이름판 60개와 그 아래의 96×112픽셀 그림을 대조했다. 아구몬 세 슬롯과 길몬 두 슬롯을 구분했다. 이 표는 롬 데이터에서 원본 픽셀을 추출해 만들었다.
 - 영문 버튼만 비교하려면 `build/english-menu-lettering-qa-20261124/buttons-before-after-4x.png`를 연다.
+
+### 검수용 롬 적용
+
+로컬 폴더 `build/title-credits-v91-r2-20261124`에 실행용 `component.gba`와 `menu-review.bps`가 있다. 패치로 직접 만들 때는 Floating IPS의 **Apply Patch**에서 BPS 파일, 미국판 원본, 새 출력 파일을 차례로 선택한다. 미국판 원본 SHA-256은 `996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED`다. 검수용 BPS는 673,811바이트이며 SHA-256은 `E17A7F0C66E35FAD786A64116A912A57D8FA82EBCA47AD96A5850DE8C75F2142`다. 이 패치를 원본에 적용한 뒤 검수 롬과 16 MiB 전체가 일치하는지 확인했다.
