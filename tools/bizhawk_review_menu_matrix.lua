@@ -1,0 +1,113 @@
+-- Capture the four language settings by following the same menu branches in each run.
+local out = assert(userdata.get("output"))
+local language = assert(userdata.get("language"))
+local function write(name, data)
+    local f = assert(io.open(out .. "/" .. name, "wb"))
+    f:write(data)
+    f:close()
+end
+local function log(s)
+    local f = assert(io.open(out .. "/trace.txt", "a"))
+    f:write(string.format("%d %s\n", emu.framecount(), s))
+    f:close()
+end
+local function iw(off) return memory.read_u16_le(off, "IWRAM") end
+local function byte(off) return memory.read_u8(off, "EWRAM") end
+local function word(off) return memory.read_u32_le(off, "EWRAM") end
+local function task(prio)
+    for i=0,51 do
+        local h=0x10000+i*0x118
+        if byte(h+16)&2~=0 and word(h+4)==prio then return h end
+    end
+end
+local function frames(n,key)
+    for i=1,n do
+        local keys={}
+        for _,b in ipairs({"A","B","Start","Select","Up","Down","Left","Right","L","R","Power"}) do keys[b]=(b==key) end
+        joypad.set(keys)
+        emu.frameadvance()
+    end
+end
+local function tap(key) frames(2,key); frames(15) end
+local function waitfor(label,fn,limit)
+    for i=1,limit or 420 do if fn() then return end;frames(1) end
+    error("timeout: "..label.." mode="..iw(0x2310))
+end
+local function enabled()
+    local n=0
+    for j=0,127 do if memory.read_u16_le(j*8,"OAM")&0x300~=0x200 then n=n+1 end end
+    return n
+end
+local function menu(tree)
+    local t=task(0x1000)
+    if iw(0x2310)==3 and t and word(t)==0x08DFE048 and byte(t+28)==tree then return t end
+end
+local function prompt()
+    local t=task(0x1000)
+    return iw(0x2310)==3 and t and word(t)==0x08090C7C
+end
+local function shot(name)
+    log("capture "..name.." mode="..iw(0x2310).." language="..(iw(0x112E)>>8))
+    client.screenshot(out.."/"..name..".png")
+end
+local function selectrow(tree,n)
+    waitfor("menu "..tree,function() return menu(tree) end)
+    for i=0,8 do
+        local t=menu(tree)
+        if t and byte(t+29)==n then tap("A");return end
+        tap("Down")
+    end
+    error("no row "..n)
+end
+local function mode(n) waitfor("mode "..n,function()return iw(0x2310)==n end) end
+local rootstate=out.."/root.State"
+local function root()
+    assert(savestate.load(rootstate,true))
+    assert(menu(0))
+    frames(2)
+end
+local ok,err=pcall(function()
+    client.speedmode(800)
+    write("loaded-rom.bin",memory.read_bytes_as_binary_string(0,0x1000000,"ROM"))
+    waitfor("boot prompt",prompt,6500); frames(65); tap("Start")
+    selectrow(0,2); mode(14)
+    waitfor("options init",function()return task(0x1500)end); frames(95)
+    for i=1,8 do if iw(0x473E)==4 then break end;tap("Down") end
+    assert(iw(0x473E)==4)
+    for i=1,5 do
+        local current=memory.read_u16_le(task(0x1500)+24,"EWRAM")
+        if current==language then break end
+        tap(current<language and "Right" or "Left")
+    end
+    assert(memory.read_u16_le(task(0x1500)+24,"EWRAM")==language)
+    tap("A")
+    waitfor("committed prompt",prompt)
+    assert(iw(0x112E)>>8==0xA0+language)
+    frames(45)
+    waitfor("visible Start",function()return enabled()>0 end)
+    frames(2)
+    shot("title");tap("Start")
+    waitfor("five menu rows",function()return menu(0) and enabled()==110 end)
+    frames(2);shot("main");assert(savestate.save(rootstate,true))
+    selectrow(0,1)
+    waitfor("versus paint",function()return menu(1) and enabled()>=44 end);frames(1);shot("versus")
+    root();selectrow(0,4)
+    waitfor("collection paint",function()return menu(2) and enabled()>=44 end);frames(1)
+    assert(iw(0x2A86)==8 and iw(0x2AD6)==9,"both Collection rows earned/available")
+    shot("collection")
+    selectrow(2,0);mode(22);frames(100);shot("tag")
+    root();selectrow(0,4);selectrow(2,1);mode(4);frames(150);shot("shoot-select")
+    root();selectrow(0,0);mode(4);frames(150);shot("solo-select")
+    root();selectrow(0,3)
+    waitfor("D-ARK destination",function()return iw(0x2310)~=3 end)
+    frames(145);shot("dark")
+    root();selectrow(0,2);mode(14);frames(140);shot("options")
+    for i=1,6 do if iw(0x473E)==2 then break end;tap("Down") end
+    assert(iw(0x473E)==2);tap("A");frames(40);shot("sound")
+    root();selectrow(0,2);mode(14);frames(110)
+    for i=1,6 do if iw(0x473E)==3 then break end;tap("Down") end
+    assert(iw(0x473E)==3);tap("A");frames(40);shot("erase")
+end)
+if not ok then log(tostring(err));shot("failure") end
+write("done.txt",ok and "PASS" or tostring(err))
+client.exit()

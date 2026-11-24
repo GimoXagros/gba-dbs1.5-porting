@@ -14,8 +14,10 @@ assert os.path.samefile('W:/',root)
 rom=Path(sys.argv[3]).resolve()
 rom_bytes=rom.read_bytes();assert len(rom_bytes)==0x1000000 and sha(rom_bytes)==sys.argv[4]
 english_review = sys.argv[5:] == ['--english-review']
-assert not sys.argv[5:] or (language == 0 and english_review)
-script_name = 'bizhawk_capture_english_title.lua' if english_review else 'bizhawk_capture_localized_title.lua'
+menu_review = sys.argv[5:] == ['--menu-review']
+assert not sys.argv[5:] or (language == 0 and english_review) or menu_review
+script_name = ('bizhawk_review_menu_matrix.lua' if menu_review else
+               'bizhawk_capture_english_title.lua' if english_review else 'bizhawk_capture_localized_title.lua')
 script = root/'tools'/script_name
 script_bytes = script.read_bytes()
 exe=root/'local/BizHawk-2.11.1/EmuHawk.exe'
@@ -33,10 +35,20 @@ def check(value):
  elif isinstance(value,list):
   for v in value:check(v)
 check(cfg)
+if menu_review:
+ donor=root/'build/bizhawk-collection-v89-20261124-final-a/data/104/probe.SaveRAM'
+ save_entry=cfg['PathEntries']['Paths'][104]
+ assert (save_entry['System'],save_entry['Type'])==('GBA','Save RAM')
+ digest=sha(donor.read_bytes())
+ assert digest=='6B10ABBD459E034B6D16FC035AB89EA8A6A1280FC7A90C9FE1D1B7F0BA0B5148'
+ shutil.copyfile(donor,Path(save_entry['Path'])/'probe.SaveRAM')
 (out/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8')
 shutil.copyfile(rom,out/'probe.gba')
 args=['--gdi','--config='+alias+'/config.json','--lua=W:/tools/'+script_name,'--userdata=output:'+alias+';language:'+str(language)+(';english_review:1' if english_review else ''),alias+'/probe.gba']
 report=dict(visible=False,physical_background_input=False,supplied_save_used=False,guest_writes=[],language=language,rom_sha256=sha(rom_bytes),script_sha256=sha(script_bytes),host_sha256=sha(Path(__file__).read_bytes()),arguments=args)
+if menu_review:
+ report['copied_campaign_eeprom']=digest
+ report['branch_checkpoint']='in-run root after saving language in Options'
 with PrivateDesktopProcess(exe,args,exe.parent) as process:
  report['pid']=process.pid
  (out/'launch.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
@@ -48,4 +60,4 @@ report['script_unchanged']=script.read_bytes()==script_bytes
 report['files']={p.relative_to(out).as_posix():sha(p.read_bytes())for p in sorted(out.rglob('*'))if p.is_file()and p.name!='launch.json'}
 (out/'launch.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print(json.dumps({k:report[k]for k in('language','outcome','loaded_rom_exact','script_unchanged')}))
-assert report['outcome']=='ordinary-language-title-portrait-complete' and report['loaded_rom_exact'] and report['script_unchanged']
+assert report['outcome']==('PASS' if menu_review else 'ordinary-language-title-portrait-complete') and report['loaded_rom_exact'] and report['script_unchanged']
