@@ -1,5 +1,9 @@
 # Port status
 
+## 2026-11-25 v1.0.0 배포 기준
+
+미국판과 최종 포팅판 `AA6BB1EB`을 두 코어에서 실제로 연결했다. 양쪽 배치·승패·재대전·저장 재시작을 확인했다. 무보조 전체 캠페인과 실기·공개 테스트는 배포 후 검수한다. 아래의 이전 버전 기록은 당시 상태다. [정식판 검수·지원 범위](records/v1-release.md).
+
 Snapshot date: 2026-09-02 (Asia/Seoul)
 
 User-requested pause after the v50 palette-transition investigation:

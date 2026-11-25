@@ -1,8 +1,12 @@
 # gba-dbs1.5-porting
 
-*Digimon Tamers: Battle Spirit Ver. 1.5*의 콘텐츠와 동작을 USA GBA 엔진으로 옮기는 개발 저장소입니다. 완성본은 아직 아닙니다.
+*Digimon Tamers: Battle Spirit Ver. 1.5*의 콘텐츠와 동작을 USA GBA 엔진으로 옮긴 포트입니다.
 
 ## 현재 상태
+
+정식판 **v1.0.0**은 기존 미국판과의 호환 대전과 포팅판끼리의 확장 대전을 지원합니다. 릴리스의 BPS를 미국판 원본에 적용해 사용하세요. [GitHub Release](https://github.com/GimoXagros/gba-dbs1.5-porting/releases/tag/v1.0.0) · [한글·영문 적용 안내](records/release-v1-guide.md) · [지원 범위와 검수 결과](records/v1-release.md).
+
+## 이전 v94 검수판
 
 **v94 검수판**은 게임 옵션에서 D-스피릿 고정값과 보스 체력 보조를 저장할 수 있습니다. 네 번째 오프닝의 캐릭터 그림과 시작 버튼 전환 시간을 원더스완 원본에 맞추고, 추가 캐릭터 효과음 5종의 음색을 수정했습니다. [조작과 검수 결과](records/playable-battle-assists-v94.md).
 
