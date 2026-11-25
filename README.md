@@ -2,7 +2,7 @@
 
 [English](#english) · [한국어](#한국어) · [Download the v1.0.0 patch / 패치 다운로드](https://github.com/GimoXagros/gba-dbs1.5-porting/releases/tag/v1.0.0)
 
-| Patamon vs. Gatomon · 파타몬 대 가트몬 | Link battle · 통신 대전 | Digimon Shoot · 디지몬 슈트 |
+| Patamon vs. Gatomon · 파닥몬 대 가트몬 | Link battle · 통신 대전 | Digimon Shoot · 디지몬 슈트 |
 | :---: | :---: | :---: |
 | ![Patamon and Gatomon on the versus screen](docs/screenshots/patamon-gatomon.png) | ![Gatomon on a forest platform during a link match](docs/screenshots/link-battle.png) | ![Digimon on the blue Digimon Shoot playfield](docs/screenshots/digimon-shoot.png) |
 
