@@ -1,5 +1,7 @@
 # Digimon Tamers: Battle Spirit Ver. 1.5
 
+<p align="center"><img src="logo.png" width="360" alt="Digimon Tamers: Battle Spirit Ver. 1.5 — GBA fan port cover / GBA 팬 포팅판 표지"></p>
+
 [English](#english) · [한국어](#한국어) · [Download the v1.0.0 patch / 패치 다운로드](https://github.com/GimoXagros/gba-dbs1.5-porting/releases/tag/v1.0.0)
 
 | Patamon vs. Gatomon · 파닥몬 대 가트몬 | Link battle · 통신 대전 | Digimon Shoot · 디지몬 슈트 |
