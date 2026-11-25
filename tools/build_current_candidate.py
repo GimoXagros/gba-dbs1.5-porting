@@ -16,6 +16,7 @@ import build_ending_awards_main_tail as ending_awards
 import build_tag_release_tail as tag_release
 import build_tag_audio_link_tail as tag_audio_link
 import build_assist_opening_audio_tail as assist_tail
+import build_mixed_compatibility as mixed
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GBA_SHA256 = "996DE33330AC729D10D761D1901E7A335191C9503B0470569E8F294ACF6618ED"
@@ -1997,10 +1998,25 @@ def main() -> int:
     manifest["collection_and_language"]["ending_and_title_build"] = tag_stages
     manifest["collection_and_language"]["tag_audio_and_link_build"] = tag_audio_stages
     manifest["collection_and_language"]["assist_opening_audio_build"] = assist_stages
+    # Keep the historical input for its pinned checks, then install the release-only link rules.
+    mixed_stage = intermediate / "mixed-compatibility"
+    final_owner = output / "current-candidate.json"
+    run("build_mixed_compatibility.py", "--input", candidate, "--owner", final_owner, "--output", mixed_stage)
+    release_image = mixed_stage / "component.gba"
+    require_hash(release_image, mixed.FINAL, "released mixed cable profile")
+    release_owner = mixed_stage / "manifest.json"
+    run("verify_mixed_compatibility.py", "--prior", candidate, "--image", release_image,
+        "--owner", release_owner, "--gba", args.gba, "--source", args.wsc15,
+        "--report", mixed_stage / "verified.json")
+    candidate.write_bytes(release_image.read_bytes())
+    final_owner.write_bytes(release_owner.read_bytes())
+    manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": mixed.FINAL,
+                          "intermediate/mixed-compatibility/component.gba": mixed.FINAL}
+    manifest["mixed_compatibility"] = json.loads(release_owner.read_bytes())["writes"]
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
-    print(f"[build] PASS {candidate} {EXPECTED_LAYERS['current-candidate.gba']}")
+    print(f"[build] PASS {candidate} {mixed.FINAL}")
     return 0
 
 
