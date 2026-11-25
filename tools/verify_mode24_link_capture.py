@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PIL import Image
 from render_wsc_asset_frames import layout_frames
-from verify_link_tag_capture import eeprom
+from verify_link_tag_capture import eeprom, apply_extra_fighter_results
 from verify_mode23_completion_save import sha
 
 
@@ -70,6 +70,10 @@ def inspect(source,folder,player,require_audio):
     unchanged=old.copy()
     unchanged[18+rank*2:20+rank*2]=new[18+rank*2:20+rank*2]
     unchanged[40:42]=new[40:42]
+    if json.loads((folder/'launch.json').read_bytes()).get('added_fighters'):
+        sides=set(re.findall(r'pc=0837AB8C f=\d+ role=\d+ side=(\d+)',log))
+        assert len(sides)==1
+        apply_extra_fighter_results(unchanged,log,int(sides.pop()))
     assert unchanged==new
     original_tile,original_palette=struct.unpack_from('<2H',source,0x77407c+4*rank)
     base=0x2d9360;cardpal=colors(source,base+original_palette)

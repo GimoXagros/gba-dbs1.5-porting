@@ -26,6 +26,7 @@ def main():
     parser.add_argument('--version',required=True,choices=('1.5','legacy'))
     parser.add_argument('--card-screens',action='store_true')
     parser.add_argument('--carry-to-special',action='store_true')
+    parser.add_argument('--added-fighters',action='store_true',help='Select Patamon and Tailmon through the normal 1.5 menus')
     parser.add_argument('--name-idle-frames',type=int,default=0)
     a=parser.parse_args()
     assert 0<=a.name_idle_frames<=12000 and (not a.name_idle_frames or (a.card_screens and a.carry_to_special))
@@ -64,6 +65,19 @@ def main():
         alias=Path('W:/')/out.relative_to(root)
     script=source.read_text(encoding='utf8').replace('@@OUTPUT@@',alias.as_posix())
     script=script.replace('@@ATTACKER@@',str(a.attacker)).replace('@@VERSION_ROW@@','0' if a.version=='1.5' else '1')
+    if a.added_fighters:
+        assert a.version=='1.5'
+        script=script.replace('elseif md==8 then', '''elseif md==4 and not entered_result then
+   local goal=p==1 and 11 or 12
+   pulse(read(0x0300473c,1)==goal and 1 or 128)
+  elseif md==8 then''')
+        script=script.replace('if f%400==0 then','''if md==7 and f%120==0 then
+   local a,b=read(0x0300489c,4),read(0x030048a0,4)
+   if a>=0x02010000 and a<0x02014000 and b>=0x02010000 and b<0x02014000 then
+    log(string.format("active extended fighters=%d/%d",read(a+17,1),read(b+17,1)))
+   end
+  end
+  if f%400==0 then''')
     if a.card_screens:
         snippet=Path(__file__).with_name('mgba_link_card_capture.lua').read_text(encoding='utf8')
         if a.carry_to_special:
@@ -90,7 +104,7 @@ def main():
     args=['--script',str(alias/'probe.lua'),str(alias/'player1.gba'),str(alias/'player2.gba')]
     report=dict(host_sha256=sha(gui),rom_sha256=sha(a.rom),visible=False,physical_input=False,guest_writes=[],
                 attacker=a.attacker,version=a.version,name_idle_frames=a.name_idle_frames,card_screens=a.card_screens,carry_to_special=a.carry_to_special,source_rev='fa977ccbc815efc93aefad9acddc9af0577d7827',
-                script_sha256=sha(source),arguments=args)
+                script_sha256=sha(source),loaded_script_sha256=sha(out/'probe.lua'),added_fighters=a.added_fighters,arguments=args)
     ends=[out/f'finished-{p}.txt' for p in (1,2)]
     with PrivateDesktopProcess(gui,args,out):
         deadline=time.monotonic()+(360 if a.card_screens else 160)

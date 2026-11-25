@@ -27,6 +27,22 @@ def eeprom(path):
     return logical,bytearray(s[8:50])
 
 
+def apply_extra_fighter_results(record,log,side):
+    pairs=set(re.findall(r'^active extended fighters=(\d+)/(\d+)$',log,re.M))
+    assert pairs=={('13','14')}
+    ident=(13,14)[side]
+    at=4*(ident-12)
+    wins,games=struct.unpack_from('<HH',record,at)
+    rounds=[r for r in ROW.findall(log) if int(r[0],16)==0x0837ab8c]
+    assert rounds
+    for row in rounds:
+        scores=tuple(map(int,row[4:6]))
+        if games<999:
+            games+=1
+            wins+=scores[side]>scores[1-side]
+    struct.pack_into('<HH',record,at,wins,games)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--capture',required=True,type=Path)
@@ -57,7 +73,8 @@ def main():
         assert 'tree=0 row=1' in log and 'tree=1 row=0' in log
         mode=[int(v) for v in re.findall(r'^f=\d+ mode=(\d+)',log,re.M)]
         steps=[v for j,v in enumerate(mode) if not j or mode[j-1]!=v]
-        assert all(v in steps for v in (3,4,5,6,7,8)) and [7,8,4] in [steps[j:j+3] for j in range(len(steps)-2)]
+        finish=[7,8,24,4] if launch.get('card_screens') else [7,8,4]
+        assert all(v in steps for v in (3,4,5,6,7,8)) and steps[-len(finish):]==finish
         row=matches[4]
         role,side,first,second,ver=map(int,(row[2],row[3],row[4],row[5],row[7]))
         assert (role,side) in ((8,0),(0,1))
@@ -86,6 +103,8 @@ def main():
     for peer in players:
         side=peer['side'];old=peer.pop('old');new=peer.pop('new')
         expected=old.copy()
+        if launch.get('added_fighters'):
+            apply_extra_fighter_results(expected,(cap/f"p{peer['player']}.txt").read_text(),side)
         if legacy:
             assert all(s[3]==0x1CD9 for s in peer['slots'])
         else:
