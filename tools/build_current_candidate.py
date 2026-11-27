@@ -2012,11 +2012,15 @@ def main() -> int:
     fixes = intermediate / "issue4"
     issue4_sha = install_issue4(release_image, release_owner, args.wsc15, fixes)
     train = intermediate / "train-roamer"
-    final_sha = install_train_roamer(fixes / "component.gba", fixes / "manifest.json", args.wsc15, train)
-    candidate.write_bytes((train / "component.gba").read_bytes())
-    final_owner.write_bytes((train / "manifest.json").read_bytes())
+    train_sha = install_train_roamer(fixes / "component.gba", fixes / "manifest.json", args.wsc15, train)
+    from build_boss_dark_fixes import install as install_boss_dark
+    gameplay = intermediate / "boss-dark"
+    final_sha = install_boss_dark(train / "component.gba", train / "manifest.json", args.wsc15, gameplay)
+    candidate.write_bytes((gameplay / "component.gba").read_bytes())
+    final_owner.write_bytes((gameplay / "manifest.json").read_bytes())
     manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": final_sha,
-                          "intermediate/train-roamer/component.gba": final_sha,
+                          "intermediate/boss-dark/component.gba": final_sha,
+                          "intermediate/train-roamer/component.gba": train_sha,
                           "intermediate/issue4/component.gba": issue4_sha,
                           "intermediate/mixed-compatibility/component.gba": mixed.FINAL}
     manifest["mixed_compatibility"] = json.loads(release_owner.read_bytes())["writes"]
