@@ -8,6 +8,10 @@
 | :---: | :---: | :---: |
 | ![Patamon and Gatomon on the versus screen](docs/screenshots/patamon-gatomon.png) | ![Gatomon on a forest platform during a link match](docs/screenshots/link-battle.png) | ![Digimon on the blue Digimon Shoot playfield](docs/screenshots/digimon-shoot.png) |
 
+| D-ARK battle results · D-ARK 대전 결과 | Train stage · 열차 스테이지 | Victory podium · 우승 시상대 |
+| :---: | :---: | :---: |
+| ![Battle results on GBA and WonderSwan D-Project](docs/screenshots/d-ark-dproject-results.png) | ![A Digimon moving across the train stage](docs/screenshots/issue-4-train-roaming.png) | ![All 15 fighters on the victory podium](docs/screenshots/zeed-winners.png) |
+
 ## English
 
 This fan port brings the WonderSwan Color edition of *Battle Spirit Ver. 1.5* to Game Boy Advance. Choose from 15 fighters, meet Calumon to evolve during a match, or open Collection after unlocking it to play seven rounds of Digimon Shoot. The menus support English, Japanese, Korean and Digicode.
