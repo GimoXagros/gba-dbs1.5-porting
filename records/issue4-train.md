@@ -41,6 +41,12 @@ At the same six world coordinates, sampled height differed by at most 1 display 
 
 Five WSC and eight GBA neutral actors converted in place to items during these independent matches. Exact counts depend on the fight. The first conversions occurred at frames 5242 and 6142 respectively. The WSC reached its result at frame 13461. GBA reached the result at 10943 and the next VS at 11481; its SaveRAM hash matched the input. On the v1.0.1 negative control, the observer found neither authored crossing direction at the expected speed.
 
+## Train viewport and monster variants
+
+The WSC neutral actor constructor table at `0x7638D6` picks stage 8 constructor `0x76424C`. That routine selects graphics row 8 unconditionally. Its two patterns control the side of entry. Stage 0 uses a different constructor, `0x764C54`, which selects the ordinary Mushroomon (row 0) or the alternate row 11 under flag 10h. Neither route is selected by Train. Round number and selected fighter do not override the Train constructor's graphic row.
+
+A separate cold run held right and pulsed jump, then held left and pulsed jump, recording both fighters' world positions and sprite presentation coordinates on every frame of the match. Both games reached the two Train limits at world x=96 and x=7071. At the left limit the WSC player's usual display anchor was (6,68); at the right limit it was (217,68). GBA rendered (14,76) and (225,76). Its 8-pixel border accounts for both coordinate differences. On the right spring the player's anchor stayed at the same screen height on both the ascent and descent. The camera follows the local fighter in the WSC version; a vertically separated opponent can go above the screen and come back. An outward-facing sprite can also extend past the arena edge on either system. The selected source behavior retains those viewport boundaries.
+
 ## Repeat the headless regression
 
 Use the release harness prerequisites, the verified WSC ROM, a locally built GBA ROM and the existing 15-fighter game-earned GBA SaveRAM. The snippets below run from the repository root in PowerShell 7. Supply the paths and expected GBA hash for the desired build. The harness copies each ROM and any SaveRAM into its own fresh output folder. WSC starts without a save.
@@ -78,3 +84,7 @@ To test the field Digimon, repeat the commands in a fresh output folder with `to
 | GBA field actor coordinates and drops, roamer.txt | `39BAFBB87496942260CFBD716D72EB12650D5FDEF580978A978A7CD573EF854B` |
 | WSC field actor final report.json | `7496C467E50FBCE9A28407D91C2EDF5D56FF5B833BBA8664653F8438FCF5B678` |
 | GBA field actor final report.json | `A223B869D1D6727FC02B7A89612E1E713AD61E6A40CFB3978D95559037DA9EA9` |
+| WSC Train viewport report.json | `1FFBB199C7C7D48F67BCC3CC6C28E18371B6F1839665176B590A5A5F54749339` |
+| WSC Train viewport screen.txt | `FCC1947B95496CF4E940F307D5266E0604D7904F3B35EA7AF05B17D06D1340B7` |
+| GBA Train viewport report.json | `5D3981E34914896C09802A08B1C91F043DC51C94DAB84DDAD5386B414B0E5C8D` |
+| GBA Train viewport screen.txt | `548352CBAEE3E14BFBEFE9F05F2B9A31EEA0D3580FC8BCED9DE9CEFD22921B65` |
