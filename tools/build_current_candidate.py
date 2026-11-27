@@ -2008,15 +2008,19 @@ def main() -> int:
     run("verify_mixed_compatibility.py", "--prior", candidate, "--image", release_image,
         "--owner", release_owner, "--gba", args.gba, "--source", args.wsc15,
         "--report", mixed_stage / "verified.json")
-    candidate.write_bytes(release_image.read_bytes())
-    final_owner.write_bytes(release_owner.read_bytes())
-    manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": mixed.FINAL,
+    from build_issue4_fixes import install as install_issue4
+    fixes = intermediate / "issue4"
+    final_sha = install_issue4(release_image, release_owner, args.wsc15, fixes)
+    candidate.write_bytes((fixes / "component.gba").read_bytes())
+    final_owner.write_bytes((fixes / "manifest.json").read_bytes())
+    manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": final_sha,
+                          "intermediate/issue4/component.gba": final_sha,
                           "intermediate/mixed-compatibility/component.gba": mixed.FINAL}
     manifest["mixed_compatibility"] = json.loads(release_owner.read_bytes())["writes"]
     (output / "build-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
-    print(f"[build] PASS {candidate} {mixed.FINAL}")
+    print(f"[build] PASS {candidate} {final_sha}")
     return 0
 
 
