@@ -12,6 +12,8 @@
 
 This fan port brings the WonderSwan Color edition of *Battle Spirit Ver. 1.5* to Game Boy Advance. Choose from 15 fighters, meet Calumon to evolve during a match, or open Collection after unlocking it to play seven rounds of Digimon Shoot. The menus support English, Japanese, Korean and Digicode.
 
+The development build can also battle a WonderSwan copy of D-Project through the Windows D-ARK Link player. Select a registered Digimon under **VS SWAN (CABLE)**, confirm **OK**, then press **A** at **CONNECTION**. [Direct-link verification](records/d-ark-wsc-peer.md)
+
 ### Apply the patch
 
 1. Download **DBS15-GBA-v1.0.3.bps** from the pre-release above. Start with your own clean 4 MiB copy of *Digimon – Battle Spirit (USA)*. Back up your save.
@@ -27,6 +29,8 @@ Link play was tested with two emulator cores, including wins, losses, rematches 
 ## 한국어
 
 원더스완 컬러(WSC)판 *배틀 스피릿 Ver. 1.5*를 게임보이 어드밴스(GBA)로 옮긴 팬 포팅판입니다. 15명의 디지몬 중 하나를 골라 싸우고, 대전 중 동글몬을 만나면 진화할 수 있습니다. 컬렉션을 해금하면 디지몬 슈트 7라운드에도 도전할 수 있습니다. 메뉴 언어는 영어·일본어·한국어·디지코드 중에서 고를 수 있습니다.
+
+개발판에서는 Windows용 D-ARK Link 실행기로 원더스완 D-Project와 대전할 수 있습니다. [두 게임 연결 방법](records/d-ark-direct-play-ko.md)
 
 ### 패치 적용하기
 

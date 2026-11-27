@@ -2015,11 +2015,15 @@ def main() -> int:
     train_sha = install_train_roamer(fixes / "component.gba", fixes / "manifest.json", args.wsc15, train)
     from build_boss_dark_fixes import install as install_boss_dark
     gameplay = intermediate / "boss-dark"
-    final_sha = install_boss_dark(train / "component.gba", train / "manifest.json", args.wsc15, gameplay)
-    candidate.write_bytes((gameplay / "component.gba").read_bytes())
-    final_owner.write_bytes((gameplay / "manifest.json").read_bytes())
+    gameplay_sha = install_boss_dark(train / "component.gba", train / "manifest.json", args.wsc15, gameplay)
+    from build_dark_battle_link import install as install_accessory
+    accessory = intermediate / "dark-link"
+    final_sha = install_accessory(gameplay / "component.gba", gameplay / "manifest.json", args.wsc15, accessory)
+    candidate.write_bytes((accessory / "component.gba").read_bytes())
+    final_owner.write_bytes((accessory / "manifest.json").read_bytes())
     manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": final_sha,
-                          "intermediate/boss-dark/component.gba": final_sha,
+                          "intermediate/dark-link/component.gba": final_sha,
+                          "intermediate/boss-dark/component.gba": gameplay_sha,
                           "intermediate/train-roamer/component.gba": train_sha,
                           "intermediate/issue4/component.gba": issue4_sha,
                           "intermediate/mixed-compatibility/component.gba": mixed.FINAL}
