@@ -2008,13 +2008,16 @@ def main() -> int:
     run("verify_mixed_compatibility.py", "--prior", candidate, "--image", release_image,
         "--owner", release_owner, "--gba", args.gba, "--source", args.wsc15,
         "--report", mixed_stage / "verified.json")
-    from build_issue4_fixes import install as install_issue4
+    from build_issue4_fixes import install as install_issue4, install_train_roamer
     fixes = intermediate / "issue4"
-    final_sha = install_issue4(release_image, release_owner, args.wsc15, fixes)
-    candidate.write_bytes((fixes / "component.gba").read_bytes())
-    final_owner.write_bytes((fixes / "manifest.json").read_bytes())
+    issue4_sha = install_issue4(release_image, release_owner, args.wsc15, fixes)
+    train = intermediate / "train-roamer"
+    final_sha = install_train_roamer(fixes / "component.gba", fixes / "manifest.json", args.wsc15, train)
+    candidate.write_bytes((train / "component.gba").read_bytes())
+    final_owner.write_bytes((train / "manifest.json").read_bytes())
     manifest["layers"] = {**EXPECTED_LAYERS, "current-candidate.gba": final_sha,
-                          "intermediate/issue4/component.gba": final_sha,
+                          "intermediate/train-roamer/component.gba": final_sha,
+                          "intermediate/issue4/component.gba": issue4_sha,
                           "intermediate/mixed-compatibility/component.gba": mixed.FINAL}
     manifest["mixed_compatibility"] = json.loads(release_owner.read_bytes())["writes"]
     (output / "build-manifest.json").write_text(
