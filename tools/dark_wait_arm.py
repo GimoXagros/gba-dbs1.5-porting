@@ -1,5 +1,19 @@
 """ARM scene callbacks for the D-Ark waiting screen."""
-def assembly(scenery, fighters, headers):
+def assembly(scenery, fighters, headers, *, linked=False):
+    open_link = 'bl dark_open_link' if linked else ''
+    close_link = 'bl dark_close_link' if linked else ''
+    update_link = """
+    bl dark_link_frame
+    ldrb r0,[r10,#0x40]
+    cmp r0,#0
+    bne dark_wait
+""" if linked else ''
+    wait_is_active = 'ldrb r0,[r10,#0x40]\ncmp r0,#0\nbne dark_input' if linked else ''
+    skip_idle = """
+    ldrb r0,[r10,#0x40]
+    cmp r0,#0
+    bne dark_end
+""" if linked else ''
     return f"""
 dark_init:
     mov r2,#1
@@ -150,6 +164,7 @@ dark_clear_actor_zero:
     ldr r1,=0x05000060
     mov r2,#32
     bl dark_copy
+    {open_link}
     bl dark_registers
     pop {{r0-r12,pc}}
 
@@ -233,6 +248,7 @@ dark_frame:
     strh r5,[r6,#28]
     cmp r4,#56
     bne dark_input
+    {wait_is_active}
     ldr r0,={scenery}
     ldr r0,[r0,#8]
     add r0,r0,#0x180
@@ -247,6 +263,7 @@ dark_show_wait:
     subs r2,r2,#1
     bne dark_show_wait
 dark_input:
+    {update_link}
     cmp r4,#56
     ldr r5,=0x03001306
     ldrh r5,[r5]
@@ -274,6 +291,7 @@ dark_wait:
     subs r0,r0,#1
     str r0,[r10,#16]
     bne dark_animate
+    {close_link}
     mov r6,#0x04000000
     ldrh r0,[r10,#0x20]
     strh r0,[r6]
@@ -321,6 +339,7 @@ dark_wait:
     pop {{r0-r12,pc}}
 
 dark_animate:
+    {skip_idle}
     ldr r7,[r10,#20]
     ldr r4,[r10]
     mov r6,#0x04000000
